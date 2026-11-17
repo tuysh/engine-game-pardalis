@@ -47,6 +47,14 @@ export interface AjustesDelMundo {
   /** Cómo sigue la cámara al jugador. */
   readonly camara: AjustesDeCamara;
   readonly sonidos: SonidosDelMundo;
+  /** Planos de cámara con nombre, para los pasos `camara`. */
+  readonly planos: Readonly<Record<string, Plano>>;
+}
+
+/** Un plano de cámara: desde dónde se mira a algo del escenario. Las distancias están en metros. */
+export interface Plano extends AjustesDeCamara {
+  /** Id de un personaje, id de un objeto del decorado o nombre de un punto del mapa: a lo que apunta la cámara. */
+  readonly mira: string;
 }
 
 /** Los sonidos generales del nivel. */
@@ -61,6 +69,7 @@ export const AJUSTES_DEL_MUNDO_POR_DEFECTO: AjustesDelMundo = {
   pixelesPorMetro: 100,
   camara: { distanciaEnMetros: 8, alturaEnMetros: 4, giroEnGrados: 0 },
   sonidos: {},
+  planos: {},
 };
 
 /** Una rama del diálogo de alguien: se usa la primera cuya condición se cumple. */
@@ -102,6 +111,32 @@ export interface Salida {
   readonly flecha?: FlechaDeSalida;
 }
 
+/** Qué hace que una cinemática empiece. */
+export type InicioDeCinematica =
+  /** Al entrar al nivel. */
+  | { readonly tipo: 'alEntrar' }
+  /** Cuando el jugador entra a esa zona del mapa. */
+  | { readonly tipo: 'zona'; readonly zona: string }
+  /** Cuando se cumple ese objetivo. */
+  | { readonly tipo: 'objetivo'; readonly objetivo: string }
+  /** Solo cuando el host la pide con `juego.reproducir(id)`. */
+  | { readonly tipo: 'manual' };
+
+/** Lo que pasa en una cinemática: pasos escritos en el nivel, o una función que registró el host. */
+export type GuionDeCinematica =
+  | { readonly tipo: 'pasos'; readonly pasos: readonly Paso[] }
+  | { readonly tipo: 'codigo'; readonly nombre: string };
+
+/** Una escena que se reproduce sola, sin control del jugador (docs/DISENO-3.0.md §7). */
+export interface Cinematica {
+  readonly inicio: InicioDeCinematica;
+  /** Solo empieza si esto se cumple. Si el nivel no lo dice, es «todavía no se ha visto»: se ve una sola vez. */
+  readonly condicion: Condicion;
+  /** `true` si el jugador puede saltarla. */
+  readonly saltable: boolean;
+  readonly guion: GuionDeCinematica;
+}
+
 /** El contenido completo de un nivel. */
 export interface Contenido {
   readonly meta: MetaDeNivel;
@@ -116,8 +151,13 @@ export interface Contenido {
   readonly interactivos: Readonly<Record<string, Interlocutor>>;
   /** Frases que el jugador dice al entrar a una zona del mapa, por grupo. */
   readonly comentarios: Readonly<Record<string, readonly PasoDeLinea[]>>;
+  /** Las cinemáticas del nivel, por id. */
+  readonly cinematicas: Readonly<Record<string, Cinematica>>;
   readonly salida?: Salida;
 }
 
 /** Prefijo de la variable que el motor marca solo al hablar con alguien: `charlas.<id>`. */
 export const PREFIJO_DE_CHARLAS = 'charlas.';
+
+/** Prefijo de la variable que el motor marca solo al terminar una cinemática: `vista.<id>`. */
+export const PREFIJO_DE_VISTAS = 'vista.';

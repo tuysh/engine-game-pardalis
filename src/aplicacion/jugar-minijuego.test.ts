@@ -25,6 +25,7 @@ function crearEscena(minijuegos: Record<string, Minijuego>) {
       secuencias: {},
       npcs: {},
       interactivos: {},
+      cinematicas: {},
       comentarios: {},
     },
     puntos: {},

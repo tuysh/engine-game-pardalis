@@ -41,6 +41,7 @@ const NIVEL: Nivel = {
       },
     },
     interactivos: { comal: { dialogo: [{ pasos: [{ tipo: 'linea', hablante: 'tommy', texto: 'Hot!' }] }] } },
+    cinematicas: {},
     comentarios: {},
     salida: {
       destino: 'Selector',

@@ -21,6 +21,7 @@ const CONTENIDO: Contenido = {
   secuencias: { despedida: [{ tipo: 'linea', hablante: 'tortu', texto: '¡Adiós!' }] },
   npcs: {},
   interactivos: {},
+  cinematicas: {},
   comentarios: {},
 };
 

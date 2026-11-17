@@ -24,6 +24,7 @@ const CONTENIDO: Contenido = {
   secuencias: {},
   npcs: {},
   interactivos: {},
+  cinematicas: {},
   comentarios: {},
 };
 

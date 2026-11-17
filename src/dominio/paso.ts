@@ -13,10 +13,27 @@
 //   { "secuencia": "aun_no_item" }                 { tipo: 'secuencia', nombre: 'aun_no_item' }
 //   { "cuando": "tengo x", "dice": [...] }         { tipo: 'condicional', condicion: ..., pasos: [...] }
 //
+//
+// Los pasos de escena (los de abajo) nacieron para las cinemáticas, pero sirven en cualquier diálogo:
+//
+//   { "juntos": [ ...pasos ] }                     { tipo: 'juntos', pasos: [...] }
+//   { "espera": 2 }                                { tipo: 'espera', esperaEnSegundos: 2 }
+//   { "camara": "plano_sala", "duracion": 2 }      { tipo: 'camara', destino: 'plano_sala', duracionEnSegundos: 2 }
+//   { "mira": "tommy", "hacia": "mama" }           { tipo: 'mira', personaje: 'tommy', hacia: 'mama' }
+//   { "anima": "tommy", "con": "tommy_tele" }      { tipo: 'anima', personaje: 'tommy', clave: 'tommy_tele', repite: false }
+//   { "aparece": "mama", "en": "puerta" }          { tipo: 'aparece', personaje: 'mama', punto: 'puerta' }
+//   { "desaparece": "mama" }                       { tipo: 'desaparece', personaje: 'mama' }
+//   { "musica": "mus_casa" }                       { tipo: 'musica', clave: 'mus_casa' }
+//   { "sonido": "puerta_abre" }                    { tipo: 'sonido', clave: 'puerta_abre' }
+//   { "fundido": "abrir", "duracion": 1 }          { tipo: 'fundido', sentido: 'abrir', duracionEnSegundos: 1 }
+//   { "video": "intro_tele" }                      { tipo: 'video', clavePorIdioma: { es: 'intro_tele', en: 'intro_tele' } }
+//   { "sale": "barrio" }                           { tipo: 'sale', destino: 'barrio' }
+//
 // Los mensajes de error siempre usan los nombres del contenido, que son los que conoce quien lo escribe.
 
 import type { Condicion } from './condicion.ts';
 import type { VariablesDeEstado } from './estado.ts';
+import type { Idioma } from './idioma.ts';
 
 /** Una palabra de vocabulario: la tarjeta que se muestra junto a una línea. */
 export interface PalabraDeVocabulario {
@@ -111,6 +128,94 @@ export interface PasoCondicional {
   readonly pasos: readonly Paso[];
 }
 
+/** Varios pasos a la vez; el diálogo sigue cuando todos terminaron. */
+export interface PasoDeJuntos {
+  readonly tipo: 'juntos';
+  readonly pasos: readonly Paso[];
+}
+
+/** Una pausa. */
+export interface PasoDeEspera {
+  readonly tipo: 'espera';
+  readonly esperaEnSegundos: number;
+}
+
+/** Mueve la cámara. */
+export interface PasoDeCamara {
+  readonly tipo: 'camara';
+  /** Nombre de un plano de `mundo.planos`, id de un personaje, o `'jugador'` para volver a seguirlo. */
+  readonly destino: string;
+  /** Cuánto tarda en llegar. 0 = corte directo. */
+  readonly duracionEnSegundos: number;
+}
+
+/** Voltea a un personaje hacia otro personaje o hacia un punto del mapa. */
+export interface PasoDeMirada {
+  readonly tipo: 'mira';
+  readonly personaje: string;
+  /** Id de un personaje o nombre de un punto del mapa. */
+  readonly hacia: string;
+}
+
+/** Cambia el dibujo de un personaje por una animación (o una imagen) de los assets. */
+export interface PasoDeAnimacion {
+  readonly tipo: 'anima';
+  readonly personaje: string;
+  /** Clave de una animación o de una imagen. */
+  readonly clave: string;
+  /**
+   * `true`: la animación se repite sin parar y el diálogo sigue de inmediato.
+   * `false`: se reproduce una vez, el diálogo espera a que termine y el personaje vuelve a su dibujo normal.
+   */
+  readonly repite: boolean;
+}
+
+/** Mete a un personaje al escenario, parado en un punto del mapa. */
+export interface PasoDeAparicion {
+  readonly tipo: 'aparece';
+  readonly personaje: string;
+  readonly punto: string;
+}
+
+/** Saca a un personaje del escenario. */
+export interface PasoDeDesaparicion {
+  readonly tipo: 'desaparece';
+  readonly personaje: string;
+}
+
+/** Cambia la música de fondo. */
+export interface PasoDeMusica {
+  readonly tipo: 'musica';
+  readonly clave: string;
+}
+
+/** Toca un sonido corto. */
+export interface PasoDeSonido {
+  readonly tipo: 'sonido';
+  readonly clave: string;
+}
+
+/** Aclara la pantalla desde negro (`abrir`) o la oscurece hasta negro (`cerrar`). */
+export interface PasoDeFundido {
+  readonly tipo: 'fundido';
+  readonly sentido: 'abrir' | 'cerrar';
+  /** Cuánto tarda. 0 = de golpe. */
+  readonly duracionEnSegundos: number;
+}
+
+/** Reproduce un video a pantalla completa. Si el video lleva voces, hay uno por idioma. */
+export interface PasoDeVideo {
+  readonly tipo: 'video';
+  /** La clave del video para cada idioma del sitio. Si el video no lleva voces, es la misma clave en los dos. */
+  readonly clavePorIdioma: Readonly<Record<Idioma, string>>;
+}
+
+/** Termina el nivel hacia un destino: otro nivel, o un destino que decide el host. */
+export interface PasoDeSalida {
+  readonly tipo: 'sale';
+  readonly destino: string;
+}
+
 export type Paso =
   | PasoDeLinea
   | PasoDeEleccion
@@ -119,7 +224,22 @@ export type Paso =
   | PasoDeMinijuego
   | PasoDeCaminata
   | PasoDeSecuencia
-  | PasoCondicional;
+  | PasoCondicional
+  | PasoDeJuntos
+  | PasoDeEspera
+  | PasoDeCamara
+  | PasoDeMirada
+  | PasoDeAnimacion
+  | PasoDeAparicion
+  | PasoDeDesaparicion
+  | PasoDeMusica
+  | PasoDeSonido
+  | PasoDeFundido
+  | PasoDeVideo
+  | PasoDeSalida;
+
+/** Lo que se escribe en un paso `camara` para que la cámara vuelva a seguir al jugador. */
+export const CAMARA_AL_JUGADOR = 'jugador';
 
 /** Los efectos que existen. Un paso `efecto` con otro nombre es un error de validación. */
 export const EFECTOS_DISPONIBLES: readonly string[] = ['magia', 'confeti'];

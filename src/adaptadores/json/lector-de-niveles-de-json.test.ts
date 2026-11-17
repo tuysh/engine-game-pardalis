@@ -28,11 +28,17 @@ test('un contenido con solo "meta" se lee con todas las demás secciones vacías
   const esperado: Contenido = {
     meta: { id: 'tortilleria', titulo: 'La Tortillería', personajes: { tortu: { idioma: 'es', sprite: 'spr_tortu' } } },
     jugador: undefined,
-    mundo: { pixelesPorMetro: 100, camara: { distanciaEnMetros: 8, alturaEnMetros: 4, giroEnGrados: 0 }, sonidos: {} },
+    mundo: {
+      pixelesPorMetro: 100,
+      camara: { distanciaEnMetros: 8, alturaEnMetros: 4, giroEnGrados: 0 },
+      sonidos: {},
+      planos: {},
+    },
     estado: { objetivos: [], variables: [], lista: {}, dinero: undefined },
     secuencias: {},
     npcs: {},
     interactivos: {},
+    cinematicas: {},
     comentarios: {},
     salida: undefined,
   };
@@ -52,6 +58,7 @@ test('el jugador y el mundo se leen con sus unidades, y lo que falta toma su val
     pixelesPorMetro: 64,
     camara: { distanciaEnMetros: 8, alturaEnMetros: 4, giroEnGrados: 20 },
     sonidos: { musica: 'mus_barrio' },
+    planos: {},
   });
 });
 
@@ -180,7 +187,8 @@ test('un paso que no se reconoce lista las claves posibles', () => {
 
   expect(errores).toEqual([
     'secuencias.saludo[0]: no se reconoce el paso: debe ser un objeto con una de estas claves: ' +
-      '"cuando", "elige", "juego", "camina", "secuencia", "efecto", "pon", "dice"',
+      '"cuando", "elige", "juego", "camina", "secuencia", "efecto", "pon", "juntos", "espera", "camara", "mira", ' +
+      '"anima", "aparece", "desaparece", "musica", "sonido", "fundido", "video", "sale", "dice"',
   ]);
 });
 
@@ -244,5 +252,122 @@ test('en nivel.json, una ruta que falta se reporta por su nombre', () => {
   expect(lectura).toEqual({
     tipo: 'invalido',
     errores: ['contenido: Entrada inválida: se esperaba texto, recibido indefinido'],
+  });
+});
+
+test('cada paso de escena del JSON se convierte en su forma con "tipo"', () => {
+  const pasos = leerPasos([
+    { juntos: [{ espera: 2 }, { sonido: 'puerta_abre' }] },
+    { camara: 'plano_sala', duracion: 2 },
+    { camara: 'jugador' },
+    { mira: 'tortu', hacia: 'puerta' },
+    { anima: 'tortu', con: 'tortu_saluda' },
+    { anima: 'tortu', con: 'tortu_baila', repite: true },
+    { aparece: 'tortu', en: 'puerta' },
+    { desaparece: 'tortu' },
+    { musica: 'mus_casa' },
+    { fundido: 'abrir', duracion: 1 },
+    { fundido: 'cerrar' },
+    { video: 'intro_tele' },
+    { video: { es: 'intro_es', en: 'intro_en' } },
+    { sale: 'barrio' },
+  ]);
+
+  expect(pasos).toEqual([
+    {
+      tipo: 'juntos',
+      pasos: [
+        { tipo: 'espera', esperaEnSegundos: 2 },
+        { tipo: 'sonido', clave: 'puerta_abre' },
+      ],
+    },
+    { tipo: 'camara', destino: 'plano_sala', duracionEnSegundos: 2 },
+    { tipo: 'camara', destino: 'jugador', duracionEnSegundos: 0 },
+    { tipo: 'mira', personaje: 'tortu', hacia: 'puerta' },
+    { tipo: 'anima', personaje: 'tortu', clave: 'tortu_saluda', repite: false },
+    { tipo: 'anima', personaje: 'tortu', clave: 'tortu_baila', repite: true },
+    { tipo: 'aparece', personaje: 'tortu', punto: 'puerta' },
+    { tipo: 'desaparece', personaje: 'tortu' },
+    { tipo: 'musica', clave: 'mus_casa' },
+    { tipo: 'fundido', sentido: 'abrir', duracionEnSegundos: 1 },
+    { tipo: 'fundido', sentido: 'cerrar', duracionEnSegundos: 0 },
+    { tipo: 'video', clavePorIdioma: { es: 'intro_tele', en: 'intro_tele' } },
+    { tipo: 'video', clavePorIdioma: { es: 'intro_es', en: 'intro_en' } },
+    { tipo: 'sale', destino: 'barrio' },
+  ]);
+});
+
+test('una cinemática se lee con su inicio, y sin "cuando" solo empieza si no se ha visto', () => {
+  const lectura = new LectorDeNivelesDeJson().leerContenido({
+    meta: META,
+    cinematicas: {
+      intro: { inicia: 'alEntrar', pasos: [{ espera: 1 }] },
+      festejo: { inicia: { objetivo: 'tortillas' }, cuando: 'globo', saltable: false, codigo: 'festejo' },
+      paseo: { inicia: { zona: 'plaza' }, pasos: [] },
+      despedida: { inicia: 'manual', pasos: [] },
+    },
+  });
+
+  if (lectura.tipo !== 'leido') throw new Error(`no se pudo leer: ${lectura.errores.join('; ')}`);
+  expect(lectura.valor.cinematicas).toEqual({
+    intro: {
+      inicio: { tipo: 'alEntrar' },
+      condicion: { tipo: 'no', condicion: { tipo: 'variable', nombre: 'vista.intro' } },
+      saltable: true,
+      guion: { tipo: 'pasos', pasos: [{ tipo: 'espera', esperaEnSegundos: 1 }] },
+    },
+    festejo: {
+      inicio: { tipo: 'objetivo', objetivo: 'tortillas' },
+      condicion: { tipo: 'variable', nombre: 'globo' },
+      saltable: false,
+      guion: { tipo: 'codigo', nombre: 'festejo' },
+    },
+    paseo: {
+      inicio: { tipo: 'zona', zona: 'plaza' },
+      condicion: { tipo: 'no', condicion: { tipo: 'variable', nombre: 'vista.paseo' } },
+      saltable: true,
+      guion: { tipo: 'pasos', pasos: [] },
+    },
+    despedida: {
+      inicio: { tipo: 'manual' },
+      condicion: { tipo: 'no', condicion: { tipo: 'variable', nombre: 'vista.despedida' } },
+      saltable: true,
+      guion: { tipo: 'pasos', pasos: [] },
+    },
+  });
+});
+
+test('una cinemática con pasos y código a la vez, o sin ninguno de los dos, es un error', () => {
+  const errores = erroresDe({
+    meta: META,
+    cinematicas: {
+      doble: { inicia: 'alEntrar', pasos: [], codigo: 'doble' },
+      vacia: { inicia: 'alEntrar' },
+    },
+  });
+
+  expect(errores).toEqual([
+    'cinematicas.doble: una cinemática lleva "pasos" o "codigo": uno de los dos, ni ambos ni ninguno',
+    'cinematicas.vacia: una cinemática lleva "pasos" o "codigo": uno de los dos, ni ambos ni ninguno',
+  ]);
+});
+
+test('una cinemática con un inicio desconocido explica cuáles se aceptan', () => {
+  const errores = erroresDe({ meta: META, cinematicas: { rara: { inicia: 'alSalir', pasos: [] } } });
+
+  expect(errores).toEqual([
+    'cinematicas.rara.inicia: se espera "alEntrar", "manual", { "zona": nombre } o { "objetivo": nombre }',
+  ]);
+});
+
+test('un plano de cámara se lee con sus medidas en metros y grados', () => {
+  const lectura = new LectorDeNivelesDeJson().leerContenido({
+    meta: META,
+    mundo: { planos: { plano_sala: { mira: 'sillon', distancia: 6, altura: 2.5, giro: 20 } } },
+  });
+
+  if (lectura.tipo !== 'leido') throw new Error(`no se pudo leer: ${lectura.errores.join('; ')}`);
+  expect(lectura.valor.mundo.planos).toEqual({
+    plano_sala: { mira: 'sillon', distanciaEnMetros: 6, alturaEnMetros: 2.5, giroEnGrados: 20 },
   });
 });

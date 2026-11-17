@@ -11,9 +11,11 @@ import type {
   FlechaDeSalida,
   Interlocutor,
   Jugador,
+  Plano,
   Rama,
   Salida,
 } from '../../dominio/contenido.ts';
+import { esquemaDeCinematicas } from './esquema-de-cinematicas.ts';
 import { esquemaDeCondicion } from './esquema-de-condicion.ts';
 import { esquemaDeLinea, esquemaDePaso, esquemaDePasosOSecuencia } from './esquema-de-pasos.ts';
 
@@ -51,11 +53,28 @@ const esquemaDeCamara = z
     }),
   );
 
+const esquemaDePlano = z
+  .strictObject({
+    mira: z.string().min(1),
+    distancia: z.number().positive(),
+    altura: z.number().nonnegative(),
+    giro: z.number().default(CAMARA_POR_DEFECTO.giroEnGrados),
+  })
+  .transform(
+    (json): Plano => ({
+      mira: json.mira,
+      distanciaEnMetros: json.distancia,
+      alturaEnMetros: json.altura,
+      giroEnGrados: json.giro,
+    }),
+  );
+
 const esquemaDeMundo: z.ZodType<AjustesDelMundo> = z.strictObject({
   pixelesPorMetro: z.number().positive().default(AJUSTES_DEL_MUNDO_POR_DEFECTO.pixelesPorMetro),
   // `prefault({})`: si falta la sección, se lee como si viniera vacía y entran sus valores por defecto.
   camara: esquemaDeCamara.prefault({}),
   sonidos: z.strictObject({ musica: z.string().min(1).optional() }).prefault({}),
+  planos: z.record(z.string(), esquemaDePlano).default({}),
 });
 
 const esquemaDeEstado = z.strictObject({
@@ -101,5 +120,6 @@ export const esquemaDeContenido: z.ZodType<Contenido> = z.strictObject({
   npcs: z.record(z.string(), esquemaDeInterlocutor).default({}),
   interactivos: z.record(z.string(), esquemaDeInterlocutor).default({}),
   comentarios: z.record(z.string(), z.array(esquemaDeLinea)).default({}),
+  cinematicas: esquemaDeCinematicas.prefault({}),
   salida: esquemaDeSalida.optional(),
 });

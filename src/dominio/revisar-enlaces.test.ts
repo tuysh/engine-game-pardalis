@@ -20,6 +20,7 @@ const CONTENIDO_CORRECTO: Contenido = {
   secuencias: { despedida: [{ tipo: 'linea', hablante: 'tortu', texto: '¡Adiós!' }] },
   npcs: { tortu: { dialogo: [{ pasos: [{ tipo: 'linea', hablante: 'tortu', texto: '¡Hola!' }] }] } },
   interactivos: {},
+  cinematicas: {},
   comentarios: {},
 };
 

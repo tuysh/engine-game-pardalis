@@ -12,12 +12,15 @@ import type {
   PasoDeEfecto,
   PasoDeEleccion,
   PasoDeEstado,
+  PasoDeJuntos,
   PasoDeLinea,
   PasoDeMinijuego,
   PasoDeSecuencia,
   PasosOSecuencia,
 } from '../../dominio/paso.ts';
 import { esquemaDeCondicion } from './esquema-de-condicion.ts';
+import { FORMAS_DE_PASOS_DE_ESCENA } from './esquema-de-pasos-de-escena.ts';
+import type { FormaDePaso } from './esquema-de-pasos-de-escena.ts';
 import { leerConEsquema } from './leer-con-esquema.ts';
 
 const esquemaDeValor = z.union([z.string(), z.number(), z.boolean()], {
@@ -121,11 +124,15 @@ const esquemaDeCondicional = z
   .strictObject({ cuando: esquemaDeCondicion, dice: esquemaDeListaDePasos })
   .transform((json): PasoCondicional => ({ tipo: 'condicional', condicion: json.cuando, pasos: json.dice }));
 
+const esquemaDeJuntos = z
+  .strictObject({ juntos: z.array(z.lazy(() => esquemaDePaso)).min(1) })
+  .transform((json): PasoDeJuntos => ({ tipo: 'juntos', pasos: json.juntos }));
+
 /**
  * Cada paso se reconoce por una clave que solo él lleva. El orden importa:
  * `cuando` va antes que `dice` porque un condicional también lleva `dice` (sus pasos de adentro).
  */
-const FORMAS_DE_PASO: readonly { readonly clave: string; readonly esquema: z.ZodType<Paso> }[] = [
+const FORMAS_DE_PASO: readonly FormaDePaso[] = [
   { clave: 'cuando', esquema: esquemaDeCondicional },
   { clave: 'elige', esquema: esquemaDeEleccion },
   { clave: 'juego', esquema: esquemaDeMinijuego },
@@ -133,6 +140,8 @@ const FORMAS_DE_PASO: readonly { readonly clave: string; readonly esquema: z.Zod
   { clave: 'secuencia', esquema: esquemaDeSecuencia },
   { clave: 'efecto', esquema: esquemaDeEfecto },
   { clave: 'pon', esquema: esquemaDeEstado },
+  { clave: 'juntos', esquema: esquemaDeJuntos },
+  ...FORMAS_DE_PASOS_DE_ESCENA,
   { clave: 'dice', esquema: esquemaDeLinea },
 ];
 

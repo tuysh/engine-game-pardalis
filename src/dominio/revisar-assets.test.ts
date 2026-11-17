@@ -28,6 +28,7 @@ function revisarPasos(pasos: Paso[]): Diagnostico {
     secuencias: { prueba: pasos },
     npcs: {},
     interactivos: {},
+    cinematicas: {},
     comentarios: {},
   };
   const diagnostico = crearDiagnostico();
@@ -56,6 +57,7 @@ test('el sprite de un personaje que no existe es un error', () => {
     secuencias: {},
     npcs: {},
     interactivos: {},
+    cinematicas: {},
     comentarios: {},
   };
   const diagnostico = crearDiagnostico();
@@ -142,6 +144,7 @@ test('una música que no existe es solo una advertencia; una clave de otro tipo,
     secuencias: {},
     npcs: {},
     interactivos: {},
+    cinematicas: {},
     comentarios: {},
   };
   const conMusicaQueFalta: Contenido = {

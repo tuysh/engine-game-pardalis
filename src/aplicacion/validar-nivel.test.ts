@@ -19,6 +19,7 @@ const CONTENIDO: Contenido = {
   secuencias: { saludo: [{ tipo: 'linea', hablante: 'mama', texto: '¡Hola!' }] },
   npcs: {},
   interactivos: {},
+  cinematicas: {},
   comentarios: {},
 };
 

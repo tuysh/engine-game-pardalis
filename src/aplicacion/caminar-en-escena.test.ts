@@ -36,6 +36,7 @@ async function crearEscena() {
       secuencias: {},
       npcs: {},
       interactivos: {},
+      cinematicas: {},
       comentarios: {},
     },
     puntos: { frente: { x: 9, y: 2 } },

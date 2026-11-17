@@ -11,6 +11,7 @@ const CONTENIDO: Contenido = {
   secuencias: {},
   npcs: {},
   interactivos: {},
+  cinematicas: {},
   comentarios: {
     general: [
       { tipo: 'linea', hablante: 'tommy', texto: 'Wow!' },

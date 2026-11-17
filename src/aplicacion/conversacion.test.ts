@@ -24,6 +24,7 @@ const CONTENIDO: Contenido = {
     },
   },
   interactivos: { comal: { dialogo: [{ pasos: [{ tipo: 'efecto', nombre: 'magia' }] }] } },
+  cinematicas: {},
   comentarios: {},
 };
 

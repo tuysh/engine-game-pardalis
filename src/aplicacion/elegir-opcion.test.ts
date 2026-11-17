@@ -29,6 +29,7 @@ function crearEscena() {
       secuencias: {},
       npcs: {},
       interactivos: {},
+      cinematicas: {},
       comentarios: {},
     },
     puntos: {},

@@ -39,6 +39,7 @@ async function crearEscena(jugador?: Jugador) {
       secuencias: {},
       npcs: {},
       interactivos: {},
+      cinematicas: {},
       comentarios: {},
     },
     puntos: {},

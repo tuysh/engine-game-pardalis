@@ -19,6 +19,7 @@ const CONTENIDO: Contenido = {
   secuencias: {},
   npcs: { tortu: { dialogo: [{ pasos: [{ tipo: 'camina', punto: 'frente' }] }] } },
   interactivos: { comal: { dialogo: [] } },
+  cinematicas: {},
   comentarios: { general: [] },
   salida: { destino: 'Selector' },
 };
