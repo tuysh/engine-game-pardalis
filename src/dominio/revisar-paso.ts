@@ -4,6 +4,7 @@
 
 import type { Paso, PasoDeCaminata, PasoDeEleccion, PasoDeLinea } from './paso.ts';
 import { EFECTOS_DISPONIBLES } from './paso.ts';
+import { revisarPasoDeEscena } from './revisar-paso-de-escena.ts';
 import { revisarCondicion, revisarVariableDePon } from './revisar-variables.ts';
 import type { Revision } from './revision.ts';
 import { variablesDesconocidasEn } from './texto-con-variables.ts';
@@ -49,6 +50,9 @@ export function revisarPaso(paso: Paso, ruta: string, revision: Revision): void 
 
     case 'secuencia':
       break; // el nombre de la secuencia se revisa en revisar-enlaces.ts
+
+    default:
+      revisarPasoDeEscena(paso, ruta, revision);
   }
 }
 

@@ -23,6 +23,11 @@ export interface OpcionesDeValidacion {
    * Si se omite, los pasos `juego` no se revisan.
    */
   readonly minijuegos?: readonly string[];
+  /**
+   * Nombres de las cinemáticas en código que el host registra en `crearEscenario({ cinematicas })`.
+   * Si se omite, las cinemáticas con `codigo` no se revisan.
+   */
+  readonly cinematicas?: readonly string[];
 }
 
 /**
@@ -38,5 +43,10 @@ export async function validarNivel(
     lector: new LectorDeNivelesDeJson(),
     lectorDeMapas: new LectorDeMapasDeTiled(),
   };
-  return validarNivelConPuertos({ direccionDelNivel: rutaDelNivel, minijuegos: opciones.minijuegos }, puertos);
+  const pedido = {
+    direccionDelNivel: rutaDelNivel,
+    minijuegos: opciones.minijuegos,
+    cinematicas: opciones.cinematicas,
+  };
+  return validarNivelConPuertos(pedido, puertos);
 }

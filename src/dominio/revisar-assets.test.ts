@@ -169,3 +169,26 @@ test('una música que no existe es solo una advertencia; una clave de otro tipo,
     'mundo.sonidos.musica: "spr_tortu" es un asset de tipo imagen, y aquí va un audio',
   ]);
 });
+
+test('en los pasos de escena, la animación y el video deben existir; un sonido que falta solo se advierte', () => {
+  const diagnostico = revisarPasos([
+    { tipo: 'anima', personaje: 'tortu', clave: 'img_rosa', repite: true },
+    { tipo: 'anima', personaje: 'tortu', clave: 'tortu_baila', repite: true },
+    { tipo: 'sonido', clave: 'vo_hola' },
+    { tipo: 'sonido', clave: 'puerta_abre' },
+    { tipo: 'musica', clave: 'mus_barrio' },
+    { tipo: 'video', clavePorIdioma: { es: 'intro_es', en: 'intro_en' } },
+    { tipo: 'video', clavePorIdioma: { es: 'vo_hola', en: 'vo_hola' } },
+  ]);
+
+  expect(diagnostico.errores).toEqual([
+    'secuencias.prueba[1].con: no existe la imagen "tortu_baila" en los assets del nivel',
+    'secuencias.prueba[5].video: no existe el video "intro_es" en los assets del nivel',
+    'secuencias.prueba[5].video: no existe el video "intro_en" en los assets del nivel',
+    'secuencias.prueba[6].video: "vo_hola" es un asset de tipo audio, y aquí va un video',
+  ]);
+  expect(diagnostico.advertencias).toEqual([
+    'secuencias.prueba[3].sonido: no existe el audio "puerta_abre"; no sonará',
+    'secuencias.prueba[4].musica: no existe el audio "mus_barrio"; no sonará',
+  ]);
+});

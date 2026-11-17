@@ -25,6 +25,8 @@ export interface PedidoDeValidacion {
   readonly direccionDelNivel: string;
   /** Nombres de los minijuegos que registró el host. `undefined` = no se sabe, así que no se revisan. */
   readonly minijuegos?: readonly string[];
+  /** Nombres de las cinemáticas en código que registró el host. `undefined` = no se sabe, así que no se revisan. */
+  readonly cinematicas?: readonly string[];
   /** Carpeta o CDN donde están los assets. `undefined` = junto a cada `nivel.json`. */
   readonly raizDeAssets?: string;
 }
@@ -91,7 +93,7 @@ async function leerYRevisar(
   }
   const contenido = lecturaDelContenido.valor;
 
-  revisarEnlaces(contenido, pedido.minijuegos, diagnostico);
+  revisarEnlaces(contenido, { minijuegos: pedido.minijuegos, cinematicas: pedido.cinematicas }, diagnostico);
   if (diagnostico.errores.length > 0) return undefined;
 
   const direccionDelMapa = puertos.cargador.resolverJuntoA(direccionDelNivel, descripcion.mapa);

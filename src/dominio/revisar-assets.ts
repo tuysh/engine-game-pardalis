@@ -53,13 +53,65 @@ function revisarAssetsDePaso(paso: Paso, ruta: string, revision: RevisionDeAsset
       }
       break;
 
+    case 'anima':
+      revisarImagen(paso.clave, `${ruta}.con`, revision);
+      break;
+
+    case 'musica':
+      revisarSonido(paso.clave, `${ruta}.musica`, revision);
+      break;
+
+    case 'sonido':
+      revisarSonido(paso.clave, `${ruta}.sonido`, revision);
+      break;
+
+    case 'video':
+      revisarVideo(paso.clavePorIdioma.es, `${ruta}.video`, revision);
+      // Un video sin voces usa la misma clave en los dos idiomas: no hace falta revisarla dos veces.
+      if (paso.clavePorIdioma.en !== paso.clavePorIdioma.es) {
+        revisarVideo(paso.clavePorIdioma.en, `${ruta}.video`, revision);
+      }
+      break;
+
     case 'efecto':
     case 'pon':
     case 'juego':
     case 'camina':
     case 'secuencia':
     case 'condicional':
+    case 'juntos':
+    case 'espera':
+    case 'camara':
+    case 'mira':
+    case 'aparece':
+    case 'desaparece':
+    case 'fundido':
+    case 'sale':
       break; // estos pasos no nombran assets
+  }
+}
+
+/** Un sonido o una música que falta no impide jugar: solo no suena. */
+function revisarSonido(clave: string, ruta: string, revision: RevisionDeAssets): void {
+  const asset = buscarAsset(clave, revision.assets);
+  if (asset === undefined) {
+    revision.diagnostico.advertencias.push(`${ruta}: no existe el audio "${clave}"; no sonará`);
+    return;
+  }
+  if (asset.tipo !== 'audio') {
+    revision.diagnostico.errores.push(`${ruta}: "${clave}" es un asset de tipo ${asset.tipo}, y aquí va un audio`);
+  }
+}
+
+/** Un video que falta es un error: la cinemática quedaría con un hueco. */
+function revisarVideo(clave: string, ruta: string, revision: RevisionDeAssets): void {
+  const asset = buscarAsset(clave, revision.assets);
+  if (asset === undefined) {
+    revision.diagnostico.errores.push(`${ruta}: no existe el video "${clave}" en los assets del nivel`);
+    return;
+  }
+  if (asset.tipo !== 'video') {
+    revision.diagnostico.errores.push(`${ruta}: "${clave}" es un asset de tipo ${asset.tipo}, y aquí va un video`);
   }
 }
 

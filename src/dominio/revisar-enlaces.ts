@@ -7,23 +7,26 @@ import type { Contenido, Interlocutor } from './contenido.ts';
 import type { Diagnostico } from './diagnostico.ts';
 import { recorrerPasos } from './recorrer-pasos.ts';
 import { revisarCiclosDeSecuencias } from './revisar-ciclos-de-secuencias.ts';
+import { revisarCinematicas } from './revisar-cinematicas.ts';
 import { revisarPaso } from './revisar-paso.ts';
 import { reunirVariablesDeclaradas, revisarCondicion } from './revisar-variables.ts';
 import type { Revision } from './revision.ts';
 
-/**
- * Anota en `diagnostico` los errores y advertencias de enlaces del contenido.
- * `minijuegos` son los nombres que registró el host; con `undefined` no se revisan.
- */
-export function revisarEnlaces(
-  contenido: Contenido,
-  minijuegos: readonly string[] | undefined,
-  diagnostico: Diagnostico,
-): void {
+/** Lo que el host registró en `crearEscenario()`. Lo que venga `undefined` no se sabe, así que no se revisa. */
+export interface RegistrosDelHost {
+  /** Nombres de los minijuegos. */
+  readonly minijuegos?: readonly string[];
+  /** Nombres de las cinemáticas escritas en código. */
+  readonly cinematicas?: readonly string[];
+}
+
+/** Anota en `diagnostico` los errores y advertencias de enlaces del contenido. */
+export function revisarEnlaces(contenido: Contenido, registros: RegistrosDelHost, diagnostico: Diagnostico): void {
   const revision: Revision = {
     contenido,
     variablesDeclaradas: reunirVariablesDeclaradas(contenido),
-    minijuegos,
+    minijuegos: registros.minijuegos,
+    cinematicasEnCodigo: registros.cinematicas,
     diagnostico,
   };
 
@@ -35,6 +38,7 @@ export function revisarEnlaces(
     revisarRamas(contenido.interactivos[id]!, `interactivos.${id}`, revision);
   }
   revisarSalida(revision);
+  revisarCinematicas(revision);
 
   recorrerPasos(contenido, {
     alVerPaso(paso, ruta) {

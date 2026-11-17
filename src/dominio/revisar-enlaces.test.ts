@@ -28,14 +28,14 @@ const CONTENIDO_CORRECTO: Contenido = {
 function revisarPasosDeTortu(pasos: Paso[], minijuegos?: string[]): Diagnostico {
   const contenido: Contenido = { ...CONTENIDO_CORRECTO, npcs: { tortu: { dialogo: [{ pasos }] } } };
   const diagnostico = crearDiagnostico();
-  revisarEnlaces(contenido, minijuegos, diagnostico);
+  revisarEnlaces(contenido, { minijuegos }, diagnostico);
   return diagnostico;
 }
 
 test('un contenido correcto no tiene errores ni advertencias', () => {
   const diagnostico = crearDiagnostico();
 
-  revisarEnlaces(CONTENIDO_CORRECTO, undefined, diagnostico);
+  revisarEnlaces(CONTENIDO_CORRECTO, {}, diagnostico);
 
   expect(diagnostico).toEqual({ errores: [], advertencias: [] });
 });
@@ -44,7 +44,7 @@ test('el personaje del jugador debe existir', () => {
   const contenido: Contenido = { ...CONTENIDO_CORRECTO, jugador: { personaje: 'tomy', velocidadEnMetrosPorSegundo: 2.4 } };
   const diagnostico = crearDiagnostico();
 
-  revisarEnlaces(contenido, undefined, diagnostico);
+  revisarEnlaces(contenido, {}, diagnostico);
 
   expect(diagnostico.errores).toEqual(['jugador.personaje "tomy" no existe en meta.personajes']);
 });
@@ -100,8 +100,8 @@ test('"dinero" solo está declarado si el nivel empieza con dinero', () => {
   const diagnosticoSinDinero = crearDiagnostico();
   const diagnosticoConDinero = crearDiagnostico();
 
-  revisarEnlaces(sinDinero, undefined, diagnosticoSinDinero);
-  revisarEnlaces(conDinero, undefined, diagnosticoConDinero);
+  revisarEnlaces(sinDinero, {}, diagnosticoSinDinero);
+  revisarEnlaces(conDinero, {}, diagnosticoConDinero);
 
   expect(diagnosticoSinDinero.errores).toEqual([
     '"pon" de "dinero" en npcs.tortu.dialogo[0].dice[0]: no está en estado.objetivos ni en estado.variables',
@@ -148,7 +148,7 @@ test('en un nivel sin jugador, toda caminata debe decir quién camina', () => {
   const contenido: Contenido = { ...CONTENIDO_CORRECTO, jugador: undefined, npcs: { tortu: { dialogo: [{ pasos }] } } };
   const diagnostico = crearDiagnostico();
 
-  revisarEnlaces(contenido, undefined, diagnostico);
+  revisarEnlaces(contenido, {}, diagnostico);
 
   expect(diagnostico.errores).toEqual([
     'camina en npcs.tortu.dialogo[0].dice[0]: el nivel no tiene jugador; indica quién camina con "quien"',
@@ -170,7 +170,7 @@ test('una secuencia usada por nombre debe existir, con la ruta de donde se usa',
   };
   const diagnostico = crearDiagnostico();
 
-  revisarEnlaces(contenido, undefined, diagnostico);
+  revisarEnlaces(contenido, {}, diagnostico);
 
   expect(diagnostico.errores).toEqual([
     'secuencia "saludo" usada en npcs.tortu.dialogo[0].dice[0] pero no existe en "secuencias"',
@@ -205,7 +205,7 @@ test('una rama después de otra sin condición es inalcanzable (advertencia)', (
   };
   const diagnostico = crearDiagnostico();
 
-  revisarEnlaces(contenido, undefined, diagnostico);
+  revisarEnlaces(contenido, {}, diagnostico);
 
   expect(diagnostico.errores).toEqual([]);
   expect(diagnostico.advertencias).toEqual([
@@ -258,7 +258,7 @@ test('las condiciones de la salida también se revisan', () => {
   };
   const diagnostico = crearDiagnostico();
 
-  revisarEnlaces(contenido, undefined, diagnostico);
+  revisarEnlaces(contenido, {}, diagnostico);
 
   expect(diagnostico.errores).toEqual([
     'condición "limones" usada en salida.requiere: no está en estado.objetivos ni en estado.variables',

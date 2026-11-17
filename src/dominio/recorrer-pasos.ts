@@ -35,6 +35,14 @@ export function recorrerPasos(contenido: Contenido, visitante: VisitanteDePasos)
   if (contenido.salida !== undefined && contenido.salida.siBloqueada !== undefined) {
     recorrerPasosOSecuencia(contenido.salida.siBloqueada, 'salida.siBloqueada', visitante);
   }
+
+  for (const id of Object.keys(contenido.cinematicas)) {
+    const guion = contenido.cinematicas[id]!.guion; // `id` viene de `Object.keys`, así que existe
+    // Una cinemática escrita en código no tiene pasos en el nivel que recorrer.
+    if (guion.tipo === 'pasos') {
+      recorrerLista(guion.pasos, `cinematicas.${id}.pasos`, visitante);
+    }
+  }
 }
 
 function recorrerInterlocutor(interlocutor: Interlocutor, ruta: string, visitante: VisitanteDePasos): void {
@@ -84,11 +92,26 @@ function recorrerPaso(paso: Paso, ruta: string, visitante: VisitanteDePasos): vo
       visitante.alVerSecuenciaPorNombre(paso.nombre, ruta);
       break;
 
+    case 'juntos':
+      recorrerLista(paso.pasos, `${ruta}.juntos`, visitante);
+      break;
+
     case 'linea':
     case 'efecto':
     case 'pon':
     case 'juego':
     case 'camina':
+    case 'espera':
+    case 'camara':
+    case 'mira':
+    case 'anima':
+    case 'aparece':
+    case 'desaparece':
+    case 'musica':
+    case 'sonido':
+    case 'fundido':
+    case 'video':
+    case 'sale':
       break; // estos pasos no llevan otros pasos dentro
   }
 }

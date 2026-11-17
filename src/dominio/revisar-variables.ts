@@ -1,12 +1,13 @@
 // Revisa que toda variable que un nivel usa esté declarada.
 // Una variable se usa en dos lugares: en las condiciones y en los pasos `pon`.
 //
-// Están declaradas: los objetivos y variables de la sección `estado`, el dinero (si el nivel lo usa)
-// y una variable `charlas.<id>` por cada NPC e interactivo, que el motor marca solo al hablar con él.
+// Están declaradas: los objetivos y variables de la sección `estado`, el dinero (si el nivel lo usa),
+// una variable `charlas.<id>` por cada NPC e interactivo (el motor la marca sola al hablar con él)
+// y una variable `vista.<id>` por cada cinemática (el motor la marca sola cuando termina).
 
 import { variablesQueUsa } from './condicion.ts';
 import type { Condicion } from './condicion.ts';
-import { PREFIJO_DE_CHARLAS } from './contenido.ts';
+import { PREFIJO_DE_CHARLAS, PREFIJO_DE_VISTAS } from './contenido.ts';
 import type { Contenido } from './contenido.ts';
 import { NOMBRE_DEL_DINERO } from './estado.ts';
 import type { Revision } from './revision.ts';
@@ -29,6 +30,9 @@ export function reunirVariablesDeclaradas(contenido: Contenido): Set<string> {
   }
   for (const id of Object.keys(contenido.interactivos)) {
     declaradas.add(PREFIJO_DE_CHARLAS + id);
+  }
+  for (const id of Object.keys(contenido.cinematicas)) {
+    declaradas.add(PREFIJO_DE_VISTAS + id);
   }
   return declaradas;
 }
@@ -55,6 +59,10 @@ function explicarPorQueNoEstaDeclarada(nombre: string): string {
   if (nombre.startsWith(PREFIJO_DE_CHARLAS)) {
     const id = nombre.slice(PREFIJO_DE_CHARLAS.length);
     return `no existe "${id}" en npcs ni en interactivos`;
+  }
+  if (nombre.startsWith(PREFIJO_DE_VISTAS)) {
+    const id = nombre.slice(PREFIJO_DE_VISTAS.length);
+    return `no existe la cinemática "${id}"`;
   }
   return 'no está en estado.objetivos ni en estado.variables';
 }

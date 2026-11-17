@@ -53,6 +53,7 @@ function secuenciasQueLlama(pasos: readonly Paso[]): string[] {
         nombres.push(paso.nombre);
         break;
       case 'condicional':
+      case 'juntos':
         nombres.push(...secuenciasQueLlama(paso.pasos));
         break;
       case 'elige':
@@ -65,6 +66,17 @@ function secuenciasQueLlama(pasos: readonly Paso[]): string[] {
       case 'pon':
       case 'juego':
       case 'camina':
+      case 'espera':
+      case 'camara':
+      case 'mira':
+      case 'anima':
+      case 'aparece':
+      case 'desaparece':
+      case 'musica':
+      case 'sonido':
+      case 'fundido':
+      case 'video':
+      case 'sale':
         break; // estos pasos no llaman secuencias
     }
   }

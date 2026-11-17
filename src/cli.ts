@@ -9,6 +9,7 @@ import { interpretarComando, TEXTO_DE_AYUDA } from './aplicacion/interpretar-com
 import { redactarInformeDeAssets } from './aplicacion/redactar-informe-de-assets.ts';
 import { redactarInformeDeValidacion } from './aplicacion/redactar-informe-de-validacion.ts';
 import { validarNivel } from './validar.ts';
+import type { OpcionesDeValidacion } from './validar.ts';
 
 const CODIGO_DE_EXITO = 0;
 const CODIGO_DE_ERROR = 1;
@@ -22,7 +23,7 @@ async function ejecutar(argumentos: readonly string[]): Promise<number> {
       return CODIGO_DE_EXITO;
 
     case 'validar':
-      return validar(comando.rutaDelNivel, comando.minijuegos);
+      return validar(comando.rutaDelNivel, { minijuegos: comando.minijuegos, cinematicas: comando.cinematicas });
 
     case 'assets':
       return generarAssets(comando.carpeta);
@@ -34,8 +35,8 @@ async function ejecutar(argumentos: readonly string[]): Promise<number> {
   }
 }
 
-async function validar(rutaDelNivel: string, minijuegos: readonly string[] | undefined): Promise<number> {
-  const resultado = await validarNivel(rutaDelNivel, { minijuegos });
+async function validar(rutaDelNivel: string, registros: OpcionesDeValidacion): Promise<number> {
+  const resultado = await validarNivel(rutaDelNivel, registros);
 
   for (const linea of redactarInformeDeValidacion(rutaDelNivel, resultado)) {
     console.log(linea);

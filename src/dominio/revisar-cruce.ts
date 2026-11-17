@@ -4,6 +4,8 @@
 // - Cada diálogo de `npcs` e `interactivos` tiene su objeto en el mapa, y cada objeto interactivo su diálogo.
 // - Hay piso, y si el nivel tiene jugador, exactamente un inicio dentro del piso.
 // - Los puntos de los pasos `camina`, los grupos de las zonas y la salida existen en los dos lados.
+//
+// Lo que nombran los pasos de escena, los planos y las cinemáticas se cruza en revisar-cruce-de-escena.ts.
 
 import type { Contenido } from './contenido.ts';
 import type { Diagnostico } from './diagnostico.ts';
@@ -11,6 +13,7 @@ import { puntoDentroDePoligono } from './geometria.ts';
 import type { Mundo } from './mundo.ts';
 import type { PasoDeCaminata } from './paso.ts';
 import { recorrerPasos } from './recorrer-pasos.ts';
+import { revisarCruceDeEscena } from './revisar-cruce-de-escena.ts';
 
 export function revisarCruce(contenido: Contenido, mundo: Mundo, diagnostico: Diagnostico): void {
   revisarNpcs(contenido, mundo, diagnostico);
@@ -18,11 +21,12 @@ export function revisarCruce(contenido: Contenido, mundo: Mundo, diagnostico: Di
   revisarPisoEInicio(contenido, mundo, diagnostico);
   revisarZonas(contenido, mundo, diagnostico);
   revisarSalida(contenido, mundo, diagnostico);
+  revisarCruceDeEscena(contenido, mundo, diagnostico);
 
   recorrerPasos(contenido, {
     alVerPaso(paso, ruta) {
       if (paso.tipo === 'camina') {
-        revisarCaminata(paso, ruta, contenido, mundo, diagnostico);
+        revisarDestinoDeCaminata(paso, ruta, mundo, diagnostico);
       }
     },
     alVerSecuenciaPorNombre() {
@@ -118,25 +122,9 @@ function revisarSalida(contenido: Contenido, mundo: Mundo, diagnostico: Diagnost
   }
 }
 
-/** El destino de una caminata es un punto del mapa, y quien camina está en el escenario. */
-function revisarCaminata(
-  paso: PasoDeCaminata,
-  ruta: string,
-  contenido: Contenido,
-  mundo: Mundo,
-  diagnostico: Diagnostico,
-): void {
+/** El destino de una caminata es un punto del mapa. Que quien camina esté en el escenario se revisa aparte. */
+function revisarDestinoDeCaminata(paso: PasoDeCaminata, ruta: string, mundo: Mundo, diagnostico: Diagnostico): void {
   if (!Object.hasOwn(mundo.puntos, paso.punto)) {
     diagnostico.errores.push(`camina "${paso.punto}" en ${ruta}: no hay un punto con ese nombre en el mapa`);
-  }
-
-  // Sin `quien` camina el jugador; que el nivel tenga jugador ya lo revisó la fase de enlaces.
-  if (paso.personaje === undefined) return;
-  const esElJugador = contenido.jugador !== undefined && contenido.jugador.personaje === paso.personaje;
-  const esUnNpcDelMapa = Object.hasOwn(mundo.npcs, paso.personaje);
-  if (!esElJugador && !esUnNpcDelMapa) {
-    diagnostico.errores.push(
-      `camina en ${ruta}: "${paso.personaje}" no está en el escenario: no es el jugador ni un NPC del mapa`,
-    );
   }
 }

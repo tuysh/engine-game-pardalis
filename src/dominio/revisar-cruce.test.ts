@@ -169,6 +169,10 @@ test('el destino de una caminata debe ser un punto del mapa', () => {
 test('quien camina debe estar en el escenario: ser el jugador o un NPC del mapa', () => {
   const contenido: Contenido = {
     ...CONTENIDO,
+    meta: {
+      ...CONTENIDO.meta,
+      personajes: { ...CONTENIDO.meta.personajes, mama: { idioma: 'es', sprite: 'spr_mama' } },
+    },
     secuencias: {
       paseo: [
         { tipo: 'camina', punto: 'frente', personaje: 'tommy' },
@@ -179,6 +183,74 @@ test('quien camina debe estar en el escenario: ser el jugador o un NPC del mapa'
   };
 
   expect(revisar(contenido, MUNDO).errores).toEqual([
-    'camina en secuencias.paseo[2]: "mama" no está en el escenario: no es el jugador ni un NPC del mapa',
+    'secuencias.paseo[2]: "mama" nunca está en el escenario: no es el jugador, ni un NPC del mapa, ' +
+      'ni entra con un paso "aparece"',
+  ]);
+});
+
+test('quien entra con un paso "aparece" sí está en el escenario, y su punto debe existir', () => {
+  const contenido: Contenido = {
+    ...CONTENIDO,
+    meta: {
+      ...CONTENIDO.meta,
+      personajes: { ...CONTENIDO.meta.personajes, mama: { idioma: 'es', sprite: 'spr_mama' } },
+    },
+    secuencias: {
+      visita: [
+        { tipo: 'aparece', personaje: 'mama', punto: 'puerta' },
+        { tipo: 'camina', punto: 'frente', personaje: 'mama' },
+        { tipo: 'mira', personaje: 'mama', hacia: 'tommy' },
+        { tipo: 'mira', personaje: 'mama', hacia: 'ventana' },
+        { tipo: 'desaparece', personaje: 'mama' },
+      ],
+    },
+  };
+
+  expect(revisar(contenido, MUNDO).errores).toEqual([
+    'aparece "mama" en secuencias.visita[0]: no hay un punto llamado "puerta" en el mapa',
+    'mira en secuencias.visita[3]: "hacia": "ventana" no es un personaje ni un punto del mapa',
+  ]);
+});
+
+test('un plano de cámara debe apuntar a un personaje, a un punto del mapa o a un objeto con id', () => {
+  const contenido: Contenido = {
+    ...CONTENIDO,
+    mundo: {
+      ...CONTENIDO.mundo,
+      planos: {
+        a_tortu: { mira: 'tortu', distanciaEnMetros: 5, alturaEnMetros: 2, giroEnGrados: 0 },
+        al_frente: { mira: 'frente', distanciaEnMetros: 5, alturaEnMetros: 2, giroEnGrados: 0 },
+        al_comal: { mira: 'comal', distanciaEnMetros: 5, alturaEnMetros: 2, giroEnGrados: 0 },
+        a_la_nada: { mira: 'sillon', distanciaEnMetros: 5, alturaEnMetros: 2, giroEnGrados: 0 },
+      },
+    },
+  };
+
+  expect(revisar(contenido, MUNDO).errores).toEqual([
+    'mundo.planos.a_la_nada.mira: "sillon" no es un personaje, ni un punto del mapa, ni un objeto del decorado con id',
+  ]);
+});
+
+test('la zona que hace empezar una cinemática debe existir en el mapa', () => {
+  const contenido: Contenido = {
+    ...CONTENIDO,
+    cinematicas: {
+      bienvenida: {
+        inicio: { tipo: 'zona', zona: 'entrada' },
+        condicion: { tipo: 'objetivosCompletos' },
+        saltable: true,
+        guion: { tipo: 'pasos', pasos: [] },
+      },
+      paseo: {
+        inicio: { tipo: 'zona', zona: 'plaza' },
+        condicion: { tipo: 'objetivosCompletos' },
+        saltable: true,
+        guion: { tipo: 'pasos', pasos: [] },
+      },
+    },
+  };
+
+  expect(revisar(contenido, MUNDO).errores).toEqual([
+    'cinematicas.paseo.inicia: no hay una zona llamada "plaza" en el mapa',
   ]);
 });
