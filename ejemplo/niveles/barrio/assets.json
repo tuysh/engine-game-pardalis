@@ -1,8 +1,50 @@
 {
+  "cajas": {
+    "tipo": "imagen",
+    "archivo": "img/cajas.svg",
+    "ancho": 120,
+    "alto": 110
+  },
+  "comal": {
+    "tipo": "imagen",
+    "archivo": "img/comal.svg",
+    "ancho": 90,
+    "alto": 80
+  },
+  "flecha_piso": {
+    "tipo": "imagen",
+    "archivo": "img/flecha_piso.svg",
+    "ancho": 120,
+    "alto": 120
+  },
+  "papel_picado": {
+    "tipo": "imagen",
+    "archivo": "img/papel_picado.svg",
+    "ancho": 600,
+    "alto": 90
+  },
+  "puesto_tortilleria": {
+    "tipo": "imagen",
+    "archivo": "img/puesto_tortilleria.svg",
+    "ancho": 320,
+    "alto": 300
+  },
   "spr_tortu": {
     "tipo": "imagen",
     "archivo": "img/spr_tortu.svg",
     "ancho": 110,
     "alto": 170
+  },
+  "suelo_barrio": {
+    "tipo": "imagen",
+    "archivo": "img/suelo_barrio.svg",
+    "ancho": 2048,
+    "alto": 768
+  },
+  "telon_fachadas": {
+    "tipo": "imagen",
+    "archivo": "img/telon_fachadas.svg",
+    "ancho": 2048,
+    "alto": 500
   }
 }

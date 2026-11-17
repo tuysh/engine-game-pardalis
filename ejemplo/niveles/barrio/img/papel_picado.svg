@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 90">
+  <!-- Tira de papel picado. Provisional, para el nivel de ejemplo. -->
+  <path d="M0 10 Q300 22 600 10" fill="none" stroke="#7a4a2b" stroke-width="4"/>
+  <path d="M12 12 h46 v52 l-23 16 l-23 -16 Z" fill="#e8553d"/>
+  <circle cx="35" cy="40" r="8" fill="#ffffff" opacity="0.6"/>
+  <path d="M70 12 h46 v52 l-23 16 l-23 -16 Z" fill="#f6c453"/>
+  <circle cx="93" cy="40" r="8" fill="#ffffff" opacity="0.6"/>
+  <path d="M128 12 h46 v52 l-23 16 l-23 -16 Z" fill="#4aa3df"/>
+  <circle cx="151" cy="40" r="8" fill="#ffffff" opacity="0.6"/>
+  <path d="M186 12 h46 v52 l-23 16 l-23 -16 Z" fill="#7fc86b"/>
+  <circle cx="209" cy="40" r="8" fill="#ffffff" opacity="0.6"/>
+  <path d="M244 12 h46 v52 l-23 16 l-23 -16 Z" fill="#e87ea1"/>
+  <circle cx="267" cy="40" r="8" fill="#ffffff" opacity="0.6"/>
+  <path d="M302 12 h46 v52 l-23 16 l-23 -16 Z" fill="#f2a65a"/>
+  <circle cx="325" cy="40" r="8" fill="#ffffff" opacity="0.6"/>
+  <path d="M360 12 h46 v52 l-23 16 l-23 -16 Z" fill="#e8553d"/>
+  <circle cx="383" cy="40" r="8" fill="#ffffff" opacity="0.6"/>
+  <path d="M418 12 h46 v52 l-23 16 l-23 -16 Z" fill="#f6c453"/>
+  <circle cx="441" cy="40" r="8" fill="#ffffff" opacity="0.6"/>
+  <path d="M476 12 h46 v52 l-23 16 l-23 -16 Z" fill="#4aa3df"/>
+  <circle cx="499" cy="40" r="8" fill="#ffffff" opacity="0.6"/>
+  <path d="M534 12 h46 v52 l-23 16 l-23 -16 Z" fill="#7fc86b"/>
+  <circle cx="557" cy="40" r="8" fill="#ffffff" opacity="0.6"/>
+</svg>

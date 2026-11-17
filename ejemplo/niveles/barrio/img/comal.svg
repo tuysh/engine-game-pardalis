@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 80">
+  <!-- Comal sobre su brasero. Provisional, para el nivel de ejemplo. -->
+  <rect x="20" y="40" width="10" height="40" fill="#5b5b5b"/>
+  <rect x="60" y="40" width="10" height="40" fill="#5b5b5b"/>
+  <ellipse cx="45" cy="34" rx="44" ry="14" fill="#3a3a3a"/>
+  <ellipse cx="45" cy="30" rx="38" ry="10" fill="#555555"/>
+  <ellipse cx="34" cy="29" rx="12" ry="4" fill="#f6dc9a"/>
+  <ellipse cx="58" cy="31" rx="12" ry="4" fill="#f6dc9a"/>
+</svg>

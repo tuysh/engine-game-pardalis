@@ -1,0 +1,341 @@
+{
+ "compressionlevel": -1,
+ "height": 12,
+ "infinite": false,
+ "layers": [
+  {
+   "id": 1,
+   "name": "suelo",
+   "type": "imagelayer",
+   "image": "img/suelo_barrio.svg",
+   "opacity": 1,
+   "visible": true,
+   "x": 0,
+   "y": 0,
+   "properties": [
+    {
+     "name": "asset",
+     "type": "string",
+     "value": "suelo_barrio"
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "name": "telones",
+   "type": "objectgroup",
+   "draworder": "topdown",
+   "opacity": 1,
+   "visible": true,
+   "x": 0,
+   "y": 0,
+   "objects": [
+    {
+     "id": 1,
+     "name": "Fachadas",
+     "type": "telon",
+     "x": 0,
+     "y": 170,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "polyline": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 2048,
+       "y": 0
+      }
+     ],
+     "properties": [
+      {
+       "name": "asset",
+       "type": "string",
+       "value": "telon_fachadas"
+      },
+      {
+       "name": "alto",
+       "type": "int",
+       "value": 500
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "name": "decorado",
+   "type": "objectgroup",
+   "draworder": "topdown",
+   "opacity": 1,
+   "visible": true,
+   "x": 0,
+   "y": 0,
+   "objects": [
+    {
+     "id": 2,
+     "name": "Puesto de tortillas",
+     "type": "parado",
+     "x": 880,
+     "y": 215,
+     "width": 320,
+     "height": 80,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "asset",
+       "type": "string",
+       "value": "puesto_tortilleria"
+      }
+     ]
+    },
+    {
+     "id": 3,
+     "name": "Comal",
+     "type": "parado",
+     "x": 1230,
+     "y": 240,
+     "width": 90,
+     "height": 50,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "asset",
+       "type": "string",
+       "value": "comal"
+      }
+     ]
+    },
+    {
+     "id": 4,
+     "name": "Cajas",
+     "type": "parado",
+     "x": 560,
+     "y": 520,
+     "width": 120,
+     "height": 60,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "asset",
+       "type": "string",
+       "value": "cajas"
+      }
+     ]
+    },
+    {
+     "id": 5,
+     "name": "Papel picado",
+     "type": "colgado",
+     "x": 300,
+     "y": 330,
+     "width": 600,
+     "height": 10,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "asset",
+       "type": "string",
+       "value": "papel_picado"
+      },
+      {
+       "name": "altura",
+       "type": "int",
+       "value": 250
+      }
+     ]
+    },
+    {
+     "id": 6,
+     "name": "Flecha a la salida",
+     "type": "plano",
+     "x": 1820,
+     "y": 430,
+     "width": 120,
+     "height": 120,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "asset",
+       "type": "string",
+       "value": "flecha_piso"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "name": "npcs",
+   "type": "objectgroup",
+   "draworder": "topdown",
+   "opacity": 1,
+   "visible": true,
+   "x": 0,
+   "y": 0,
+   "objects": [
+    {
+     "id": 7,
+     "name": "Doña Tortu",
+     "type": "npc",
+     "x": 1040,
+     "y": 330,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "id",
+       "type": "string",
+       "value": "tortu"
+      },
+      {
+       "name": "mira",
+       "type": "string",
+       "value": "izquierda"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "name": "interaccion",
+   "type": "objectgroup",
+   "draworder": "topdown",
+   "opacity": 1,
+   "visible": true,
+   "x": 0,
+   "y": 0,
+   "objects": [
+    {
+     "id": 8,
+     "name": "Inicio",
+     "type": "inicioJugador",
+     "x": 260,
+     "y": 480,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "mira",
+       "type": "string",
+       "value": "derecha"
+      }
+     ]
+    },
+    {
+     "id": 9,
+     "name": "frente_tortilleria",
+     "type": "punto",
+     "x": 940,
+     "y": 400,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true
+    },
+    {
+     "id": 10,
+     "name": "Salida",
+     "type": "salida",
+     "x": 1900,
+     "y": 380,
+     "width": 110,
+     "height": 220,
+     "rotation": 0,
+     "visible": true
+    },
+    {
+     "id": 11,
+     "name": "entrada",
+     "type": "zona",
+     "x": 120,
+     "y": 300,
+     "width": 320,
+     "height": 330,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "grupo",
+       "type": "string",
+       "value": "general"
+      },
+      {
+       "name": "espera",
+       "type": "int",
+       "value": 20
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6,
+   "name": "piso",
+   "type": "objectgroup",
+   "draworder": "topdown",
+   "opacity": 1,
+   "visible": true,
+   "x": 0,
+   "y": 0,
+   "objects": [
+    {
+     "id": 12,
+     "name": "Calle",
+     "type": "piso",
+     "x": 40,
+     "y": 190,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "polygon": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 1968,
+       "y": 0
+      },
+      {
+       "x": 1968,
+       "y": 550
+      },
+      {
+       "x": 0,
+       "y": 550
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "nextlayerid": 7,
+ "nextobjectid": 13,
+ "orientation": "orthogonal",
+ "renderorder": "right-down",
+ "tiledversion": "1.11.0",
+ "tileheight": 64,
+ "tilesets": [],
+ "tilewidth": 64,
+ "type": "map",
+ "version": "1.10",
+ "width": 32
+}

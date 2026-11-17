@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 110">
+  <!-- Cajas de madera apiladas. Provisional, para el nivel de ejemplo. -->
+  <rect x="4" y="54" width="56" height="54" fill="#c98a4b" stroke="#8a5a33" stroke-width="5"/>
+  <rect x="60" y="54" width="56" height="54" fill="#d39a5b" stroke="#8a5a33" stroke-width="5"/>
+  <rect x="32" y="2" width="56" height="54" fill="#dba766" stroke="#8a5a33" stroke-width="5"/>
+  <path d="M4 54 L60 108 M60 54 L116 108 M32 2 L88 56" stroke="#8a5a33" stroke-width="4"/>
+</svg>
