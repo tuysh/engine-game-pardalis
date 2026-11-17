@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "id": "barrio",
+    "titulo": "El barrio",
+    "personajes": {
+      "tommy": { "idioma": "en", "sprite": "spr_tommy" },
+      "tortu": { "idioma": "es", "sprite": "spr_tortu" }
+    }
+  },
+  "jugador": { "personaje": "tommy" },
+  "estado": {
+    "objetivos": ["tortillas"],
+    "lista": { "tortillas": "las tortillas" }
+  },
+  "secuencias": {
+    "aun_no_item": [
+      { "dice": "tortu", "texto": "¡Otro día lo intentamos!", "audio": "vo_tortu_otro_dia" }
+    ],
+    "bloquea_salida": [
+      { "dice": "tortu", "texto": "¡Espérate! Te faltan {faltan}.", "audio": "vo_tortu_faltan" }
+    ]
+  },
+  "npcs": {
+    "tortu": {
+      "dialogo": [
+        {
+          "cuando": "tengo tortillas",
+          "dice": [
+            { "dice": "tortu", "texto": "¡Que te aprovechen!", "audio": "vo_tortu_provecho" }
+          ]
+        },
+        {
+          "dice": [
+            { "camina": "frente_tortilleria" },
+            {
+              "dice": "tortu",
+              "texto": "¡Cuidado, el comal está caliente!",
+              "en": "hot",
+              "es": "caliente",
+              "audio": "vo_tortu_caliente"
+            },
+            { "juego": "Tortilleria", "config": { "palabras": ["hot", "corn"] } }
+          ]
+        }
+      ],
+      "alVolver": {
+        "siLogrado": [
+          { "efecto": "magia" },
+          { "dice": "tommy", "texto": "Thank you!", "trad": "¡Gracias!", "audio": "vo_tommy_gracias" }
+        ],
+        "siNo": "aun_no_item"
+      }
+    }
+  },
+  "comentarios": {
+    "general": [
+      { "dice": "tommy", "texto": "Wow!", "trad": "¡Qué colorido!", "audio": "vo_wow" }
+    ]
+  },
+  "salida": {
+    "destino": "Selector",
+    "requiere": "objetivosCompletos",
+    "siBloqueada": "bloquea_salida",
+    "flecha": { "visibleCuando": "objetivosCompletos" }
+  }
+}
