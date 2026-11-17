@@ -84,7 +84,7 @@ async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
   const ubicacion = { direccionDelNivel: '/niveles/barrio/nivel.json', cargador: new CargadorDeMemoria({}) };
   const nivelEnJuego = await jugarNivel(
     { nivel, ubicacion, idiomaBase: 'es', minijuegos: {}, variablesGuardadas },
-    { escenario, interfaz, audio, controles, reloj },
+    { escenario, interfaz, audio, controles, reloj, azar: () => 0 },
     {
       alCumplirObjetivo: (objetivo) => objetivosCumplidos.push(objetivo),
       alVerPalabra: () => {},
@@ -270,4 +270,59 @@ test('durante un diálogo, el teclado no mueve al jugador', async () => {
   await reloj.avanzar(1);
 
   expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 5.1, y: 2.1 });
+});
+
+test('al entrar a una zona con grupo, el jugador comenta sin dejar de poder caminar', async () => {
+  const nivelConZona: Nivel = {
+    ...NIVEL,
+    contenido: {
+      ...NIVEL.contenido,
+      comentarios: { general: [{ tipo: 'linea', hablante: 'tommy', texto: 'Wow!', traduccion: '¡Qué colorido!' }] },
+    },
+    mundo: {
+      ...NIVEL.mundo,
+      zonas: {
+        plaza: {
+          descripcion: 'plaza',
+          forma: { tipo: 'rectangulo', rectangulo: { x: 3, y: 2, ancho: 2, alto: 2 } },
+          grupo: 'general',
+          esperaEnSegundos: 20,
+        },
+      },
+    },
+  };
+  const { escenario, interfaz, reloj } = await empezar(nivelConZona);
+
+  escenario.simularToque({ tipo: 'piso', punto: { x: 4, y: 3 } });
+  await reloj.avanzar(0.6);
+
+  expect(interfaz.globo).toEqual({ texto: 'Wow!', traduccion: '¡Qué colorido!', palabra: undefined });
+  // El globo de un comentario no atrapa toques: el jugador puede seguir caminando.
+  expect(interfaz.hayQuienEscuchaToques).toBe(false);
+});
+
+test('un diálogo que empieza reemplaza el comentario, y el comentario no le borra su globo', async () => {
+  const nivelConZona: Nivel = {
+    ...NIVEL,
+    contenido: { ...NIVEL.contenido, comentarios: { general: [{ tipo: 'linea', hablante: 'tommy', texto: 'Wow!' }] } },
+    mundo: {
+      ...NIVEL.mundo,
+      zonas: {
+        todo: {
+          descripcion: 'todo',
+          forma: { tipo: 'rectangulo', rectangulo: { x: 0, y: 0, ancho: 10, alto: 4 } },
+          grupo: 'general',
+          esperaEnSegundos: 20,
+        },
+      },
+    },
+  };
+  const { escenario, interfaz, reloj } = await empezar(nivelConZona);
+  await reloj.avanzar(0.016);
+  expect(interfaz.globo?.texto).toBe('Wow!');
+
+  escenario.simularToque({ tipo: 'personaje', id: 'tortu' });
+  await reloj.avanzar(3);
+
+  expect(interfaz.globo?.texto).toBe('¡Aquí tienes!');
 });

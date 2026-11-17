@@ -2,7 +2,7 @@
 // Es la raíz de composición: el único lugar que crea los adaptadores del navegador y se los entrega a la aplicación.
 //
 // Estado: carga y valida un nivel, lo dibuja, y deja caminar, hablar con personajes, jugar minijuegos y salir.
-// Todavía no usa `cinematicas`, `alCargar`, `depurar` ni `semilla`. Cada cosa llega en su fase (§13).
+// Todavía no usa `cinematicas`, `alCargar` ni `depurar`. Cada cosa llega en su fase (§13).
 
 import { AudioDelNavegador } from './adaptadores/audio/audio-del-navegador.ts';
 import { ControlesDelTeclado } from './adaptadores/dom/controles-del-teclado.ts';
@@ -16,6 +16,7 @@ import { LectorDeMapasDeTiled } from './adaptadores/tiled/lector-de-mapas-de-til
 import { jugarNivel } from './aplicacion/jugar-nivel.ts';
 import type { AvisosDelNivel, NivelEnJuego } from './aplicacion/jugar-nivel.ts';
 import { validarNivel } from './aplicacion/validar-nivel.ts';
+import { crearAzarConSemilla } from './dominio/azar-con-semilla.ts';
 import { ErrorDeEscenario } from './dominio/error-de-escenario.ts';
 import type { Nivel } from './dominio/nivel.ts';
 import { actualizarPartida, leerPartida, variablesGuardadasDe } from './dominio/partida.ts';
@@ -80,7 +81,9 @@ export async function crearEscenario(elemento: HTMLElement, opciones: OpcionesDe
       minijuegos: opciones.minijuegos ?? {},
       variablesGuardadas: variablesGuardadasDe(partidaInicial, idDelNivel),
     };
-    nivelEnJuego = await jugarNivel(pedido, { escenario, interfaz, audio, controles, reloj }, avisos);
+    // Con `semilla`, el azar del juego es siempre el mismo: sirve para pruebas.
+    const azar = opciones.semilla === undefined ? Math.random : crearAzarConSemilla(opciones.semilla);
+    nivelEnJuego = await jugarNivel(pedido, { escenario, interfaz, audio, controles, reloj, azar }, avisos);
     revisarQueNoSeCancelo(opciones);
   } catch (error) {
     // Si algo falla o se cancela a medio armar, no se deja nada montado en la página.

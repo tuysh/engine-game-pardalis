@@ -24,6 +24,8 @@ export interface PiezasDeConversacion {
   readonly acciones: AccionesDePaso;
   /** Se llama si un diálogo falla con un error inesperado. El diálogo se da por terminado. */
   readonly alFallar: (error: unknown) => void;
+  /** Se llama justo antes de que empiece cada diálogo; sirve, por ejemplo, para callar un comentario. */
+  readonly alEmpezar?: () => void;
 }
 
 export class Conversacion {
@@ -94,6 +96,9 @@ export class Conversacion {
     const cancelador = new AbortController();
     this.cancelador = cancelador;
     try {
+      if (this.piezas.alEmpezar !== undefined) {
+        this.piezas.alEmpezar();
+      }
       await dialogo(cancelador.signal);
     } catch (error) {
       this.piezas.alFallar(error);

@@ -1,8 +1,7 @@
 // Caso de uso: poner a jugar un nivel ya validado. Monta la escenografía y los personajes,
 // conecta los toques y el teclado del jugador con el nivel (caminar, hablar, salir) y dibuja un cuadro tras otro.
 //
-// Estado: faltan las zonas con comentarios, la flecha de la salida y los efectos
-// (ver crear-acciones-de-paso.ts).
+// Estado: faltan la flecha de la salida y los efectos (ver crear-acciones-de-paso.ts).
 
 import { crearEstadoDeNivel } from '../dominio/estado.ts';
 import type { VariablesDeEstado } from '../dominio/estado.ts';
@@ -10,19 +9,24 @@ import type { Idioma } from '../dominio/idioma.ts';
 import type { Nivel } from '../dominio/nivel.ts';
 import type { PalabraDeVocabulario } from '../dominio/paso.ts';
 import { crearTerreno } from '../dominio/terreno.ts';
+import { completarTexto } from '../dominio/texto-con-variables.ts';
 import type { Audio } from '../puertos/audio.ts';
+import type { Azar } from '../puertos/azar.ts';
 import type { Controles } from '../puertos/controles.ts';
 import type { Escenario } from '../puertos/escenario.ts';
 import type { Interfaz } from '../puertos/interfaz.ts';
 import type { Minijuego } from '../puertos/minijuego.ts';
 import type { Reloj } from '../puertos/reloj.ts';
 import { atenderToque } from './atender-toque.ts';
+import { ComentariosDeZona } from './comentarios-de-zona.ts';
 import { Conversacion } from './conversacion.ts';
 import { crearAccionesDePaso } from './crear-acciones-de-paso.ts';
+import { decirLinea } from './decir-linea.ts';
 import { buscarDireccionDeAsset } from './direccion-de-asset.ts';
 import type { UbicacionDeAssets } from './direccion-de-asset.ts';
 import { EstadoEnJuego } from './estado-en-juego.ts';
 import { Exploracion } from './exploracion.ts';
+import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { prepararEscenografia, prepararPersonajes } from './preparar-escena.ts';
 import { Reparto } from './reparto.ts';
 
@@ -46,6 +50,7 @@ export interface PuertosParaJugar {
   readonly audio: Audio;
   readonly controles: Controles;
   readonly reloj: Reloj;
+  readonly azar: Azar;
 }
 
 /** Cómo el nivel le avisa de lo que pasa a quien lo puso a jugar. */
@@ -92,7 +97,7 @@ export async function jugarNivel(
 
   const estadoInicial = crearEstadoDeNivel(nivel.contenido.estado, pedido.variablesGuardadas);
   const estado = new EstadoEnJuego(estadoInicial, (objetivo) => avisos.alCumplirObjetivo(objetivo));
-  const acciones = crearAccionesDePaso({
+  const piezasDeEscena: PiezasDeEscena = {
     contenido: nivel.contenido,
     puntos: nivel.mundo.puntos,
     idiomaBase: pedido.idiomaBase,
@@ -105,12 +110,25 @@ export async function jugarNivel(
     minijuegos: pedido.minijuegos,
     direccionDeAsset: (clave) => buscarDireccionDeAsset(clave, nivel.assets, ubicacion),
     alVerPalabra: (palabra) => avisos.alVerPalabra(palabra),
+  };
+
+  const comentarios = new ComentariosDeZona({
+    contenido: nivel.contenido,
+    zonas: nivel.mundo.zonas,
+    azar: puertos.azar,
+    decirComentario(linea, senal) {
+      const textoCompleto = completarTexto(linea.texto, estado.actual);
+      return decirLinea({ paso: linea, textoCompleto, seCierraConUnToque: false }, senal, piezasDeEscena);
+    },
+    alFallar: (error) => avisos.alFallar(error),
   });
   const conversacion = new Conversacion({
     contenido: nivel.contenido,
     estado,
-    acciones,
+    acciones: crearAccionesDePaso(piezasDeEscena),
     alFallar: (error) => avisos.alFallar(error),
+    // Un comentario nunca se encima con un diálogo: al empezar uno, el comentario se calla.
+    alEmpezar: () => comentarios.callar(),
   });
 
   const piezasParaToques = { nivel, reparto, conversacion, estado, exploracion, alSalir: avisos.alSalir };
@@ -120,6 +138,7 @@ export async function jugarNivel(
       // Durante un diálogo o un minijuego, el teclado no mueve al jugador.
       const direccion = conversacion.hayDialogoEnCurso ? SIN_DIRECCION : controles.leerDireccion();
       exploracion.avanzar(segundos, direccion);
+      comentarios.avanzar(segundos, exploracion.posicion, !conversacion.hayDialogoEnCurso);
     }
     escenario.dibujar(segundos);
   });
@@ -133,6 +152,7 @@ export async function jugarNivel(
     },
     terminar(): void {
       conversacion.interrumpir();
+      comentarios.callar();
       dejarDeAtenderToques();
       dejarDeDibujar();
     },
