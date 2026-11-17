@@ -6,6 +6,7 @@
 //   ✗ secuencia "aun_no_item" usada en npcs.tortu.alVolver.siNo pero no existe en "secuencias"
 //   ✗ niveles/barrio/nivel.json no es válido (1 error, 1 advertencia)
 
+import { contarConPlural } from './contar-con-plural.ts';
 import type { ResultadoDeValidacion } from './validar-nivel.ts';
 
 export function redactarInformeDeValidacion(direccionDelNivel: string, resultado: ResultadoDeValidacion): string[] {
@@ -18,8 +19,8 @@ export function redactarInformeDeValidacion(direccionDelNivel: string, resultado
     lineas.push(`✗ ${error}`);
   }
 
-  const cuantosErrores = contar(resultado.errores.length, 'error', 'errores');
-  const cuantasAdvertencias = contar(resultado.advertencias.length, 'advertencia', 'advertencias');
+  const cuantosErrores = contarConPlural(resultado.errores.length, 'error', 'errores');
+  const cuantasAdvertencias = contarConPlural(resultado.advertencias.length, 'advertencia', 'advertencias');
   const resumen = `(${cuantosErrores}, ${cuantasAdvertencias})`;
 
   if (resultado.errores.length > 0) {
@@ -28,10 +29,4 @@ export function redactarInformeDeValidacion(direccionDelNivel: string, resultado
     lineas.push(`✓ ${direccionDelNivel} es válido ${resumen}`);
   }
   return lineas;
-}
-
-/** Ejemplos: `contar(1, 'error', 'errores')` → `'1 error'`; `contar(0, 'error', 'errores')` → `'0 errores'`. */
-function contar(cantidad: number, singular: string, plural: string): string {
-  if (cantidad === 1) return `1 ${singular}`;
-  return `${cantidad} ${plural}`;
 }
