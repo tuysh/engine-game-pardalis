@@ -101,9 +101,8 @@ function revisarArchivo(rutaEnSrc: string, contenido: string): string[] {
     const rutaImportada = posix.join(posix.dirname(rutaEnSrc), importado);
     const capaImportada = capaDe(rutaImportada);
     if (!capasPermitidas.includes(capaImportada)) {
-      problemas.push(
-        `${rutaEnSrc}: importa ${rutaImportada}, pero la capa ${capa} solo puede importar de ${capasPermitidas.join(', ')}`,
-      );
+      const permitidas = capasPermitidas.join(', ');
+      problemas.push(`${rutaEnSrc}: importa ${rutaImportada}, pero la capa ${capa} solo puede importar de ${permitidas}`);
     }
   }
   return problemas;
