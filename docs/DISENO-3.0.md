@@ -193,6 +193,9 @@ export function Tortilleria({ elemento, config, estado, audio, assets, senal }) 
 Resultado: `{ exito: boolean, otorgar?: Record<string, valor> }`. Si la función lanza un error se trata como
 `{ exito: false }` y sigue el diálogo amable `siNo`.
 
+El motor coloca `elemento` a pantalla completa con un marco propio, así que el minijuego puede ponerle cualquier
+estilo sin perder su lugar. Un ejemplo completo está en [`ejemplo/tortilleria.ts`](../ejemplo/tortilleria.ts).
+
 ## 7. Cinemáticas
 
 Una cinemática es una lista de **pasos**: el mismo lenguaje que ya usan los diálogos, con pasos nuevos.
@@ -408,6 +411,17 @@ Es parte del motor, pero solo se carga con `depurar: true`: no pesa en producci�
 
 La interfaz en DOM da texto nítido y accesible. Vive dentro de un *shadow root*, así los estilos del host
 (Tailwind incluido) no la rompen. Se personaliza con variables CSS: `--escenario-fuente`, `--escenario-color-globo`…
+
+### 9.5 Controles
+
+El jugador se mueve de dos formas, que conviven:
+
+- **Tocar o hacer clic** en un lugar del piso: su personaje camina hasta ahí. Tocar a un personaje o a un objeto
+  interactivo lo lleva junto a él y empieza su diálogo.
+- **Teclado:** mantener oprimida `W` `A` `S` `D` o una flecha lo hace caminar hacia ese lado. El teclado manda
+  sobre el lugar tocado. Durante un diálogo o un minijuego no mueve al jugador.
+
+En los diálogos, `Enter` o la barra espaciadora siguen la línea, y las teclas `1` a `9` eligen una opción.
 
 ## 10. Partida
 

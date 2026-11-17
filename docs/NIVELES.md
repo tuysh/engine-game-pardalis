@@ -7,9 +7,8 @@ Referencia para quien dibuja mapas y escribe diálogos. El ejemplo completo est�
 > Las cinemáticas se documentan aquí cuando se construya su fase ([`DISENO-3.0.md` §13](DISENO-3.0.md));
 > mientras tanto, su diseño está en `DISENO-3.0.md` §7.
 >
-> Al jugar, hoy el motor dibuja el nivel y deja caminar, hablar con personajes y objetos, y salir.
-> Ya se validan pero **todavía no se pueden jugar**: los minijuegos (el diálogo sigue por `siNo`),
-> los efectos (solo hacen una pausa), los comentarios de las zonas y la flecha de la salida.
+> Todo lo que este documento describe ya se puede jugar: caminar, hablar con personajes y objetos, elegir opciones,
+> minijuegos, efectos, comentarios de las zonas, música y salir.
 
 Un nivel es **una carpeta** con estos archivos, que se unen por `id` y por clave:
 
@@ -101,7 +100,7 @@ La clase de un objeto se escribe en el campo **Clase** de Tiled. No se usan tile
 {
   "meta": { "id": "barrio", "titulo": "El barrio", "personajes": { ... } },
   "jugador": { "personaje": "tommy" },    // opcional: un nivel sin jugador no tiene control libre
-  "mundo": { "pixelesPorMetro": 100, "camara": { "distancia": 8, "altura": 4, "giro": 0 } },
+  "mundo": { "pixelesPorMetro": 100, "camara": { "distancia": 8, "altura": 4, "giro": 0 }, "sonidos": { "musica": "mus_barrio" } },
   "estado": { "objetivos": [...], "variables": [...], "lista": { ... }, "dinero": 100 },
   "secuencias": { "nombre": [ ...pasos ] },
   "npcs": { "tortu": { "dialogo": [...], "alVolver": { ... } } },
@@ -137,6 +136,7 @@ Solo `meta` es obligatoria. **Una clave que el motor no conoce es un error**: as
 | `mundo.camara.distancia` | 8 | Metros entre la cámara y lo que sigue. |
 | `mundo.camara.altura` | 4 | Metros de la cámara sobre el piso. |
 | `mundo.camara.giro` | 0 | Grados que la cámara gira alrededor de lo que sigue. 0 = de frente. |
+| `mundo.sonidos.musica` | — | Clave de la música de fondo, que se repite mientras se juega. Si falta el archivo, hay advertencia y el nivel se juega sin música. |
 
 La cámara sigue al jugador. Sus tres campos son los mismos que los de un plano de cinemática.
 
@@ -208,7 +208,9 @@ Lo que el minijuego concede (`otorgar`) se aplica al estado antes de ejecutar cu
 
 ### `comentarios`
 
-Frases que el jugador dice al entrar a una zona del mapa; se elige una al azar del grupo de la zona.
+Frases que el jugador dice al **entrar** a una zona del mapa que lleva la propiedad `grupo`; se elige una al azar
+de ese grupo. Cada zona espera su `espera` (20 segundos por defecto) antes de repetir, un comentario nunca
+interrumpe un diálogo, y su globo no detiene al jugador: puede seguir caminando mientras lo oye.
 
 ```json
 "comentarios": { "general": [ { "dice": "tommy", "texto": "Wow!", "trad": "¡Qué colorido!", "audio": "vo_wow" } ] }
@@ -225,9 +227,11 @@ Frases que el jugador dice al entrar a una zona del mapa; se elige una al azar d
 }
 ```
 
-Si `requiere` no se cumple, se ejecuta `siBloqueada`. Si se cumple y `destino` es otro nivel registrado, el motor
-lo carga; cualquier otro destino llega al host con el evento `salida`.
-`flecha.texto` es opcional y solo debe usar palabras que la niña o el niño ya vio.
+El jugador intenta salir al entrar al área de la salida (caminando o tocándola). Si `requiere` no se cumple,
+se ejecuta `siBloqueada`; si se cumple, el destino llega al host con el evento `salida`.
+
+Una flecha que sube y baja señala la salida. Aparece cuando se cumple `flecha.visibleCuando`, o siempre si la
+salida no lo dice. `flecha.texto` es opcional y solo debe usar palabras que la niña o el niño ya vio.
 
 ## 4. Assets (imágenes, voces y videos)
 
@@ -305,6 +309,15 @@ Los problemas del mapa nombran el objeto de Tiled por su número y su nombre:
 ✗ mapa: objeto #7 de la capa "decorado": la clase "puesto" no existe; las clases de decorado son: parado, plano, colgado
 ✗ camina "frente_tortileria" en npcs.tortu.dialogo[1].dice[0]: no hay un punto con ese nombre en el mapa
 ```
+
+### Cómo se juega
+
+| Para… | Con dedo o ratón | Con teclado |
+| --- | --- | --- |
+| Caminar | Tocar un lugar del piso | Mantener oprimida `W` `A` `S` `D` o una flecha |
+| Hablar con alguien o usar un objeto | Tocarlo: el jugador camina hasta ahí | — |
+| Seguir un diálogo | Tocar la pantalla | `Enter` o la barra espaciadora |
+| Elegir una opción | Tocar su tarjeta | Las teclas `1` a `9` |
 
 ### Verlo en la demo
 

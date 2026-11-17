@@ -58,7 +58,7 @@ Todo lo de afuera (Three.js, el DOM, el audio, la red, Tiled) se conecta por med
         │   adaptadores/   three/   dom/   audio/   red/   archivos/   tiled/   json/   memoria/
         │        │ implementan
         │        ▼
-        │   puertos/       Escenario · Interfaz · Audio · Video · Cargador · LectorDeNiveles · LectorDeMapas · Reloj · Azar
+        │   puertos/       Escenario · Interfaz · Audio · Video · Controles · Cargador · LectorDeNiveles · LectorDeMapas · Reloj · Azar
         │                  (y los de la línea de comandos: Carpetas · EscritorDeManifiestos)
         │        ▲ usan
         │        │
@@ -86,7 +86,7 @@ Todo lo de afuera (Three.js, el DOM, el audio, la red, Tiled) se conecta por med
 | Carpeta | Tecnología | Implementa |
 | --- | --- | --- |
 | `adaptadores/three/` | Three.js | `Escenario`: piso, telones, personajes de papel, cámara, efectos |
-| `adaptadores/dom/` | DOM y CSS | `Interfaz`: globos, opciones, tarjetas, botones, franjas de cine; `Video`; `Reloj` del navegador |
+| `adaptadores/dom/` | DOM y CSS | `Interfaz`: globos, opciones, tarjetas, botones, franjas de cine; `Video`; `Controles` del teclado; `Reloj` del navegador |
 | `adaptadores/audio/` | Web Audio y voz del navegador | `Audio`: voces, sonidos, música |
 | `adaptadores/red/` | `fetch` | `Cargador`: descarga niveles, manifiestos y assets |
 | `adaptadores/archivos/` | Archivos del disco (`node:fs`) | `Cargador` y `Carpetas` para la línea de comandos |
