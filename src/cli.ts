@@ -6,11 +6,9 @@
 // - `validar` revisa nivel.json y el contenido. Todavía NO revisa el mapa ni los assets, y lo dice al terminar.
 // - `assets` todavía no hace su trabajo: avisa y termina con error. Llega con la fase 3 (docs/DISENO-3.0.md §13).
 
-import { CargadorDeArchivos } from './adaptadores/archivos/cargador-de-archivos.ts';
-import { LectorDeNivelesDeJson } from './adaptadores/json/lector-de-niveles-de-json.ts';
 import { interpretarComando, TEXTO_DE_AYUDA } from './aplicacion/interpretar-comando.ts';
 import { redactarInformeDeValidacion } from './aplicacion/redactar-informe-de-validacion.ts';
-import { validarNivel } from './aplicacion/validar-nivel.ts';
+import { validarNivel } from './validar.ts';
 
 const CODIGO_DE_EXITO = 0;
 const CODIGO_DE_ERROR = 1;
@@ -38,8 +36,7 @@ async function ejecutar(argumentos: readonly string[]): Promise<number> {
 }
 
 async function validar(rutaDelNivel: string, minijuegos: readonly string[] | undefined): Promise<number> {
-  const puertos = { cargador: new CargadorDeArchivos(), lector: new LectorDeNivelesDeJson() };
-  const resultado = await validarNivel({ direccionDelNivel: rutaDelNivel, minijuegos }, puertos);
+  const resultado = await validarNivel(rutaDelNivel, { minijuegos });
 
   for (const linea of redactarInformeDeValidacion(rutaDelNivel, resultado)) {
     console.log(linea);
