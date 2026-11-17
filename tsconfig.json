@@ -1,0 +1,31 @@
+{
+  // Configuración para revisar tipos (`bun check`) y para el editor.
+  // La que genera `dist/` es tsconfig.construir.json, que parte de esta.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["bun"],
+
+    // Modo estricto completo (AGENTS.md §4.5).
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+
+    // Obliga a escribir `import type` cuando algo solo se usa como tipo.
+    "verbatimModuleSyntax": true,
+
+    // Los `import` se escriben con la extensión real (`./archivo.ts`);
+    // al construir, TypeScript la cambia por `.js`.
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src"]
+}
