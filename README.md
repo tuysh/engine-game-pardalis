@@ -11,7 +11,7 @@ aprendan inglés. Dibuja personajes y objetos 2D «de papel» parados dentro de 
 | Fase | Qué incluye | Estado |
 | --- | --- | --- |
 | 1. Paquete | Estructura, construcción a JavaScript con tipos, pruebas, CLI vacío | Hecha |
-| 2. Núcleo | Contenido, pasos, condiciones, estado, partida, validación | En curso: falta ejecutar los pasos |
+| 2. Núcleo | Contenido, pasos, condiciones, estado, partida, validación | Hecha (el cruce con el mapa llega en la fase 4) |
 | 3. Assets | Manifiesto, validación cruzada, carga de SVG | Pendiente |
 | 4. Escenario | Mapa de Tiled, piso, telones, personajes, cámara | Pendiente |
 | 5. Interfaz y audio | Globos, opciones, tarjetas, voces | Pendiente |
