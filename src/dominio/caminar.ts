@@ -34,13 +34,10 @@ export function avanzarHacia(posicion: Punto, destino: Punto, distanciaEnMetros:
   }
 
   // El pasito recto: todo lo que se puede caminar, sin pasarse del destino.
-  const proporcionDelCamino = Math.min(1, distanciaEnMetros / distanciaAlDestino);
-  const pasoRecto = {
-    x: posicion.x + (destino.x - posicion.x) * proporcionDelCamino,
-    y: posicion.y + (destino.y - posicion.y) * proporcionDelCamino,
-  };
+  const pasoRecto = acercarse(posicion, destino, distanciaEnMetros);
   if (esCaminable(pasoRecto, terreno)) {
-    return { posicion: pasoRecto, llego: proporcionDelCamino === 1, seAtoro: false };
+    const llegoAlDestino = pasoRecto.x === destino.x && pasoRecto.y === destino.y;
+    return { posicion: pasoRecto, llego: llegoAlDestino, seAtoro: false };
   }
 
   // El paso recto choca: se intenta deslizar moviendo una sola coordenada.
@@ -56,4 +53,19 @@ export function avanzarHacia(posicion: Punto, destino: Punto, distanciaEnMetros:
     return { posicion: soloDeFondo, llego: false, seAtoro: false };
   }
   return { posicion, llego: false, seAtoro: true };
+}
+
+/**
+ * El punto que queda al acercarse en línea recta hasta `distanciaEnMetros` hacia el destino, sin pasarse de él.
+ * No mira el terreno: sirve tal cual para las caminatas de un diálogo, que van directo a su punto.
+ */
+export function acercarse(posicion: Punto, destino: Punto, distanciaEnMetros: number): Punto {
+  const distanciaAlDestino = distanciaEntre(posicion, destino);
+  if (distanciaAlDestino <= distanciaEnMetros) return destino;
+
+  const proporcionDelCamino = distanciaEnMetros / distanciaAlDestino;
+  return {
+    x: posicion.x + (destino.x - posicion.x) * proporcionDelCamino,
+    y: posicion.y + (destino.y - posicion.y) * proporcionDelCamino,
+  };
 }
