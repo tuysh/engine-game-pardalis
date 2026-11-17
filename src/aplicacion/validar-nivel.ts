@@ -4,17 +4,19 @@
 //   1. nivel.json existe y tiene la forma esperada
 //   2. el contenido existe y tiene la forma esperada (tipos, campos obligatorios, claves conocidas)
 //   3. enlaces: todo lo que el contenido nombra existe (secuencias, hablantes, variables, minijuegos)
-//   4. assets: cada carpeta de assets tiene su manifiesto, y existe cada imagen y voz que el contenido nombra
-//
-// Estado: todavía no se revisa el mapa; esa fase se agrega con el lector de Tiled (docs/DISENO-3.0.md §13, fase 4).
+//   4. mapa: existe, se puede leer y coincide con el contenido (NPCs, puntos, zonas, salida, inicio del jugador)
+//   5. assets: cada carpeta de assets tiene su manifiesto, y existe cada imagen y voz que se nombra
 
 import { crearDiagnostico } from '../dominio/diagnostico.ts';
 import type { Diagnostico } from '../dominio/diagnostico.ts';
 import { ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
 import type { Nivel } from '../dominio/nivel.ts';
+import { revisarAssetsDelMundo } from '../dominio/revisar-assets-del-mundo.ts';
 import { revisarAssets } from '../dominio/revisar-assets.ts';
+import { revisarCruce } from '../dominio/revisar-cruce.ts';
 import { revisarEnlaces } from '../dominio/revisar-enlaces.ts';
 import type { Cargador } from '../puertos/cargador.ts';
+import type { LectorDeMapas } from '../puertos/lector-de-mapas.ts';
 import type { LectorDeNiveles } from '../puertos/lector-de-niveles.ts';
 import { cargarAssetsDeNivel } from './cargar-assets-de-nivel.ts';
 
@@ -28,6 +30,7 @@ export interface PedidoDeValidacion {
 export interface PuertosParaValidar {
   readonly cargador: Cargador;
   readonly lector: LectorDeNiveles;
+  readonly lectorDeMapas: LectorDeMapas;
 }
 
 export interface ResultadoDeValidacion {
@@ -89,10 +92,19 @@ async function leerYRevisar(
   revisarEnlaces(contenido, pedido.minijuegos, diagnostico);
   if (diagnostico.errores.length > 0) return undefined;
 
+  const direccionDelMapa = puertos.cargador.resolverJuntoA(direccionDelNivel, descripcion.mapa);
+  const jsonDelMapa = await puertos.cargador.cargarJson(direccionDelMapa);
+  const mundo = puertos.lectorDeMapas.leerMundo(jsonDelMapa, contenido.mundo.pixelesPorMetro, diagnostico);
+  if (mundo === undefined || diagnostico.errores.length > 0) return undefined;
+
+  revisarCruce(contenido, mundo, diagnostico);
+  if (diagnostico.errores.length > 0) return undefined;
+
   const pedidoDeAssets = { direccionDelNivel, descripcion, cargador: puertos.cargador, lector: puertos.lector };
   const assets = await cargarAssetsDeNivel(pedidoDeAssets, diagnostico);
   if (diagnostico.errores.length > 0) return undefined;
 
   revisarAssets(contenido, assets, diagnostico);
-  return { descripcion, contenido, assets };
+  revisarAssetsDelMundo(mundo, assets, diagnostico);
+  return { descripcion, contenido, mundo, assets };
 }

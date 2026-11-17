@@ -2,8 +2,6 @@
 // Línea de comandos del motor: valida niveles y genera manifiestos de assets, sin navegador.
 // Corre en Bun y en Node. Uso: `escenario-engine ayuda`.
 //
-// Estado: `validar` todavía NO revisa el mapa, y lo dice al terminar. Llega con la fase 4 (docs/DISENO-3.0.md §13).
-
 import { CarpetasDeDisco } from './adaptadores/archivos/carpetas-de-disco.ts';
 import { EscritorDeManifiestosDeJson } from './adaptadores/json/escritor-de-manifiestos-de-json.ts';
 import { generarManifiesto } from './aplicacion/generar-manifiesto.ts';
@@ -42,7 +40,6 @@ async function validar(rutaDelNivel: string, minijuegos: readonly string[] | und
   for (const linea of redactarInformeDeValidacion(rutaDelNivel, resultado)) {
     console.log(linea);
   }
-  console.log('Nota: esta versión todavía no revisa el mapa del nivel.');
 
   if (resultado.errores.length > 0) return CODIGO_DE_ERROR;
   return CODIGO_DE_EXITO;

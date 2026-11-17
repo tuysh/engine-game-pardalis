@@ -5,11 +5,10 @@
 //   import { validarNivel } from '@pardalis/escenario-engine/validar';
 //   const resultado = await validarNivel('niveles/barrio/nivel.json', { minijuegos: ['Tortilleria'] });
 //   if (resultado.errores.length > 0) { ... }
-//
-// Estado: todavía no revisa el mapa (docs/DISENO-3.0.md §13, fase 4).
 
 import { CargadorDeArchivos } from './adaptadores/archivos/cargador-de-archivos.ts';
 import { LectorDeNivelesDeJson } from './adaptadores/json/lector-de-niveles-de-json.ts';
+import { LectorDeMapasDeTiled } from './adaptadores/tiled/lector-de-mapas-de-tiled.ts';
 // Se importa con otro nombre porque la función pública de este archivo también se llama `validarNivel`.
 import { validarNivel as validarNivelConPuertos } from './aplicacion/validar-nivel.ts';
 import type { ResultadoDeValidacion } from './aplicacion/validar-nivel.ts';
@@ -34,6 +33,10 @@ export async function validarNivel(
   rutaDelNivel: string,
   opciones: OpcionesDeValidacion = {},
 ): Promise<ResultadoDeValidacion> {
-  const puertos = { cargador: new CargadorDeArchivos(), lector: new LectorDeNivelesDeJson() };
+  const puertos = {
+    cargador: new CargadorDeArchivos(),
+    lector: new LectorDeNivelesDeJson(),
+    lectorDeMapas: new LectorDeMapasDeTiled(),
+  };
   return validarNivelConPuertos({ direccionDelNivel: rutaDelNivel, minijuegos: opciones.minijuegos }, puertos);
 }
