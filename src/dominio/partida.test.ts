@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
-import { leerPartida } from './partida.ts';
+import { actualizarPartida, leerPartida, variablesGuardadasDe } from './partida.ts';
+import type { Partida } from './partida.ts';
 
 test('una partida bien formada se lee completa', () => {
   const guardada = {
@@ -81,4 +82,29 @@ test('ignora la clave __proto__ en los niveles y en las variables', () => {
 
   expect(Object.keys(lectura.partida?.niveles ?? {})).toEqual(['casa']);
   expect(Object.keys(lectura.partida?.niveles.casa?.estado ?? {})).toEqual(['a']);
+});
+
+test('actualizar una partida pone las variables del nivel actual y conserva los demás niveles', () => {
+  const anterior: Partida = { v: 1, nivel: 'casa', niveles: { casa: { estado: { 'vista.intro': true } } } };
+
+  const partida = actualizarPartida(anterior, 'barrio', { tortillas: true });
+
+  expect(partida).toEqual({
+    v: 1,
+    nivel: 'barrio',
+    niveles: { casa: { estado: { 'vista.intro': true } }, barrio: { estado: { tortillas: true } } },
+  });
+});
+
+test('sin partida anterior, la partida solo tiene el nivel actual', () => {
+  expect(actualizarPartida(undefined, 'barrio', {})).toEqual({ v: 1, nivel: 'barrio', niveles: { barrio: { estado: {} } } });
+});
+
+test('las variables guardadas de un nivel se buscan por su id', () => {
+  const partida: Partida = { v: 1, nivel: 'barrio', niveles: { barrio: { estado: { tortillas: true } } } };
+
+  expect(variablesGuardadasDe(partida, 'barrio')).toEqual({ tortillas: true });
+  expect(variablesGuardadasDe(partida, 'casa')).toBeUndefined();
+  expect(variablesGuardadasDe(partida, 'constructor')).toBeUndefined();
+  expect(variablesGuardadasDe(undefined, 'barrio')).toBeUndefined();
 });

@@ -24,6 +24,11 @@ try {
     nivel: 'barrio',
     minijuegos: { Tortilleria },
   });
+  // El motor avisa con eventos y el host decide qué hacer: aquí solo se muestran en la consola.
+  juego.on('objetivo', (objetivo) => console.log('objetivo cumplido:', objetivo));
+  juego.on('palabra', (palabra) => console.log('palabra vista:', palabra.en, '=', palabra.es));
+  juego.on('guardar', (partida) => console.log('conviene guardar:', JSON.stringify(partida)));
+  juego.on('salida', (destino) => console.log('el jugador salió hacia:', destino));
   addEventListener('pagehide', () => juego.destruir());
 } catch (error) {
   // Un nivel mal escrito se explica en la propia página: cada problema en su línea.

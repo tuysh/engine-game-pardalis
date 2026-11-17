@@ -4,7 +4,8 @@
 // Una partida viene de afuera, así que no es confiable: `leerPartida` revisa su forma
 // y descarta lo que no entiende. Una partida corrupta nunca impide jugar.
 //
-// Estado: falta el campo `momento` de cada nivel (dónde quedó el jugador); se agrega con el escenario.
+// Estado: falta el campo `momento` de cada nivel (dónde quedó el jugador): al volver a un nivel,
+// el jugador empieza en su inicio.
 
 import { esObjetoPlano } from './es-objeto-plano.ts';
 import type { ValorDeEstado, VariablesDeEstado } from './estado.ts';
@@ -62,6 +63,31 @@ export function leerPartida(guardada: unknown): LecturaDePartida {
     niveles[id] = { estado: limpiarVariables(nivelGuardado.estado) };
   }
   return { partida: { v: VERSION_DE_PARTIDA, nivel: guardada.nivel, niveles } };
+}
+
+/**
+ * La partida que resulta de jugar un nivel: conserva lo guardado de los demás niveles
+ * y pone, para este, sus variables de ahora. `anterior` es la partida con la que se empezó, si había.
+ */
+export function actualizarPartida(
+  anterior: Partida | undefined,
+  idDelNivel: string,
+  variables: VariablesDeEstado,
+): Partida {
+  const niveles: Record<string, PartidaDeNivel> = {};
+  if (anterior !== undefined) {
+    for (const id of Object.keys(anterior.niveles)) {
+      niveles[id] = anterior.niveles[id]!; // `id` viene de `Object.keys`, así que existe
+    }
+  }
+  niveles[idDelNivel] = { estado: variables };
+  return { v: VERSION_DE_PARTIDA, nivel: idDelNivel, niveles };
+}
+
+/** Las variables guardadas de un nivel, o `undefined` si la partida no tiene ese nivel. */
+export function variablesGuardadasDe(partida: Partida | undefined, idDelNivel: string): VariablesDeEstado | undefined {
+  if (partida === undefined || !Object.hasOwn(partida.niveles, idDelNivel)) return undefined;
+  return partida.niveles[idDelNivel]!.estado; // `hasOwn` acaba de comprobar que existe
 }
 
 /** Conserva solo las variables con un valor que el estado puede guardar. */
