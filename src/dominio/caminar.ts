@@ -56,6 +56,21 @@ export function avanzarHacia(posicion: Punto, destino: Punto, distanciaEnMetros:
 }
 
 /**
+ * El punto al que se llega caminando `distanciaEnMetros` en una dirección (la del teclado).
+ * `direccion` lleva -1, 0 o 1 en cada eje. En diagonal se avanza lo mismo que en línea recta, no más.
+ * Sin dirección (los dos ejes en 0), devuelve la misma posición.
+ */
+export function avanzarEnDireccion(posicion: Punto, direccion: Punto, distanciaEnMetros: number): Punto {
+  const largoDeLaDireccion = Math.hypot(direccion.x, direccion.y);
+  if (largoDeLaDireccion === 0) return posicion;
+
+  return {
+    x: posicion.x + (direccion.x / largoDeLaDireccion) * distanciaEnMetros,
+    y: posicion.y + (direccion.y / largoDeLaDireccion) * distanciaEnMetros,
+  };
+}
+
+/**
  * El punto que queda al acercarse en línea recta hasta `distanciaEnMetros` hacia el destino, sin pasarse de él.
  * No mira el terreno: sirve tal cual para las caminatas de un diálogo, que van directo a su punto.
  */

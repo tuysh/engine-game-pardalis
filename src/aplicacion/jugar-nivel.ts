@@ -1,5 +1,5 @@
 // Caso de uso: poner a jugar un nivel ya validado. Monta la escenografía y los personajes,
-// conecta los toques del jugador con el nivel (caminar, hablar, salir) y dibuja un cuadro tras otro.
+// conecta los toques y el teclado del jugador con el nivel (caminar, hablar, salir) y dibuja un cuadro tras otro.
 //
 // Estado: faltan las zonas con comentarios, la flecha de la salida y los efectos
 // (ver crear-acciones-de-paso.ts).
@@ -11,6 +11,7 @@ import type { Nivel } from '../dominio/nivel.ts';
 import type { PalabraDeVocabulario } from '../dominio/paso.ts';
 import { crearTerreno } from '../dominio/terreno.ts';
 import type { Audio } from '../puertos/audio.ts';
+import type { Controles } from '../puertos/controles.ts';
 import type { Escenario } from '../puertos/escenario.ts';
 import type { Interfaz } from '../puertos/interfaz.ts';
 import type { Minijuego } from '../puertos/minijuego.ts';
@@ -24,6 +25,8 @@ import { EstadoEnJuego } from './estado-en-juego.ts';
 import { Exploracion } from './exploracion.ts';
 import { prepararEscenografia, prepararPersonajes } from './preparar-escena.ts';
 import { Reparto } from './reparto.ts';
+
+const SIN_DIRECCION = { x: 0, y: 0 };
 
 /** Lo que se va a jugar. */
 export interface PedidoDeJuego {
@@ -41,6 +44,7 @@ export interface PuertosParaJugar {
   readonly escenario: Escenario;
   readonly interfaz: Interfaz;
   readonly audio: Audio;
+  readonly controles: Controles;
   readonly reloj: Reloj;
 }
 
@@ -71,7 +75,7 @@ export async function jugarNivel(
   avisos: AvisosDelNivel,
 ): Promise<NivelEnJuego> {
   const { nivel, ubicacion } = pedido;
-  const { escenario, interfaz, audio, reloj } = puertos;
+  const { escenario, interfaz, audio, controles, reloj } = puertos;
 
   await escenario.montar(prepararEscenografia(nivel, ubicacion));
   const reparto = new Reparto(escenario);
@@ -113,7 +117,9 @@ export async function jugarNivel(
   const dejarDeAtenderToques = escenario.alTocar((toque) => atenderToque(toque, piezasParaToques));
   const dejarDeDibujar = reloj.enCadaCuadro((segundos) => {
     if (exploracion !== undefined) {
-      exploracion.avanzar(segundos);
+      // Durante un diálogo o un minijuego, el teclado no mueve al jugador.
+      const direccion = conversacion.hayDialogoEnCurso ? SIN_DIRECCION : controles.leerDireccion();
+      exploracion.avanzar(segundos, direccion);
     }
     escenario.dibujar(segundos);
   });

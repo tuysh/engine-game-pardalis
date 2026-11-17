@@ -144,3 +144,41 @@ test('si se le manda a otro lugar antes de llegar, el aviso anterior ya no se da
 
   expect(avisos).toBe(0);
 });
+
+test('con el teclado camina hacia el lado oprimido, y en diagonal no va más rápido', async () => {
+  const { exploracion } = await crearExploracion();
+
+  exploracion.avanzar(0.5, { x: 1, y: 0 });
+  expect(exploracion.posicion).toEqual({ x: 3, y: 3 });
+
+  exploracion.avanzar(0.5, { x: -1, y: -1 });
+  // En medio segundo camina 1 metro: en diagonal, unos 0.707 m en cada eje.
+  expect(exploracion.posicion.x).toBeCloseTo(3 - Math.SQRT1_2, 5);
+  expect(exploracion.posicion.y).toBeCloseTo(3 - Math.SQRT1_2, 5);
+});
+
+test('con el teclado voltea hacia donde camina y no se sale del piso', async () => {
+  const { escenario, exploracion } = await crearExploracion();
+
+  for (let cuadro = 0; cuadro < 200; cuadro++) {
+    exploracion.avanzar(0.02, { x: -1, y: 0 });
+  }
+
+  expect(escenario.personajes.get('tommy')?.mira).toBe('izquierda');
+  expect(exploracion.posicion.x).toBeGreaterThanOrEqual(0);
+  expect(exploracion.posicion.x).toBeLessThan(0.1);
+});
+
+test('oprimir una dirección cancela la caminata hacia el lugar tocado y su aviso', async () => {
+  const { exploracion } = await crearExploracion();
+  let avisos = 0;
+
+  exploracion.irA({ x: 8, y: 3 }, () => avisos++);
+  exploracion.avanzar(0.25);
+  exploracion.avanzar(0.25, { x: 0, y: -1 });
+  exploracion.avanzar(5);
+
+  expect(exploracion.estaCaminando).toBe(false);
+  expect(avisos).toBe(0);
+  expect(exploracion.posicion.x).toBeCloseTo(2.5, 5);
+});

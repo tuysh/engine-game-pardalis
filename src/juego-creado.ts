@@ -4,6 +4,7 @@
 // Cada uno se completa en su fase (§13).
 
 import type { AudioDelNavegador } from './adaptadores/audio/audio-del-navegador.ts';
+import type { ControlesDelTeclado } from './adaptadores/dom/controles-del-teclado.ts';
 import type { InterfazDelNavegador } from './adaptadores/dom/interfaz-del-navegador.ts';
 import type { RelojDelNavegador } from './adaptadores/dom/reloj-del-navegador.ts';
 import type { NivelEnJuego } from './aplicacion/jugar-nivel.ts';
@@ -23,6 +24,7 @@ export interface PiezasDelJuego {
   readonly escenario: Escenario;
   readonly interfaz: InterfazDelNavegador;
   readonly audio: AudioDelNavegador;
+  readonly controles: ControlesDelTeclado;
   readonly reloj: RelojDelNavegador;
   readonly nivelEnJuego: NivelEnJuego;
   readonly proyeccion: boolean;
@@ -91,6 +93,7 @@ export class JuegoCreado implements Juego {
 
     this.piezas.nivelEnJuego.terminar();
     this.piezas.reloj.detener();
+    this.piezas.controles.destruir();
     this.piezas.audio.destruir();
     this.piezas.interfaz.destruir();
     this.piezas.escenario.destruir();

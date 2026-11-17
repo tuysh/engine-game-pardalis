@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test';
 import { AudioDeMemoria } from '../adaptadores/memoria/audio-de-memoria.ts';
 import { CargadorDeMemoria } from '../adaptadores/memoria/cargador-de-memoria.ts';
+import { ControlesDeMemoria } from '../adaptadores/memoria/controles-de-memoria.ts';
 import { EscenarioDeMemoria } from '../adaptadores/memoria/escenario-de-memoria.ts';
 import { InterfazDeMemoria } from '../adaptadores/memoria/interfaz-de-memoria.ts';
 import { RelojDeMemoria } from '../adaptadores/memoria/reloj-de-memoria.ts';
@@ -74,6 +75,7 @@ async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
   const escenario = new EscenarioDeMemoria();
   const interfaz = new InterfazDeMemoria();
   const audio = new AudioDeMemoria();
+  const controles = new ControlesDeMemoria();
   const reloj = new RelojDeMemoria();
   const objetivosCumplidos: string[] = [];
   const salidas: string[] = [];
@@ -82,7 +84,7 @@ async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
   const ubicacion = { direccionDelNivel: '/niveles/barrio/nivel.json', cargador: new CargadorDeMemoria({}) };
   const nivelEnJuego = await jugarNivel(
     { nivel, ubicacion, idiomaBase: 'es', minijuegos: {}, variablesGuardadas },
-    { escenario, interfaz, audio, reloj },
+    { escenario, interfaz, audio, controles, reloj },
     {
       alCumplirObjetivo: (objetivo) => objetivosCumplidos.push(objetivo),
       alVerPalabra: () => {},
@@ -90,7 +92,7 @@ async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
       alFallar: (error) => fallas.push(error),
     },
   );
-  return { nivelEnJuego, escenario, interfaz, audio, reloj, objetivosCumplidos, salidas, fallas };
+  return { nivelEnJuego, escenario, interfaz, audio, controles, reloj, objetivosCumplidos, salidas, fallas };
 }
 
 test('al empezar, monta la escenografía con la dirección y el tamaño en metros de cada imagen', async () => {
@@ -245,4 +247,27 @@ test('en un nivel sin jugador, la cámara mira al centro del lugar y se puede ha
   expect(escenario.puntoEnfocado).toEqual({ x: 5, y: 2 });
   expect(escenario.personajes.has('tommy')).toBe(false);
   expect(interfaz.globo?.texto).toBe('¡Aquí tienes!');
+});
+
+test('con una dirección oprimida en el teclado, el jugador camina hacia ese lado mientras se oprime', async () => {
+  const { escenario, controles, reloj } = await empezar(NIVEL);
+
+  controles.direccion = { x: 1, y: 0 };
+  await reloj.avanzar(0.5);
+  expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 3, y: 3 });
+
+  controles.direccion = { x: 0, y: 0 };
+  await reloj.avanzar(0.5);
+  expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 3, y: 3 });
+});
+
+test('durante un diálogo, el teclado no mueve al jugador', async () => {
+  const { escenario, controles, reloj } = await empezar(NIVEL);
+  escenario.simularToque({ tipo: 'personaje', id: 'tortu' });
+  await reloj.avanzar(3);
+
+  controles.direccion = { x: -1, y: 0 };
+  await reloj.avanzar(1);
+
+  expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 5.1, y: 2.1 });
 });

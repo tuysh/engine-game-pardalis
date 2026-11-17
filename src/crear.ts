@@ -5,6 +5,7 @@
 // Todavía no usa `cinematicas`, `alCargar`, `depurar` ni `semilla`. Cada cosa llega en su fase (§13).
 
 import { AudioDelNavegador } from './adaptadores/audio/audio-del-navegador.ts';
+import { ControlesDelTeclado } from './adaptadores/dom/controles-del-teclado.ts';
 import { crearLienzo, leerDensidadDePantalla } from './adaptadores/dom/crear-lienzo.ts';
 import { InterfazDelNavegador } from './adaptadores/dom/interfaz-del-navegador.ts';
 import { RelojDelNavegador } from './adaptadores/dom/reloj-del-navegador.ts';
@@ -43,6 +44,7 @@ export async function crearEscenario(elemento: HTMLElement, opciones: OpcionesDe
 
   const reloj = new RelojDelNavegador();
   const audio = new AudioDelNavegador();
+  const controles = new ControlesDelTeclado();
   const escenario = crearEscenarioDeThree(elemento);
   const interfaz = new InterfazDelNavegador(elemento);
 
@@ -78,11 +80,12 @@ export async function crearEscenario(elemento: HTMLElement, opciones: OpcionesDe
       minijuegos: opciones.minijuegos ?? {},
       variablesGuardadas: variablesGuardadasDe(partidaInicial, idDelNivel),
     };
-    nivelEnJuego = await jugarNivel(pedido, { escenario, interfaz, audio, reloj }, avisos);
+    nivelEnJuego = await jugarNivel(pedido, { escenario, interfaz, audio, controles, reloj }, avisos);
     revisarQueNoSeCancelo(opciones);
   } catch (error) {
     // Si algo falla o se cancela a medio armar, no se deja nada montado en la página.
     reloj.detener();
+    controles.destruir();
     audio.destruir();
     interfaz.destruir();
     escenario.destruir();
@@ -101,6 +104,7 @@ export async function crearEscenario(elemento: HTMLElement, opciones: OpcionesDe
     escenario,
     interfaz,
     audio,
+    controles,
     reloj,
     nivelEnJuego,
     proyeccion: opciones.proyeccion ?? false,
