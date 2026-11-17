@@ -4,14 +4,14 @@ Motor del **modo Aventura de Pardalis**: juegos educativos libres para que niña
 aprendan inglés. Dibuja personajes y objetos 2D «de papel» parados dentro de un escenario 3D.
 
 > **Estado: versión 3.0 en construcción.** Es una reescritura completa.
-> Hoy el paquete ya se instala y trae sus tipos, pero `crearEscenario()` todavía no dibuja nada:
-> rechaza con un `ErrorDeEscenario` que lo dice. El avance por fases está en
-> [`docs/DISENO-3.0.md` §13](docs/DISENO-3.0.md).
+> Hoy el paquete ya se instala, trae sus tipos y **valida el contenido de un nivel**, pero
+> `crearEscenario()` todavía no dibuja nada: rechaza con un `ErrorDeEscenario` que lo dice.
+> El avance por fases está en [`docs/DISENO-3.0.md` §13](docs/DISENO-3.0.md).
 
 | Fase | Qué incluye | Estado |
 | --- | --- | --- |
 | 1. Paquete | Estructura, construcción a JavaScript con tipos, pruebas, CLI vacío | Hecha |
-| 2. Núcleo | Contenido, pasos, condiciones, estado, partida, validación | Pendiente |
+| 2. Núcleo | Contenido, pasos, condiciones, estado, partida, validación | En curso: falta ejecutar los pasos |
 | 3. Assets | Manifiesto, validación cruzada, carga de SVG | Pendiente |
 | 4. Escenario | Mapa de Tiled, piso, telones, personajes, cámara | Pendiente |
 | 5. Interfaz y audio | Globos, opciones, tarjetas, voces | Pendiente |
@@ -34,7 +34,16 @@ const juego = await crearEscenario(document.querySelector('#juego'), {
 juego.on('guardar', (partida) => localStorage.setItem('pardalis:partida', JSON.stringify(partida)));
 ```
 
-La API completa (opciones, eventos, minijuegos, cinemáticas, niveles) está en [`docs/DISENO-3.0.md`](docs/DISENO-3.0.md).
+La API completa (opciones, eventos, minijuegos, cinemáticas) está en [`docs/DISENO-3.0.md`](docs/DISENO-3.0.md).
+
+## Validar un nivel (ya funciona)
+
+```bash
+bunx escenario-engine validar niveles/barrio/nivel.json --minijuegos Tortilleria
+```
+
+Revisa `nivel.json` y el contenido, y lista cada problema con la ruta de donde está. Todavía no revisa
+el mapa ni los assets. Cómo se escribe un nivel: [`docs/NIVELES.md`](docs/NIVELES.md).
 
 ## Desarrollo
 
@@ -45,6 +54,7 @@ bun install
 bun check            # tipos: debe decir "No type errors"
 bun test             # pruebas, incluida la de arquitectura
 bun run construir    # genera dist/ (JavaScript y tipos)
+bun src/cli.ts validar ejemplo/niveles/barrio/nivel.json --minijuegos Tortilleria
 ```
 
 Antes de cambiar código, lee [`AGENTS.md`](AGENTS.md): explica la arquitectura y las reglas para que

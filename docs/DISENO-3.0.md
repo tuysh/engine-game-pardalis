@@ -405,7 +405,8 @@ No se leen partidas de la versión 2.0.
 - **Importar el paquete no toca `window` ni `document`**: se puede importar en código que también corre en
   el servidor. Solo `crearEscenario()` necesita navegador.
 - Entradas: `@pardalis/escenario-engine` (navegador) y `@pardalis/escenario-engine/validar` (sin navegador).
-- CLI: `escenario-engine validar <nivel.json>` y `escenario-engine assets <carpeta>`; corre en Bun y en Node.
+- CLI: `escenario-engine validar <nivel.json> [--minijuegos A,B]` y `escenario-engine assets <carpeta>`;
+  corre en Bun y en Node.
 - Se quita `private: true` y `typescript` deja de ser dependencia de quien lo usa.
 
 ## 12. Uso por framework

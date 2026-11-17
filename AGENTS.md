@@ -55,10 +55,10 @@ Todo lo de afuera (Three.js, el DOM, el audio, la red, Tiled) se conecta por med
                            │
         ┌──────────────────┼────────────────────────────────────────┐
         │                  ▼                                        │
-        │   adaptadores/   three/   dom/   audio/   red/   tiled/   json/   memoria/
+        │   adaptadores/   three/   dom/   audio/   red/   archivos/   tiled/   json/   memoria/
         │        │ implementan
         │        ▼
-        │   puertos/       Escenario · Interfaz · Audio · Video · Cargador · Reloj · Azar
+        │   puertos/       Escenario · Interfaz · Audio · Video · Cargador · LectorDeNiveles · Reloj · Azar
         │        ▲ usan
         │        │
         │   aplicacion/    cargar un nivel · ejecutar pasos · cinemáticas · minijuegos · guardar
@@ -77,7 +77,8 @@ Todo lo de afuera (Three.js, el DOM, el audio, la red, Tiled) se conecta por med
 | `src/aplicacion/` | Los casos de uso: lo que el motor **hace**. Coordina dominio y puertos. | `dominio/`, `puertos/` |
 | `src/adaptadores/` | Una carpeta por tecnología. Cada una implementa uno o más puertos. | `dominio/`, `puertos/` y **su** librería |
 | `src/crear.ts` | La raíz de composición: el **único** lugar que crea adaptadores y se los entrega a la aplicación. | Todo |
-| `src/cli.ts` | Otra entrada: valida niveles y genera manifiestos sin navegador. | Todo menos `three/` y `dom/` |
+| `src/validar.ts` | Entrada pública sin navegador (`@pardalis/escenario-engine/validar`): arma lo necesario para validar un nivel del disco. | Todo menos `three/` y `dom/` |
+| `src/cli.ts` | La línea de comandos: valida niveles y genera manifiestos sin navegador. | Todo menos `three/` y `dom/` |
 
 ### Los adaptadores
 
@@ -87,7 +88,8 @@ Todo lo de afuera (Three.js, el DOM, el audio, la red, Tiled) se conecta por med
 | `adaptadores/dom/` | DOM y CSS | `Interfaz`: globos, opciones, tarjetas, botones, franjas de cine; `Video` |
 | `adaptadores/audio/` | Web Audio y voz del navegador | `Audio`: voces, sonidos, música |
 | `adaptadores/red/` | `fetch` | `Cargador`: descarga niveles, manifiestos y assets |
-| `adaptadores/json/` | Zod | Convierte el JSON de contenido en tipos del dominio |
+| `adaptadores/archivos/` | Archivos del disco (`node:fs`) | `Cargador` para la línea de comandos |
+| `adaptadores/json/` | Zod | `LectorDeNiveles`: convierte el JSON de `nivel.json` y del contenido en tipos del dominio |
 | `adaptadores/tiled/` | Formato `.tmj` | Convierte el mapa de Tiled en el `Mundo` del dominio |
 | `adaptadores/memoria/` | Ninguna | Versiones falsas de cada puerto, para las pruebas |
 
@@ -97,7 +99,7 @@ Todo lo de afuera (Three.js, el DOM, el audio, la red, Tiled) se conecta por med
 2. **Cada librería externa vive en una sola carpeta.** `three` solo en `adaptadores/three/`; `zod` solo en
    `adaptadores/json/`; `document` y `window` solo en `adaptadores/dom/`, `adaptadores/audio/` y `adaptadores/red/`.
 3. **Un adaptador no importa de otro adaptador.** Si dos necesitan hablarse, lo coordina `aplicacion/` con un puerto.
-4. **Solo `crear.ts` y `cli.ts` escriben `new` de un adaptador.**
+4. **Solo las entradas (`crear.ts`, `validar.ts` y `cli.ts`) escriben `new` de un adaptador.**
 5. **Importar el paquete no ejecuta nada del navegador.** Ningún archivo toca `window` o `document` al cargarse;
    solo dentro de funciones.
 
@@ -337,7 +339,13 @@ bun run construir   # genera dist/: JavaScript (ESM) y tipos .d.ts
 `bun run construir` y no `bun build`: ese último es el empaquetador de Bun y aquí no se usa.
 `dist/` lleva un archivo por cada archivo de `src/`, sin empaquetar, para que se pueda leer.
 
-Los comandos de demo y validación de niveles se documentan aquí conforme se agreguen.
+Para validar un nivel (el formato está en [`docs/NIVELES.md`](docs/NIVELES.md)):
+
+```bash
+bun src/cli.ts validar ejemplo/niveles/barrio/nivel.json --minijuegos Tortilleria
+```
+
+Los comandos de demo se documentan aquí conforme se agreguen.
 Usa Bun para todo; no Node, npm ni vitest. Ver `CLAUDE.md`.
 
 **Antes de dar un cambio por terminado:**
