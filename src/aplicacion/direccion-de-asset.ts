@@ -1,6 +1,7 @@
 // Calcula la dirección completa de un archivo de assets de un nivel: junto a su `nivel.json`,
 // o bajo `raizDeAssets` si el host la dio (docs/DISENO-3.0.md §8.3).
 
+import type { AssetsDeNivel } from '../dominio/assets-de-nivel.ts';
 import { ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
 import { rutaDesdeLaRaizDeAssets } from '../dominio/ruta-desde-la-raiz-de-assets.ts';
 import type { Cargador } from '../puertos/cargador.ts';
@@ -36,4 +37,21 @@ export function direccionDeArchivoDeAssets(carpeta: string, archivo: string, ubi
     raizComoCarpeta += '/';
   }
   return ubicacion.cargador.resolverJuntoA(raizComoCarpeta, ruta);
+}
+
+/**
+ * La dirección completa de un asset por su clave. De una animación, la de su primer cuadro.
+ * Devuelve `undefined` si la clave no está en los assets del nivel (por ejemplo, una voz sin grabar).
+ */
+export function buscarDireccionDeAsset(clave: string, assets: AssetsDeNivel, ubicacion: UbicacionDeAssets): string | undefined {
+  if (!Object.hasOwn(assets, clave)) return undefined;
+  const ubicado = assets[clave]!; // `hasOwn` acaba de comprobar que existe
+
+  let archivo: string;
+  if (ubicado.asset.tipo === 'animacion') {
+    archivo = ubicado.asset.cuadros[0]!; // el manifiesto garantiza al menos un cuadro
+  } else {
+    archivo = ubicado.asset.archivo;
+  }
+  return direccionDeArchivoDeAssets(ubicado.carpeta, archivo, ubicacion);
 }
