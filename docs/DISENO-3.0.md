@@ -325,6 +325,11 @@ crearEscenario(elemento, {
 La estructura de carpetas es la misma en ambos casos; solo cambia la raíz. Así en desarrollo se usa la carpeta
 local y en producción el CDN, sin tocar los niveles.
 
+La raíz ocupa el lugar de **la carpeta que contiene a las carpetas de los niveles**. Con el nivel en
+`/niveles/barrio/nivel.json` y la raíz de arriba, la carpeta de assets `"."` es
+`https://assets.pardalis.mx/aventura/barrio/` y `"../comun"` es `https://assets.pardalis.mx/aventura/comun/`.
+Los manifiestos `assets.json` también se leen de ahí.
+
 - **El CDN debe enviar cabeceras CORS** (`Access-Control-Allow-Origin`). Sin ellas el navegador no permite usar
   las imágenes como texturas.
 - Seguridad (igual que hoy): claves relativas, sin `..`, sin URLs completas dentro de los niveles, y solo el
@@ -354,6 +359,18 @@ de la cámara). La altura no se dibuja en el mapa: sale del tamaño de cada spri
 
 Lo que se dibuja en el plano es exactamente lo que bloquea el paso: no hay ajustes de «huella» a mano.
 
+El **catálogo de decorado** tiene tres clases, que dicen cómo se dibuja el objeto y sirven para cualquier lugar:
+`parado` (papel vertical; bloquea el paso), `plano` (pintado sobre el piso; se puede pisar) y `colgado`
+(papel vertical en lo alto; no bloquea).
+
+Una **zona** se identifica por su nombre y puede llevar `grupo` (qué lista de `comentarios` del contenido se usa
+al entrar) y `espera` (segundos antes de repetir, por defecto 20).
+
+Un **NPC** del mapa debe ser un personaje de `meta.personajes`. Su diálogo en el contenido es opcional:
+sin él, el personaje está en el escenario pero no se puede tocar.
+
+El detalle de cada capa y propiedad está en [`NIVELES.md`](NIVELES.md).
+
 ### 9.2 Unidades
 
 `mundo.pixelesPorMetro` (por defecto 100) convierte tanto los píxeles del mapa como los de los sprites.
@@ -361,7 +378,8 @@ Un personaje de 160 px de alto mide 1.6 m en el escenario.
 
 ### 9.3 Cámara y planos
 
-- Cámara en perspectiva que sigue al jugador con un ángulo fijo configurable en `mundo.camara`.
+- Cámara en perspectiva que sigue al jugador con un ángulo fijo configurable en `mundo.camara`, con los mismos
+  campos que un plano: `{ "distancia": 8, "altura": 4, "giro": 0 }` (metros y grados; esos son los valores por defecto).
 - Los **planos** para cinemáticas viven en `mundo.planos`:
 
 ```jsonc

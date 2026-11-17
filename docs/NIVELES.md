@@ -3,9 +3,12 @@
 Referencia para quien dibuja mapas y escribe diálogos. El ejemplo completo está en
 [`ejemplo/niveles/barrio/`](../ejemplo/niveles/barrio).
 
-> **Estado:** este documento describe lo que el motor **ya lee y valida**: `nivel.json`, el contenido y los assets.
-> El mapa de Tiled y las cinemáticas se documentan aquí cuando se construya su fase
-> ([`DISENO-3.0.md` §13](DISENO-3.0.md)). Mientras tanto, su diseño está en `DISENO-3.0.md` §7 y §9.
+> **Estado:** este documento describe lo que el motor **ya lee y valida**: `nivel.json`, el mapa, el contenido y los assets.
+> Las cinemáticas se documentan aquí cuando se construya su fase ([`DISENO-3.0.md` §13](DISENO-3.0.md));
+> mientras tanto, su diseño está en `DISENO-3.0.md` §7.
+>
+> Al jugar, hoy el motor dibuja el nivel y deja caminar al jugador. Los diálogos, la salida, las zonas y los
+> minijuegos ya se validan, pero todavía no se pueden jugar.
 
 Un nivel es **una carpeta** con estos archivos, que se unen por `id` y por clave:
 
@@ -33,7 +36,63 @@ Mover algo en Tiled nunca rompe un diálogo, y cambiar un diálogo nunca rompe u
 Todas las rutas son relativas al propio `nivel.json`. `assets` es la lista de carpetas donde están las imágenes
 y sonidos del nivel; si se omite, es la carpeta del nivel (`["."]`).
 
-## 2. El contenido
+## 2. El mapa de Tiled
+
+El mapa es el **plano del lugar visto desde arriba**, hecho en [Tiled](https://www.mapeditor.org) y guardado como
+JSON (`.tmj`). `x` es izquierda–derecha; `y` es profundidad: más abajo en Tiled = más cerca de la cámara.
+La altura no se dibuja en el mapa: sale del tamaño de cada imagen.
+
+**Medidas:** todo en el mapa está en píxeles, y `mundo.pixelesPorMetro` del contenido (por defecto 100) los convierte
+a metros del escenario, igual que a las imágenes. Un personaje dibujado de 160 px de alto mide 1.6 m.
+
+### Capas (nombres exactos, en minúsculas)
+
+| Capa | Tipo en Tiled | Contenido |
+| --- | --- | --- |
+| `suelo` | Capa de imagen | La imagen del piso, tal como se ve desde arriba. Propiedad `asset` (clave). Se coloca según el desplazamiento de la capa y mide lo que mide la imagen. |
+| `telones` | Capa de objetos | Una **línea de dos puntos** por cada fondo vertical (fachadas, cielo). Propiedades `asset` y `alto` (en píxeles). |
+| `decorado` | Capa de objetos | Un **rectángulo** por objeto: su forma es **la huella real** del objeto en el piso. Clase del catálogo y propiedad `asset`. |
+| `npcs` | Capa de objetos | Un objeto por personaje (un punto es lo más cómodo). Propiedades `id` y, opcional, `mira`. |
+| `interaccion` | Capa de objetos | Objetos de clase `inicioJugador`, `punto`, `salida` o `zona`. |
+| `piso` | Capa de objetos | Polígonos (o rectángulos) por donde se puede caminar. |
+
+Solo `piso` es obligatoria. Otra capa da advertencia, salvo que lleve la propiedad booleana `ignorar` marcada
+(por ejemplo, notas del equipo).
+
+### Catálogo de decorado
+
+La clase de un objeto de `decorado` dice cómo se dibuja:
+
+| Clase | Cómo se dibuja | ¿Bloquea el paso? |
+| --- | --- | --- |
+| `parado` | Papel vertical, parado en el centro de su huella. | Sí: exactamente su huella. |
+| `plano` | Pintado sobre el piso, estirado a su huella (un tapete, una flecha). | No. |
+| `colgado` | Papel vertical en lo alto. Propiedad `altura` (píxeles del piso a su borde inferior; por defecto 2.2 m). | No. |
+
+Con la propiedad `id`, el objeto se puede tocar: su diálogo está en `interactivos` del contenido.
+Lo que se dibuja en el plano es exactamente lo que bloquea: no hay ajustes de «huella» a mano.
+
+### Clases de la capa `interaccion`
+
+| Clase | Forma | Propiedades |
+| --- | --- | --- |
+| `inicioJugador` | punto | `mira` (`izquierda`/`derecha`, por defecto `derecha`). Exactamente uno si el nivel tiene jugador, dentro del piso. |
+| `punto` | punto | Su **nombre** es su identificador (p. ej. `frente_tortilleria`); lo usan los pasos `camina`. No se repite. |
+| `salida` | rectángulo o polígono | Máximo una. |
+| `zona` | rectángulo o polígono | Su **nombre** es su identificador. Opcionales: `grupo` (qué lista de `comentarios` usar al entrar) y `espera` (segundos antes de repetir; por defecto 20). |
+
+### Cómo se une el mapa con el contenido
+
+- Un objeto de `npcs` con `id: "tortu"` es el personaje `tortu` de `meta.personajes`: de ahí sale su dibujo.
+  **Su diálogo es opcional:** sin entrada en `npcs` del contenido, el personaje está en el escenario pero no se puede tocar.
+- Cada entrada de `npcs` e `interactivos` del contenido necesita su objeto en el mapa.
+- Cada `punto` que nombra un paso `camina` debe existir, y quien camina debe estar en el escenario
+  (ser el jugador o un NPC del mapa).
+- El `grupo` de una zona debe existir en `comentarios`, y la sección `salida` del contenido necesita un objeto `salida`.
+
+La clase de un objeto se escribe en el campo **Clase** de Tiled. No se usan tilesets ni objetos de imagen.
+
+## 3. El contenido
 
 ### Estructura
 
@@ -41,6 +100,7 @@ y sonidos del nivel; si se omite, es la carpeta del nivel (`["."]`).
 {
   "meta": { "id": "barrio", "titulo": "El barrio", "personajes": { ... } },
   "jugador": { "personaje": "tommy" },    // opcional: un nivel sin jugador no tiene control libre
+  "mundo": { "pixelesPorMetro": 100, "camara": { "distancia": 8, "altura": 4, "giro": 0 } },
   "estado": { "objetivos": [...], "variables": [...], "lista": { ... }, "dinero": 100 },
   "secuencias": { "nombre": [ ...pasos ] },
   "npcs": { "tortu": { "dialogo": [...], "alVolver": { ... } } },
@@ -65,6 +125,19 @@ Solo `meta` es obligatoria. **Una clave que el motor no conoce es un error**: as
 - `idioma`: `es` o `en`. Si es distinto del idioma base del sitio, sus líneas pueden traer `trad`.
 - `sprite`: clave de su imagen.
 - Un NPC del mapa con `id: "tortu"` se dibuja con el personaje `tortu`.
+
+### `jugador` y `mundo`
+
+| Campo | Por defecto | Qué es |
+| --- | --- | --- |
+| `jugador.personaje` | — | Id en `meta.personajes` (obligatorio si hay `jugador`). |
+| `jugador.velocidad` | 2.4 | Metros por segundo al caminar. |
+| `mundo.pixelesPorMetro` | 100 | Cuántos píxeles del mapa y de las imágenes son un metro del escenario. |
+| `mundo.camara.distancia` | 8 | Metros entre la cámara y lo que sigue. |
+| `mundo.camara.altura` | 4 | Metros de la cámara sobre el piso. |
+| `mundo.camara.giro` | 0 | Grados que la cámara gira alrededor de lo que sigue. 0 = de frente. |
+
+La cámara sigue al jugador. Sus tres campos son los mismos que los de un plano de cinemática.
 
 ### `estado`
 
@@ -155,7 +228,7 @@ Si `requiere` no se cumple, se ejecuta `siBloqueada`. Si se cumple y `destino` e
 lo carga; cualquier otro destino llega al host con el evento `salida`.
 `flecha.texto` es opcional y solo debe usar palabras que la niña o el niño ya vio.
 
-## 3. Assets (imágenes, voces y videos)
+## 4. Assets (imágenes, voces y videos)
 
 Todo se nombra por **clave**: el nombre del archivo sin carpeta ni extensión. `img/spr_tortu.svg` es `spr_tortu`.
 
@@ -202,13 +275,13 @@ El generador avisa si un SVG enlaza archivos externos (una foto, una fuente): al
 
 ### Qué revisa el validador
 
-- Una **imagen** que el contenido nombra y no existe es **error**: el nivel no puede dibujarse.
+- Una **imagen** que el contenido o el mapa nombran y no existe es **error**: el nivel no puede dibujarse.
 - Una **voz** que no existe es **advertencia**: se usa voz sintetizada, así que se puede escribir el nivel antes de grabar.
 - Usar una clave del tipo equivocado (una imagen donde va un audio) es error.
 - Si la misma clave está en dos carpetas de `assets`, **gana la primera de la lista** y hay advertencia.
   Así un nivel puede reemplazar a propósito un asset común.
 
-## 4. Validar
+## 5. Validar
 
 ```bash
 bunx escenario-engine validar ruta/al/nivel.json --minijuegos Tortilleria,Fruteria
@@ -224,7 +297,21 @@ pero no bloquean. Cada mensaje dice dónde está el problema, con la ruta dentro
 ⚠ npcs.tortu.dialogo[0].dice[0].audio: no existe la voz "vo_tortu_provecho"; se usará voz sintetizada
 ```
 
-Todavía **no revisa el mapa** de Tiled; el comando lo recuerda al terminar.
+Los problemas del mapa nombran el objeto de Tiled por su número y su nombre:
+
+```
+✗ mapa: objeto #12 "Doña Tortu" (npc) tiene id "tortu2", que no existe en meta.personajes
+✗ mapa: objeto #7 de la capa "decorado": la clase "puesto" no existe; las clases de decorado son: parado, plano, colgado
+✗ camina "frente_tortileria" en npcs.tortu.dialogo[1].dice[0]: no hay un punto con ese nombre en el mapa
+```
+
+### Verlo en la demo
+
+```bash
+bun ejemplo/servidor.ts     # y abrir http://localhost:3000
+```
+
+La demo carga `ejemplo/niveles/barrio`. Para probar otro nivel, cambia la dirección en `ejemplo/demo.ts`.
 
 `--minijuegos` es opcional: sin él, los pasos `juego` no se revisan.
 
@@ -240,7 +327,7 @@ const resultado = await validarNivel('niveles/barrio/nivel.json', { minijuegos: 
 Después, pruébalo como lo usarán: en una tablet con el dedo, con teclado y en modo proyección.
 Revisa que nada requiera leer.
 
-## 5. Qué cambió respecto a la versión 2.0
+## 6. Qué cambió respecto a la versión 2.0
 
 Para quien trae niveles de la versión anterior (no hay conversión automática):
 
@@ -253,4 +340,9 @@ Para quien trae niveles de la versión anterior (no hay conversión automática)
 | Claves desconocidas se ignoraban | Son error. |
 | La clave llevaba subcarpeta y se le agregaba `.webp` o `.mp3` | La clave es solo el nombre; el archivo real lo dice `assets.json`. |
 | Animaciones como atlas (`.webp` + `.json`) | Imágenes numeradas `clave_1.svg`, `clave_2.svg`… |
-| `jugador.animaciones`, `velocidadX`, `mundo.logico`, `mundo.camara`… | Todavía no existen en la 3.0; se definen con el escenario 3D. |
+| Mapa en coordenadas de pantalla, con capas `capas` y parallax | Mapa visto desde arriba, con capas `suelo` y `telones`. |
+| Decorado como objetos de imagen con catálogo de mercado (`puesto`, `cajas`…) y `huella` a mano | Rectángulos que son la huella, con tres clases: `parado`, `plano`, `colgado`. |
+| `zonaComentario` con `cooldown`; `enfoqueCamara`; `puntoInteraccion` | `zona` con `grupo` y `espera`; los otros dos no existen. |
+| Todo NPC del mapa necesitaba diálogo | El diálogo es opcional. |
+| `velocidadX`/`velocidadY` en píxeles; cámara `follow`/`rails`/`pan` | `jugador.velocidad` en metros por segundo; `mundo.camara` con `distancia`, `altura` y `giro`. |
+| `jugador.animaciones`, `radioAviso`, `mundo.fondo`, `mundo.sonidos`… | Todavía no existen en la 3.0; se definen cuando se construya lo que los usa. |

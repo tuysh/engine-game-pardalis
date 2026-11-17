@@ -4,21 +4,29 @@ Motor del **modo Aventura de Pardalis**: juegos educativos libres para que niña
 aprendan inglés. Dibuja personajes y objetos 2D «de papel» parados dentro de un escenario 3D.
 
 > **Estado: versión 3.0 en construcción.** Es una reescritura completa.
-> Hoy el paquete ya se instala, trae sus tipos, **valida el contenido y los assets de un nivel** y genera
-> manifiestos de assets, pero
-> `crearEscenario()` todavía no dibuja nada: rechaza con un `ErrorDeEscenario` que lo dice.
+> Hoy el paquete ya **valida un nivel completo** (mapa, contenido y assets), genera manifiestos de assets y
+> **dibuja el nivel en 3D con el jugador caminando**. Todavía no hay diálogos, sonido, minijuegos ni cinemáticas.
 > El avance por fases está en [`docs/DISENO-3.0.md` §13](docs/DISENO-3.0.md).
 
 | Fase | Qué incluye | Estado |
 | --- | --- | --- |
 | 1. Paquete | Estructura, construcción a JavaScript con tipos, pruebas, CLI vacío | Hecha |
-| 2. Núcleo | Contenido, pasos, condiciones, estado, partida, validación | Hecha (el cruce con el mapa llega en la fase 4) |
-| 3. Assets | Manifiesto, validación cruzada, carga de SVG | En curso: falta la carga en el navegador (`raizDeAssets`, SVG como textura) |
-| 4. Escenario | Mapa de Tiled, piso, telones, personajes, cámara | Pendiente |
+| 2. Núcleo | Contenido, pasos, condiciones, estado, partida, validación | Hecha |
+| 3. Assets | Manifiesto, validación cruzada, carga de SVG | Hecha (`raizDeAssets` no se ha probado contra un CDN real) |
+| 4. Escenario | Mapa de Tiled, piso, telones, personajes, cámara | Hecha |
 | 5. Interfaz y audio | Globos, opciones, tarjetas, voces | Pendiente |
 | 6. Minijuegos | Minijuegos en un elemento del DOM | Pendiente |
 | 7. Cinemáticas | Pasos nuevos, saltar, video, modo código | Pendiente |
 | 8. Varios niveles | La casa y el barrio de punta a punta | Pendiente |
+
+## Ver la demo
+
+```bash
+bun install
+bun ejemplo/servidor.ts     # y abrir http://localhost:3000
+```
+
+Carga el nivel de ejemplo `ejemplo/niveles/barrio`. Toca el piso y Tommy camina hasta ahí.
 
 ## Uso (como quedará)
 
@@ -43,8 +51,8 @@ La API completa (opciones, eventos, minijuegos, cinemáticas) está en [`docs/DI
 bunx escenario-engine validar niveles/barrio/nivel.json --minijuegos Tortilleria
 ```
 
-Revisa `nivel.json`, el contenido y que existan sus imágenes y voces, y lista cada problema con la ruta
-de donde está. Todavía no revisa el mapa. Cómo se escribe un nivel: [`docs/NIVELES.md`](docs/NIVELES.md).
+Revisa `nivel.json`, el mapa de Tiled, el contenido y que existan sus imágenes y voces, y lista cada problema
+con la ruta de donde está. Cómo se escribe un nivel: [`docs/NIVELES.md`](docs/NIVELES.md).
 
 Para generar el manifiesto de una carpeta de assets (`assets.json`):
 
@@ -63,6 +71,7 @@ bun test             # pruebas, incluida la de arquitectura
 bun run construir    # genera dist/ (JavaScript y tipos)
 bun src/cli.ts validar ejemplo/niveles/barrio/nivel.json --minijuegos Tortilleria
 bun src/cli.ts assets ejemplo/niveles/barrio
+bun ejemplo/servidor.ts    # la demo, en http://localhost:3000
 ```
 
 Antes de cambiar código, lee [`AGENTS.md`](AGENTS.md): explica la arquitectura y las reglas para que

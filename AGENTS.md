@@ -58,7 +58,7 @@ Todo lo de afuera (Three.js, el DOM, el audio, la red, Tiled) se conecta por med
         │   adaptadores/   three/   dom/   audio/   red/   archivos/   tiled/   json/   memoria/
         │        │ implementan
         │        ▼
-        │   puertos/       Escenario · Interfaz · Audio · Video · Cargador · LectorDeNiveles · Reloj · Azar
+        │   puertos/       Escenario · Interfaz · Audio · Video · Cargador · LectorDeNiveles · LectorDeMapas · Reloj · Azar
         │                  (y los de la línea de comandos: Carpetas · EscritorDeManifiestos)
         │        ▲ usan
         │        │
@@ -91,7 +91,7 @@ Todo lo de afuera (Three.js, el DOM, el audio, la red, Tiled) se conecta por med
 | `adaptadores/red/` | `fetch` | `Cargador`: descarga niveles, manifiestos y assets |
 | `adaptadores/archivos/` | Archivos del disco (`node:fs`) | `Cargador` y `Carpetas` para la línea de comandos |
 | `adaptadores/json/` | Zod | `LectorDeNiveles`: convierte el JSON de `nivel.json`, del contenido y de `assets.json` en tipos del dominio. `EscritorDeManifiestos`: escribe `assets.json` |
-| `adaptadores/tiled/` | Formato `.tmj` | Convierte el mapa de Tiled en el `Mundo` del dominio |
+| `adaptadores/tiled/` | Formato `.tmj` | `LectorDeMapas`: convierte el mapa de Tiled en el `Mundo` del dominio (sin Zod: revisa el JSON a mano) |
 | `adaptadores/memoria/` | Ninguna | Versiones falsas de cada puerto, para las pruebas |
 
 ### Reglas de dependencia
@@ -348,6 +348,12 @@ bun src/cli.ts assets ejemplo/niveles/barrio
 ```
 
 Si agregas, quitas o renombras un archivo de `ejemplo/niveles/`, regenera su `assets.json` en el mismo cambio.
+
+Para ver el motor funcionando en el navegador:
+
+```bash
+bun ejemplo/servidor.ts     # la demo, en http://localhost:3000
+```
 
 Los comandos de demo se documentan aquí conforme se agreguen.
 Usa Bun para todo; no Node, npm ni vitest. Ver `CLAUDE.md`.
