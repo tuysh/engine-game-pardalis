@@ -3,11 +3,8 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { ErrorDeEscenario } from '../../dominio/error-de-escenario.ts';
-import { esObjetoPlano } from '../../dominio/es-objeto-plano.ts';
 import type { Cargador } from '../../puertos/cargador.ts';
-
-/** Código con el que el sistema avisa que un archivo no existe. */
-const CODIGO_DE_ARCHIVO_INEXISTENTE = 'ENOENT';
+import { describirError, esErrorDeInexistente } from './errores-de-archivo.ts';
 
 export class CargadorDeArchivos implements Cargador {
   async cargarJson(direccion: string): Promise<unknown> {
@@ -29,15 +26,9 @@ async function leerTexto(direccion: string): Promise<string> {
   try {
     return await readFile(direccion, 'utf8');
   } catch (error) {
-    const noExiste = esObjetoPlano(error) && error.code === CODIGO_DE_ARCHIVO_INEXISTENTE;
-    if (noExiste) {
+    if (esErrorDeInexistente(error)) {
       throw new ErrorDeEscenario([`no existe el archivo ${direccion}`]);
     }
     throw new ErrorDeEscenario([`no se pudo leer ${direccion}: ${describirError(error)}`]);
   }
-}
-
-function describirError(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
 }
