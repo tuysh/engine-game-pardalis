@@ -4,17 +4,19 @@
 //   1. nivel.json existe y tiene la forma esperada
 //   2. el contenido existe y tiene la forma esperada (tipos, campos obligatorios, claves conocidas)
 //   3. enlaces: todo lo que el contenido nombra existe (secuencias, hablantes, variables, minijuegos)
+//   4. assets: cada carpeta de assets tiene su manifiesto, y existe cada imagen y voz que el contenido nombra
 //
-// Estado: todavía no se revisan el mapa ni los assets; esas fases se agregan con el lector de Tiled
-// y con el manifiesto de assets (docs/DISENO-3.0.md §13, fases 3 y 4).
+// Estado: todavía no se revisa el mapa; esa fase se agrega con el lector de Tiled (docs/DISENO-3.0.md §13, fase 4).
 
 import { crearDiagnostico } from '../dominio/diagnostico.ts';
 import type { Diagnostico } from '../dominio/diagnostico.ts';
 import { ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
 import type { Nivel } from '../dominio/nivel.ts';
+import { revisarAssets } from '../dominio/revisar-assets.ts';
 import { revisarEnlaces } from '../dominio/revisar-enlaces.ts';
 import type { Cargador } from '../puertos/cargador.ts';
 import type { LectorDeNiveles } from '../puertos/lector-de-niveles.ts';
+import { cargarAssetsDeNivel } from './cargar-assets-de-nivel.ts';
 
 export interface PedidoDeValidacion {
   /** Dirección del `nivel.json`: una URL en el navegador, una ruta en la línea de comandos. */
@@ -85,5 +87,12 @@ async function leerYRevisar(
   const contenido = lecturaDelContenido.valor;
 
   revisarEnlaces(contenido, pedido.minijuegos, diagnostico);
-  return { descripcion, contenido };
+  if (diagnostico.errores.length > 0) return undefined;
+
+  const pedidoDeAssets = { direccionDelNivel, descripcion, cargador: puertos.cargador, lector: puertos.lector };
+  const assets = await cargarAssetsDeNivel(pedidoDeAssets, diagnostico);
+  if (diagnostico.errores.length > 0) return undefined;
+
+  revisarAssets(contenido, assets, diagnostico);
+  return { descripcion, contenido, assets };
 }

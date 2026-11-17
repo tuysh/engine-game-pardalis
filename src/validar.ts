@@ -6,7 +6,7 @@
 //   const resultado = await validarNivel('niveles/barrio/nivel.json', { minijuegos: ['Tortilleria'] });
 //   if (resultado.errores.length > 0) { ... }
 //
-// Estado: todavía no revisa el mapa ni los assets (docs/DISENO-3.0.md §13, fases 3 y 4).
+// Estado: todavía no revisa el mapa (docs/DISENO-3.0.md §13, fase 4).
 
 import { CargadorDeArchivos } from './adaptadores/archivos/cargador-de-archivos.ts';
 import { LectorDeNivelesDeJson } from './adaptadores/json/lector-de-niveles-de-json.ts';
