@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
 import { leerCondicionDeTexto } from './condicion.ts';
+import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from './contenido.ts';
 import type { Contenido } from './contenido.ts';
 import { crearDiagnostico } from './diagnostico.ts';
 import type { Diagnostico } from './diagnostico.ts';
@@ -13,7 +14,8 @@ const CONTENIDO_CORRECTO: Contenido = {
     titulo: 'La Tortillería',
     personajes: { tommy: { idioma: 'en', sprite: 'spr_tommy' }, tortu: { idioma: 'es', sprite: 'spr_tortu' } },
   },
-  jugador: { personaje: 'tommy' },
+  jugador: { personaje: 'tommy', velocidadEnMetrosPorSegundo: 2.4 },
+  mundo: AJUSTES_DEL_MUNDO_POR_DEFECTO,
   estado: { objetivos: ['tortillas'], variables: ['globo'], lista: {} },
   secuencias: { despedida: [{ tipo: 'linea', hablante: 'tortu', texto: '¡Adiós!' }] },
   npcs: { tortu: { dialogo: [{ pasos: [{ tipo: 'linea', hablante: 'tortu', texto: '¡Hola!' }] }] } },
@@ -38,7 +40,7 @@ test('un contenido correcto no tiene errores ni advertencias', () => {
 });
 
 test('el personaje del jugador debe existir', () => {
-  const contenido: Contenido = { ...CONTENIDO_CORRECTO, jugador: { personaje: 'tomy' } };
+  const contenido: Contenido = { ...CONTENIDO_CORRECTO, jugador: { personaje: 'tomy', velocidadEnMetrosPorSegundo: 2.4 } };
   const diagnostico = crearDiagnostico();
 
   revisarEnlaces(contenido, undefined, diagnostico);

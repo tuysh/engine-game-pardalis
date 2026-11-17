@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test';
 import { CargadorDeMemoria } from '../adaptadores/memoria/cargador-de-memoria.ts';
 import { LectorDeNivelesDeMemoria } from '../adaptadores/memoria/lector-de-niveles-de-memoria.ts';
 import type { LecturasPreparadas } from '../adaptadores/memoria/lector-de-niveles-de-memoria.ts';
+import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from '../dominio/contenido.ts';
 import type { Contenido } from '../dominio/contenido.ts';
 import type { DescripcionDeNivel } from '../dominio/descripcion-de-nivel.ts';
 import type { Manifiesto } from '../dominio/manifiesto.ts';
@@ -11,6 +12,7 @@ const DESCRIPCION: DescripcionDeNivel = { mapa: 'mapa.tmj', contenido: 'contenid
 
 const CONTENIDO: Contenido = {
   meta: { id: 'casa', titulo: 'La casa', personajes: { mama: { idioma: 'es', sprite: 'spr_mama' } } },
+  mundo: AJUSTES_DEL_MUNDO_POR_DEFECTO,
   estado: { objetivos: [], variables: [], lista: {} },
   secuencias: { saludo: [{ tipo: 'linea', hablante: 'mama', texto: '¡Hola!' }] },
   npcs: {},

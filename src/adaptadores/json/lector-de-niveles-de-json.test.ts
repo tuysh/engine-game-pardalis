@@ -28,6 +28,7 @@ test('un contenido con solo "meta" se lee con todas las demás secciones vacías
   const esperado: Contenido = {
     meta: { id: 'tortilleria', titulo: 'La Tortillería', personajes: { tortu: { idioma: 'es', sprite: 'spr_tortu' } } },
     jugador: undefined,
+    mundo: { pixelesPorMetro: 100, camara: { distanciaEnMetros: 8, alturaEnMetros: 4, giroEnGrados: 0 } },
     estado: { objetivos: [], variables: [], lista: {}, dinero: undefined },
     secuencias: {},
     npcs: {},
@@ -36,6 +37,21 @@ test('un contenido con solo "meta" se lee con todas las demás secciones vacías
     salida: undefined,
   };
   expect(lectura).toEqual({ tipo: 'leido', valor: esperado });
+});
+
+test('el jugador y el mundo se leen con sus unidades, y lo que falta toma su valor por defecto', () => {
+  const lectura = new LectorDeNivelesDeJson().leerContenido({
+    meta: META,
+    jugador: { personaje: 'tortu', velocidad: 3 },
+    mundo: { pixelesPorMetro: 64, camara: { giro: 20 } },
+  });
+
+  if (lectura.tipo !== 'leido') throw new Error(`no se pudo leer: ${lectura.errores.join('; ')}`);
+  expect(lectura.valor.jugador).toEqual({ personaje: 'tortu', velocidadEnMetrosPorSegundo: 3 });
+  expect(lectura.valor.mundo).toEqual({
+    pixelesPorMetro: 64,
+    camara: { distanciaEnMetros: 8, alturaEnMetros: 4, giroEnGrados: 20 },
+  });
 });
 
 test('una línea se convierte con su hablante, traducción, audio y tarjeta de vocabulario', () => {

@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
 import { leerCondicionDeTexto } from '../dominio/condicion.ts';
+import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from '../dominio/contenido.ts';
 import type { Contenido } from '../dominio/contenido.ts';
 import { crearEstadoDeNivel, valorDe } from '../dominio/estado.ts';
 import type { AccionesDePaso } from './acciones-de-paso.ts';
@@ -8,6 +9,7 @@ import { EstadoEnJuego } from './estado-en-juego.ts';
 
 const CONTENIDO: Contenido = {
   meta: { id: 'barrio', titulo: 'El barrio', personajes: { tortu: { idioma: 'es', sprite: 'spr_tortu' } } },
+  mundo: AJUSTES_DEL_MUNDO_POR_DEFECTO,
   estado: { objetivos: ['tortillas'], variables: [], lista: {} },
   secuencias: { bloquea_salida: [{ tipo: 'linea', hablante: 'tortu', texto: '¡Espérate!' }] },
   npcs: {

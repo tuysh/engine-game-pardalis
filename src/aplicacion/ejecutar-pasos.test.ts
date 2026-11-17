@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
 import { leerCondicionDeTexto } from '../dominio/condicion.ts';
+import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from '../dominio/contenido.ts';
 import type { AlVolver, Contenido } from '../dominio/contenido.ts';
 import { crearEstadoDeNivel, valorDe } from '../dominio/estado.ts';
 import type { Paso } from '../dominio/paso.ts';
@@ -14,7 +15,8 @@ const CONTENIDO: Contenido = {
     titulo: 'El barrio',
     personajes: { tommy: { idioma: 'en', sprite: 'spr_tommy' }, tortu: { idioma: 'es', sprite: 'spr_tortu' } },
   },
-  jugador: { personaje: 'tommy' },
+  jugador: { personaje: 'tommy', velocidadEnMetrosPorSegundo: 2.4 },
+  mundo: AJUSTES_DEL_MUNDO_POR_DEFECTO,
   estado: { objetivos: ['tortillas'], variables: ['globo'], lista: { tortillas: 'las tortillas' } },
   secuencias: { despedida: [{ tipo: 'linea', hablante: 'tortu', texto: '¡Adiós!' }] },
   npcs: {},

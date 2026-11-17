@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
 import type { AssetsDeNivel } from './assets-de-nivel.ts';
+import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from './contenido.ts';
 import type { Contenido } from './contenido.ts';
 import { crearDiagnostico } from './diagnostico.ts';
 import type { Diagnostico } from './diagnostico.ts';
@@ -22,6 +23,7 @@ const ASSETS: AssetsDeNivel = {
 function revisarPasos(pasos: Paso[]): Diagnostico {
   const contenido: Contenido = {
     meta: { id: 'barrio', titulo: 'El barrio', personajes: { tortu: { idioma: 'es', sprite: 'spr_tortu' } } },
+    mundo: AJUSTES_DEL_MUNDO_POR_DEFECTO,
     estado: { objetivos: [], variables: [], lista: {} },
     secuencias: { prueba: pasos },
     npcs: {},
@@ -49,6 +51,7 @@ test('un contenido cuyos assets existen no tiene errores ni advertencias', () =>
 test('el sprite de un personaje que no existe es un error', () => {
   const contenido: Contenido = {
     meta: { id: 'barrio', titulo: 'El barrio', personajes: { tommy: { idioma: 'en', sprite: 'spr_tommy' } } },
+    mundo: AJUSTES_DEL_MUNDO_POR_DEFECTO,
     estado: { objetivos: [], variables: [], lista: {} },
     secuencias: {},
     npcs: {},
