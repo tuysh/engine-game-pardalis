@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 170">
+  <!-- Doña Tortu: figura de papel provisional para el nivel de ejemplo. -->
+  <rect x="34" y="132" width="16" height="34" rx="7" fill="#7fae5a"/>
+  <rect x="60" y="132" width="16" height="34" rx="7" fill="#7fae5a"/>
+  <ellipse cx="55" cy="104" rx="46" ry="44" fill="#4f7d3a"/>
+  <ellipse cx="55" cy="108" rx="32" ry="30" fill="#e9d79a"/>
+  <rect x="2" y="88" width="16" height="40" rx="8" fill="#7fae5a"/>
+  <rect x="92" y="88" width="16" height="40" rx="8" fill="#7fae5a"/>
+  <circle cx="55" cy="38" r="30" fill="#8fbf68"/>
+  <circle cx="44" cy="36" r="4" fill="#2b2b2b"/>
+  <circle cx="66" cy="36" r="4" fill="#2b2b2b"/>
+  <path d="M43 50 Q55 60 67 50" fill="none" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/>
+  <path d="M28 22 Q55 -6 82 22 Q55 10 28 22 Z" fill="#d94f70"/>
+</svg>

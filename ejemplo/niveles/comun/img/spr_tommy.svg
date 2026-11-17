@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 160">
+  <!-- Tommy: figura de papel provisional para el nivel de ejemplo. -->
+  <rect x="30" y="118" width="12" height="38" rx="5" fill="#3b5b92"/>
+  <rect x="48" y="118" width="12" height="38" rx="5" fill="#3b5b92"/>
+  <rect x="22" y="62" width="46" height="64" rx="14" fill="#e8553d"/>
+  <rect x="10" y="68" width="12" height="42" rx="6" fill="#f2c9a0"/>
+  <rect x="68" y="68" width="12" height="42" rx="6" fill="#f2c9a0"/>
+  <circle cx="45" cy="36" r="28" fill="#f2c9a0"/>
+  <path d="M17 34 Q20 6 45 6 Q70 6 73 34 Q58 20 45 22 Q32 20 17 34 Z" fill="#5a3a22"/>
+  <circle cx="35" cy="38" r="3.5" fill="#2b2b2b"/>
+  <circle cx="55" cy="38" r="3.5" fill="#2b2b2b"/>
+  <path d="M35 50 Q45 58 55 50" fill="none" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/>
+</svg>

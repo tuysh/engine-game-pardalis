@@ -1,0 +1,8 @@
+{
+  "spr_tommy": {
+    "tipo": "imagen",
+    "archivo": "img/spr_tommy.svg",
+    "ancho": 90,
+    "alto": 160
+  }
+}

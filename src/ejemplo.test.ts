@@ -6,12 +6,25 @@ import { validarNivel } from './validar.ts';
 
 const CARPETA_DE_NIVELES = new URL('../ejemplo/niveles/', import.meta.url).pathname;
 
-test('el nivel de ejemplo "barrio" es válido, sin errores ni advertencias', async () => {
+test('el nivel de ejemplo "barrio" es válido', async () => {
   const rutaDelNivel = `${CARPETA_DE_NIVELES}barrio/nivel.json`;
 
   const resultado = await validarNivel(rutaDelNivel, { minijuegos: ['Tortilleria'] });
 
   expect(resultado.errores).toEqual([]);
-  expect(resultado.advertencias).toEqual([]);
   expect(resultado.nivel?.contenido.meta.id).toBe('barrio');
+  // Sus figuras salen de dos carpetas: la del nivel y la común.
+  expect(resultado.nivel?.assets['spr_tortu']?.carpeta).toBe('.');
+  expect(resultado.nivel?.assets['spr_tommy']?.carpeta).toBe('../comun');
+});
+
+test('las únicas advertencias del ejemplo son por voces que todavía no se graban', async () => {
+  const rutaDelNivel = `${CARPETA_DE_NIVELES}barrio/nivel.json`;
+
+  const resultado = await validarNivel(rutaDelNivel, { minijuegos: ['Tortilleria'] });
+
+  expect(resultado.advertencias).toHaveLength(6);
+  for (const advertencia of resultado.advertencias) {
+    expect(advertencia).toEndWith('; se usará voz sintetizada');
+  }
 });

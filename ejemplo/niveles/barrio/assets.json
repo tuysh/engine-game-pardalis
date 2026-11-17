@@ -1,0 +1,8 @@
+{
+  "spr_tortu": {
+    "tipo": "imagen",
+    "archivo": "img/spr_tortu.svg",
+    "ancho": 110,
+    "alto": 170
+  }
+}
