@@ -1,0 +1,60 @@
+// Revisa que toda variable que un nivel usa esté declarada.
+// Una variable se usa en dos lugares: en las condiciones y en los pasos `pon`.
+//
+// Están declaradas: los objetivos y variables de la sección `estado`, el dinero (si el nivel lo usa)
+// y una variable `charlas.<id>` por cada NPC e interactivo, que el motor marca solo al hablar con él.
+
+import { variablesQueUsa } from './condicion.ts';
+import type { Condicion } from './condicion.ts';
+import { PREFIJO_DE_CHARLAS } from './contenido.ts';
+import type { Contenido } from './contenido.ts';
+import { NOMBRE_DEL_DINERO } from './estado.ts';
+import type { Revision } from './revision.ts';
+
+/** Reúne los nombres de todas las variables que el contenido puede usar. */
+export function reunirVariablesDeclaradas(contenido: Contenido): Set<string> {
+  const declaradas = new Set<string>();
+
+  for (const objetivo of contenido.estado.objetivos) {
+    declaradas.add(objetivo);
+  }
+  for (const variable of contenido.estado.variables) {
+    declaradas.add(variable);
+  }
+  if (contenido.estado.dinero !== undefined) {
+    declaradas.add(NOMBRE_DEL_DINERO);
+  }
+  for (const id of Object.keys(contenido.npcs)) {
+    declaradas.add(PREFIJO_DE_CHARLAS + id);
+  }
+  for (const id of Object.keys(contenido.interactivos)) {
+    declaradas.add(PREFIJO_DE_CHARLAS + id);
+  }
+  return declaradas;
+}
+
+/** Anota un error por cada variable sin declarar que la condición usa. Una condición ausente no se revisa. */
+export function revisarCondicion(condicion: Condicion | undefined, ruta: string, revision: Revision): void {
+  if (condicion === undefined) return;
+
+  for (const nombre of variablesQueUsa(condicion)) {
+    if (revision.variablesDeclaradas.has(nombre)) continue;
+    const motivo = explicarPorQueNoEstaDeclarada(nombre);
+    revision.diagnostico.errores.push(`condición "${nombre}" usada en ${ruta}: ${motivo}`);
+  }
+}
+
+/** Anota un error si un paso `pon` cambia una variable sin declarar. */
+export function revisarVariableDePon(nombre: string, ruta: string, revision: Revision): void {
+  if (revision.variablesDeclaradas.has(nombre)) return;
+  const motivo = explicarPorQueNoEstaDeclarada(nombre);
+  revision.diagnostico.errores.push(`"pon" de "${nombre}" en ${ruta}: ${motivo}`);
+}
+
+function explicarPorQueNoEstaDeclarada(nombre: string): string {
+  if (nombre.startsWith(PREFIJO_DE_CHARLAS)) {
+    const id = nombre.slice(PREFIJO_DE_CHARLAS.length);
+    return `no existe "${id}" en npcs ni en interactivos`;
+  }
+  return 'no está en estado.objetivos ni en estado.variables';
+}
