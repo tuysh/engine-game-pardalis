@@ -24,6 +24,15 @@ export class InterfazDeMemoria implements Interfaz {
   hayFlecha = false;
   textoDeLaFlecha: string | undefined;
   lugarDeLaFlecha: LugarEnPantalla | undefined;
+  /** `true` mientras se muestra la señal de que hay algo a la mano. */
+  hayAviso = false;
+  lugarDelAviso: LugarEnPantalla | undefined;
+  /** Qué tan oscura está la pantalla: 0 = nada, 1 = todo negro. */
+  opacidadDelFundido = 0;
+  /** `true` mientras se ven las franjas de cine. */
+  hayFranjasDeCine = false;
+  /** Lo que hace el botón de saltar. `undefined` = no hay botón. */
+  private funcionDeSaltar: (() => void) | undefined;
   /** `true` mientras hay un minijuego abierto. */
   hayEspacioDeMinijuego = false;
   estaDestruida = false;
@@ -82,6 +91,43 @@ export class InterfazDeMemoria implements Interfaz {
 
   ocultarFlecha(): void {
     this.hayFlecha = false;
+  }
+
+  mostrarAviso(): void {
+    this.hayAviso = true;
+  }
+
+  apuntarAviso(lugar: LugarEnPantalla): void {
+    this.lugarDelAviso = lugar;
+  }
+
+  ocultarAviso(): void {
+    this.hayAviso = false;
+  }
+
+  ponerFundido(opacidad: number): void {
+    this.opacidadDelFundido = opacidad;
+  }
+
+  mostrarFranjasDeCine(alSaltar: (() => void) | undefined): void {
+    this.hayFranjasDeCine = true;
+    this.funcionDeSaltar = alSaltar;
+  }
+
+  ocultarFranjasDeCine(): void {
+    this.hayFranjasDeCine = false;
+    this.funcionDeSaltar = undefined;
+  }
+
+  get hayBotonDeSaltar(): boolean {
+    return this.funcionDeSaltar !== undefined;
+  }
+
+  /** Para las pruebas: hace como si el jugador hubiera tocado el botón de saltar. */
+  simularToqueEnSaltar(): void {
+    if (this.funcionDeSaltar !== undefined) {
+      this.funcionDeSaltar();
+    }
   }
 
   abrirEspacioDeMinijuego(): HTMLElement {

@@ -17,6 +17,7 @@ import type { Interfaz } from '../puertos/interfaz.ts';
 import type { Minijuego } from '../puertos/minijuego.ts';
 import type { Reloj } from '../puertos/reloj.ts';
 import { atenderToque } from './atender-toque.ts';
+import { Cercania } from './cercania.ts';
 import { ComentariosDeZona } from './comentarios-de-zona.ts';
 import { Conversacion } from './conversacion.ts';
 import { crearAccionesDePaso } from './crear-acciones-de-paso.ts';
@@ -147,8 +148,18 @@ export async function jugarNivel(
 
   const salida = new SalidaDelNivel({ nivel, estado, conversacion, alSalir: (destino) => avisos.alSalir(destino) });
 
+  const cercania = new Cercania({ nivel, reparto, escenario, interfaz });
+
   const piezasParaToques = { nivel, reparto, conversacion, salida, exploracion };
   const dejarDeAtenderToques = escenario.alTocar((toque) => atenderToque(toque, piezasParaToques));
+  // La tecla de hablar hace lo mismo que tocar al personaje u objeto que el jugador tiene a la mano.
+  const dejarDeAtenderLaTecla = controles.alPedirHablar(() => {
+    if (exploracion === undefined) return;
+    const cercano = cercania.buscar(exploracion.posicion);
+    if (cercano !== undefined) {
+      atenderToque({ tipo: cercano.tipo, id: cercano.id }, piezasParaToques);
+    }
+  });
   const dejarDeDibujar = reloj.enCadaCuadro((segundos) => {
     if (exploracion !== undefined) {
       // Durante un diálogo o un minijuego, el teclado no mueve al jugador.
@@ -156,6 +167,7 @@ export async function jugarNivel(
       exploracion.avanzar(segundos, direccion);
       comentarios.avanzar(segundos, exploracion.posicion, !conversacion.hayDialogoEnCurso);
       salida.vigilar(exploracion.posicion);
+      cercania.actualizar(exploracion.posicion, !conversacion.hayDialogoEnCurso);
     }
     escenario.dibujar(segundos);
     // La flecha se coloca después de dibujar, cuando la cámara ya está en su lugar de este cuadro.
@@ -173,8 +185,10 @@ export async function jugarNivel(
       conversacion.interrumpir();
       comentarios.callar();
       flecha.ocultar();
+      cercania.ocultar();
       audio.ponerMusica(undefined);
       dejarDeAtenderToques();
+      dejarDeAtenderLaTecla();
       dejarDeDibujar();
     },
   };

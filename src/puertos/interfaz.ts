@@ -59,6 +59,28 @@ export interface Interfaz {
   ocultarFlecha(): void;
 
   /**
+   * Muestra una señal pequeña sobre el personaje u objeto que el jugador tiene a la mano,
+   * para que sepa que puede hablarle o usarlo. Si ya estaba, no cambia nada.
+   */
+  mostrarAviso(): void;
+  /** Pone la señal en un lugar de la pantalla: encima de lo que se puede tocar. */
+  apuntarAviso(lugar: LugarEnPantalla): void;
+  ocultarAviso(): void;
+
+  /**
+   * Oscurece toda la pantalla del juego. `opacidad` va de 0 (no se oscurece nada) a 1 (todo negro).
+   * Los globos de diálogo se siguen viendo encima.
+   */
+  ponerFundido(opacidad: number): void;
+
+  /**
+   * Muestra las franjas negras de arriba y abajo que dicen «esto es una cinemática», y no deja que
+   * los toques lleguen al escenario. Si se da `alSaltar`, aparece un botón que lo llama al tocarlo.
+   */
+  mostrarFranjasDeCine(alSaltar: (() => void) | undefined): void;
+  ocultarFranjasDeCine(): void;
+
+  /**
    * Crea un elemento vacío a pantalla completa, encima de todo, para que un minijuego del host dibuje dentro.
    * Está en la página normal (no aislado), así que le aplican los estilos del host.
    */

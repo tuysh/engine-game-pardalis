@@ -130,6 +130,79 @@ export const ESTILOS_DE_LA_INTERFAZ = `
   }
 }
 
+/* El aviso de que hay algo a la mano: un globito pequeño sobre el personaje u objeto. */
+.aviso {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.aviso svg {
+  display: block;
+  width: calc(44px * var(--escala));
+  height: calc(44px * var(--escala));
+  fill: var(--fondo);
+  stroke: var(--tinta);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  animation: subir-y-bajar 0.7s ease-in-out infinite alternate;
+}
+
+/* El fundido a negro: una cortina que el motor va oscureciendo o aclarando. */
+.fundido {
+  position: absolute;
+  inset: 0;
+  background: #000000;
+}
+
+/* Las franjas de cine: una arriba y una abajo. La capa completa atrapa los toques durante la cinemática. */
+.franjas {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+}
+
+.franjas::before,
+.franjas::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9%;
+  background: #000000;
+}
+
+.franjas::before {
+  top: 0;
+}
+
+.franjas::after {
+  bottom: 0;
+}
+
+.panel-de-saltar {
+  position: absolute;
+  right: calc(16px * var(--escala));
+  bottom: calc(16px * var(--escala));
+  pointer-events: auto;
+}
+
+.boton-de-saltar {
+  width: calc(64px * var(--escala));
+  height: calc(64px * var(--escala));
+  padding: 0;
+  border: calc(3px * var(--escala)) solid var(--tinta);
+  border-radius: 50%;
+  background: var(--fondo);
+  cursor: pointer;
+}
+
+.boton-de-saltar svg {
+  width: 55%;
+  height: 55%;
+  fill: var(--tinta);
+}
+
 .opciones {
   position: absolute;
   left: 0;
@@ -240,7 +313,8 @@ export const ESTILOS_DE_LA_INTERFAZ = `
   .tarjeta {
     transition: none;
   }
-  .flecha svg {
+  .flecha svg,
+  .aviso svg {
     animation: none;
   }
 }

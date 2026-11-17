@@ -1,4 +1,5 @@
-// Los controles del jugador con el teclado: las flechas o las teclas W, A, S y D.
+// Los controles del jugador con el teclado: las flechas o las teclas W, A, S y D para caminar,
+// y E, Enter o la barra espaciadora para hablar con quien tenga cerca.
 //
 // Las teclas se reconocen por su lugar en el teclado (`code`) y no por la letra que escriben (`key`):
 // así W, A, S y D quedan bajo los mismos dedos también en teclados con otra distribución.
@@ -19,9 +20,13 @@ const MOVIMIENTO_POR_TECLA: Readonly<Record<string, DireccionDeControl>> = {
   ArrowRight: { x: 1, y: 0 },
 };
 
+/** Las teclas que piden hablar, por su `code`. */
+const TECLAS_DE_HABLAR: readonly string[] = ['KeyE', 'Enter', 'Space'];
+
 export class ControlesDelTeclado implements Controles {
   /** Las teclas de movimiento que están oprimidas ahora, por su `code`. */
   private readonly teclasOprimidas = new Set<string>();
+  private funcionesDeHablar: (() => void)[] = [];
   private estanDestruidos = false;
 
   constructor() {
@@ -43,9 +48,17 @@ export class ControlesDelTeclado implements Controles {
     return { x: Math.sign(x), y: Math.sign(y) };
   }
 
+  alPedirHablar(funcion: () => void): () => void {
+    this.funcionesDeHablar.push(funcion);
+    return () => {
+      this.funcionesDeHablar = this.funcionesDeHablar.filter((registrada) => registrada !== funcion);
+    };
+  }
+
   destruir(): void {
     if (this.estanDestruidos) return;
     this.estanDestruidos = true;
+    this.funcionesDeHablar = [];
     window.removeEventListener('keydown', this.alOprimir);
     window.removeEventListener('keyup', this.alSoltar);
     window.removeEventListener('blur', this.alPerderElFoco);
@@ -55,13 +68,25 @@ export class ControlesDelTeclado implements Controles {
   // Estas funciones se guardan como propiedades (y no como métodos) para poder quitarlas
   // después con `removeEventListener`, que necesita exactamente la misma función que se registró.
   private readonly alOprimir = (evento: KeyboardEvent): void => {
-    if (!Object.hasOwn(MOVIMIENTO_POR_TECLA, evento.code)) return;
-    // Si el host tiene un campo de texto y la persona está escribiendo, sus teclas no mueven al personaje.
+    // Si el host tiene un campo de texto y la persona está escribiendo, sus teclas no son para el juego.
     if (estaEscribiendo(evento)) return;
 
-    this.teclasOprimidas.add(evento.code);
-    // Evita que las flechas, además de mover al personaje, desplacen la página.
-    evento.preventDefault();
+    if (Object.hasOwn(MOVIMIENTO_POR_TECLA, evento.code)) {
+      this.teclasOprimidas.add(evento.code);
+      // Evita que las flechas, además de mover al personaje, desplacen la página.
+      evento.preventDefault();
+      return;
+    }
+
+    // `repeat` es verdadero en los avisos que el teclado repite al dejar una tecla oprimida: se pide hablar una vez.
+    const pideHablar = TECLAS_DE_HABLAR.includes(evento.code) && !evento.repeat;
+    if (pideHablar && this.funcionesDeHablar.length > 0) {
+      // Evita que la barra espaciadora, además, desplace la página.
+      evento.preventDefault();
+      for (const funcion of [...this.funcionesDeHablar]) {
+        funcion();
+      }
+    }
   };
 
   private readonly alSoltar = (evento: KeyboardEvent): void => {

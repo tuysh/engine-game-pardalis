@@ -422,3 +422,30 @@ test('tocar la salida estando ya dentro vuelve a intentar salir', async () => {
 
   expect(interfaz.globo?.texto).toBe('¡Espérate!');
 });
+
+test('la tecla de hablar inicia el diálogo con quien el jugador tiene a la mano', async () => {
+  const { escenario, interfaz, controles, reloj } = await empezar(NIVEL);
+  // Tommy camina hasta quedar a un metro y medio de Doña Tortu, que está en (6, 2).
+  escenario.simularToque({ tipo: 'piso', punto: { x: 4.5, y: 2 } });
+  await reloj.avanzar(3);
+  await reloj.avanzar(0.016);
+  expect(interfaz.hayAviso).toBe(true);
+  expect(interfaz.lugarDelAviso).toEqual({ x: 6, y: 2 });
+
+  controles.simularTeclaDeHablar();
+  await reloj.avanzar(2);
+
+  expect(interfaz.globo?.texto).toBe('¡Aquí tienes!');
+  // Durante el diálogo, el aviso se quita.
+  expect(interfaz.hayAviso).toBe(false);
+});
+
+test('la tecla de hablar no hace nada si no hay nadie cerca, ni durante un diálogo', async () => {
+  const { interfaz, controles, reloj } = await empezar(NIVEL);
+
+  controles.simularTeclaDeHablar();
+  await reloj.avanzar(1);
+
+  expect(interfaz.hayAviso).toBe(false);
+  expect(interfaz.globo).toBeUndefined();
+});

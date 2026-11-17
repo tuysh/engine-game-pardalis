@@ -1,43 +1,53 @@
-// La interfaz del juego hecha con elementos de la página: globos de diálogo, tarjetas de opciones
-// y el botón de inicio. Va encima del lienzo del escenario, dentro de un «shadow root»
-// (docs/DISENO-3.0.md §9.4). Su apariencia está en estilos-de-la-interfaz.ts.
+// La interfaz del juego hecha con elementos de la página: globos de diálogo, tarjetas de opciones,
+// señales, franjas de cine, fundidos y el botón de inicio. Va encima del lienzo del escenario,
+// dentro de un «shadow root» (docs/DISENO-3.0.md §9.4). Su apariencia está en estilos-de-la-interfaz.ts.
+//
+// Este archivo junta las piezas (cada una en su archivo) y atiende lo que es de todas: los toques
+// para seguir un diálogo, el teclado y el espacio de los minijuegos.
 //
 // Se verifica a mano en la demo; no tiene pruebas automáticas porque necesita un navegador.
 
 import type { LugarEnPantalla } from '../../puertos/escenario.ts';
 import type { GloboPorMostrar, Interfaz, OpcionPorMostrar } from '../../puertos/interfaz.ts';
+import { crearBotonConDibujo, crearConTexto, crearDibujo, crearOculto } from './elementos.ts';
 import { ESTILOS_DE_LA_INTERFAZ } from './estilos-de-la-interfaz.ts';
-
-/** Separación entre el globo y la cabeza de quien habla, y entre el globo y la orilla del juego. */
-const SEPARACION_DEL_GLOBO_EN_PUNTOS = 18;
-const MARGEN_DEL_GLOBO_EN_PUNTOS = 12;
-
-/** A qué altura del juego va el globo cuando quien habla no está en el escenario: una parte del alto. */
-const ALTURA_DEL_GLOBO_SIN_HABLANTE = 0.35;
+import { GloboDeDialogo } from './globo-de-dialogo.ts';
+import { SenalEnPantalla } from './senal-en-pantalla.ts';
+import { TarjetasDeOpciones } from './tarjetas-de-opciones.ts';
 
 /** Cuánto crece todo en el modo proyección, para que se lea desde el fondo del salón. */
 const ESCALA_NORMAL = 1;
 const ESCALA_DE_PROYECCION = 1.4;
 
-const ESPACIO_SVG = 'http://www.w3.org/2000/svg';
+/** Los dibujos de la interfaz, como recorridos de SVG sobre una cuadrícula de 24 × 24. */
+const TRAZO_DE_REPRODUCIR = 'M6 3 L21 12 L6 21 Z';
+const TRAZO_DE_SALTAR = 'M3 5 L11 12 L3 19 Z M11 5 L19 12 L11 19 Z M19 5 H22 V19 H19 Z';
+const TRAZO_DE_FLECHA_HACIA_ABAJO = 'M12 22 L3 11 H9 V2 H15 V11 H21 Z';
+/** Un globito de diálogo con tres puntos: «aquí puedes hablar». */
+const TRAZO_DE_GLOBITO =
+  'M4 3 H20 A2 2 0 0 1 22 5 V14 A2 2 0 0 1 20 16 H13 L8 21 V16 H4 A2 2 0 0 1 2 14 V5 A2 2 0 0 1 4 3 Z ' +
+  'M6 9.5 A1.5 1.5 0 1 0 9 9.5 A1.5 1.5 0 1 0 6 9.5 Z ' +
+  'M10.5 9.5 A1.5 1.5 0 1 0 13.5 9.5 A1.5 1.5 0 1 0 10.5 9.5 Z ' +
+  'M15 9.5 A1.5 1.5 0 1 0 18 9.5 A1.5 1.5 0 1 0 15 9.5 Z';
 
 export class InterfazDelNavegador implements Interfaz {
   /** El elemento del host donde vive el juego. */
   private readonly elementoDelJuego: HTMLElement;
   /** El elemento que aloja el «shadow root» con la interfaz. */
   private readonly anfitrion: HTMLElement;
+  private readonly globo = new GloboDeDialogo();
+  private readonly opciones = new TarjetasDeOpciones();
+  private readonly flecha = new SenalEnPantalla('flecha');
+  private readonly aviso = new SenalEnPantalla('aviso');
+  private readonly capaDeToque = crearOculto('div', 'capa-de-toque');
+  private readonly fundido = crearOculto('div', 'fundido');
+  private readonly franjas = crearOculto('div', 'franjas');
+  private readonly panelDeSaltar = crearOculto('div', 'panel-de-saltar');
+  private readonly panelDeInicio = crearOculto('div', 'inicio');
   /** El marco que sostiene a pantalla completa el espacio del minijuego abierto. `undefined` = no hay ninguno. */
   private marcoDeMinijuego: HTMLElement | undefined;
-  private readonly capaDeToque: HTMLElement;
-  private readonly globo: HTMLElement;
-  private readonly flecha: HTMLElement;
-  private readonly panelDeOpciones: HTMLElement;
-  private readonly panelDeInicio: HTMLElement;
-  private tarjetas: HTMLElement[] = [];
   private funcionesParaSeguir: (() => void)[] = [];
   private funcionesDeEleccion: ((posicion: number) => void)[] = [];
-  /** Cuántos globos se han mostrado. Sirve para saber si el globo en pantalla sigue siendo el de quien quiere quitarlo. */
-  private globosMostrados = 0;
   private estaDestruida = false;
 
   /** Pone la capa de la interfaz dentro de `elemento`, encima de lo que ya tenga. */
@@ -52,15 +62,19 @@ export class InterfazDelNavegador implements Interfaz {
 
     const estilos = document.createElement('style');
     estilos.textContent = ESTILOS_DE_LA_INTERFAZ;
-    this.capaDeToque = crearOculto('div', 'capa-de-toque');
-    this.globo = crearOculto('div', 'globo');
-    // Quien usa un lector de pantalla escucha cada globo nuevo sin tener que buscarlo.
-    this.globo.setAttribute('role', 'status');
-    this.flecha = crearOculto('div', 'flecha');
-    this.panelDeOpciones = crearOculto('div', 'opciones');
-    this.panelDeInicio = crearOculto('div', 'inicio');
     // El orden importa: lo que va después se dibuja encima.
-    raiz.append(estilos, this.flecha, this.capaDeToque, this.globo, this.panelDeOpciones, this.panelDeInicio);
+    raiz.append(
+      estilos,
+      this.flecha.elemento,
+      this.aviso.elemento,
+      this.fundido,
+      this.franjas,
+      this.capaDeToque,
+      this.globo.elemento,
+      this.opciones.elemento,
+      this.panelDeSaltar,
+      this.panelDeInicio,
+    );
 
     this.capaDeToque.addEventListener('click', this.alTocarLaCapa);
     document.addEventListener('keydown', this.alOprimirUnaTecla);
@@ -68,47 +82,11 @@ export class InterfazDelNavegador implements Interfaz {
   }
 
   mostrarGlobo(globo: GloboPorMostrar): () => void {
-    this.globosMostrados++;
-    const numeroDeEsteGlobo = this.globosMostrados;
-
-    this.globo.replaceChildren();
-    if (globo.palabra !== undefined) {
-      this.globo.append(crearConTexto('div', 'tarjeta-de-palabra', `${globo.palabra.en} · ${globo.palabra.es}`));
-    }
-    this.globo.append(crearConTexto('div', 'texto', globo.texto));
-    if (globo.traduccion !== undefined) {
-      this.globo.append(crearConTexto('div', 'traduccion', globo.traduccion));
-    }
-    this.globo.hidden = false;
-
-    return () => {
-      const sigueSiendoElGloboEnPantalla = this.globosMostrados === numeroDeEsteGlobo;
-      if (sigueSiendoElGloboEnPantalla) {
-        this.globo.hidden = true;
-      }
-    };
+    return this.globo.mostrar(globo);
   }
 
   apuntarGlobo(lugar: LugarEnPantalla | undefined): void {
-    const anchoDelJuego = this.anfitrion.clientWidth;
-    const altoDelJuego = this.anfitrion.clientHeight;
-    const anchoDelGlobo = this.globo.offsetWidth;
-    const altoDelGlobo = this.globo.offsetHeight;
-
-    // Sin lugar (quien habla no está en el escenario), el globo va arriba y al centro.
-    const lugarDelPiquito = lugar ?? { x: anchoDelJuego / 2, y: altoDelJuego * ALTURA_DEL_GLOBO_SIN_HABLANTE };
-
-    // El globo se centra sobre el piquito, pero sin salirse del juego por los lados ni por arriba.
-    const izquierdaDeseada = lugarDelPiquito.x - anchoDelGlobo / 2;
-    const izquierdaMaxima = anchoDelJuego - anchoDelGlobo - MARGEN_DEL_GLOBO_EN_PUNTOS;
-    const izquierda = Math.max(MARGEN_DEL_GLOBO_EN_PUNTOS, Math.min(izquierdaDeseada, izquierdaMaxima));
-    const arribaDeseado = lugarDelPiquito.y - altoDelGlobo - SEPARACION_DEL_GLOBO_EN_PUNTOS;
-    const arriba = Math.max(MARGEN_DEL_GLOBO_EN_PUNTOS, arribaDeseado);
-
-    this.globo.style.transform = `translate(${izquierda}px, ${arriba}px)`;
-    // Si el globo tuvo que correrse de lado, el piquito se corre al revés para seguir apuntando a quien habla.
-    const desvioDelPiquito = izquierdaDeseada - izquierda;
-    this.globo.style.setProperty('--desvio-del-piquito', `${desvioDelPiquito}px`);
+    this.globo.apuntar(lugar, { ancho: this.anfitrion.clientWidth, alto: this.anfitrion.clientHeight });
   }
 
   alTocarParaSeguir(funcion: () => void): () => void {
@@ -121,27 +99,15 @@ export class InterfazDelNavegador implements Interfaz {
   }
 
   mostrarOpciones(pregunta: string, opciones: readonly OpcionPorMostrar[]): void {
-    const filaDeTarjetas = crearConTexto('div', 'tarjetas', '');
-    this.tarjetas = [];
-    for (let i = 0; i < opciones.length; i++) {
-      const tarjeta = this.crearTarjeta(opciones[i]!, i); // `i` es menor que el largo de la lista
-      this.tarjetas.push(tarjeta);
-      filaDeTarjetas.append(tarjeta);
-    }
-    this.panelDeOpciones.replaceChildren(crearConTexto('div', 'pregunta', pregunta), filaDeTarjetas);
-    this.panelDeOpciones.hidden = false;
+    this.opciones.mostrar(pregunta, opciones, (posicion) => this.avisarEleccion(posicion));
   }
 
   resaltarOpcion(posicion: number | undefined): void {
-    for (let i = 0; i < this.tarjetas.length; i++) {
-      this.tarjetas[i]!.classList.toggle('resaltada', i === posicion); // `i` es menor que el largo de la lista
-    }
+    this.opciones.resaltar(posicion);
   }
 
   ocultarOpciones(): void {
-    this.panelDeOpciones.hidden = true;
-    this.panelDeOpciones.replaceChildren();
-    this.tarjetas = [];
+    this.opciones.ocultar();
   }
 
   alElegirOpcion(funcion: (posicion: number) => void): () => void {
@@ -151,47 +117,57 @@ export class InterfazDelNavegador implements Interfaz {
     };
   }
 
-  /**
-   * Muestra un botón grande de jugar sobre el juego y llama a `alTocar` cuando lo tocan.
-   * Ese primer toque es el que deja al navegador reproducir sonido (docs/DISENO-3.0.md §7.5).
-   */
-  mostrarBotonDeInicio(alTocar: () => void): void {
-    const boton = document.createElement('button');
-    boton.className = 'boton-de-inicio';
-    boton.type = 'button';
-    // El botón no lleva texto: el triángulo de «reproducir» se entiende sin leer.
-    boton.setAttribute('aria-label', 'Jugar');
-    boton.append(crearDibujo('M6 3 L21 12 L6 21 Z'));
-    boton.addEventListener(
-      'click',
-      () => {
-        this.panelDeInicio.hidden = true;
-        this.panelDeInicio.replaceChildren();
-        alTocar();
-      },
-      { once: true },
-    );
-    this.panelDeInicio.replaceChildren(boton);
-    this.panelDeInicio.hidden = false;
-  }
-
   mostrarFlecha(texto: string | undefined): void {
-    const dibujo = crearDibujo('M12 22 L3 11 H9 V2 H15 V11 H21 Z');
-    this.flecha.replaceChildren();
+    const contenido: Node[] = [];
     if (texto !== undefined) {
-      this.flecha.append(crearConTexto('div', 'leyenda-de-la-flecha', texto));
+      contenido.push(crearConTexto('div', 'leyenda-de-la-flecha', texto));
     }
-    this.flecha.append(dibujo);
-    this.flecha.hidden = false;
+    contenido.push(crearDibujo(TRAZO_DE_FLECHA_HACIA_ABAJO));
+    this.flecha.mostrar(contenido);
   }
 
   apuntarFlecha(lugar: LugarEnPantalla): void {
-    // La punta de la flecha (el centro de su borde de abajo) queda en el lugar pedido.
-    this.flecha.style.transform = `translate(${lugar.x}px, ${lugar.y}px) translate(-50%, -100%)`;
+    this.flecha.apuntar(lugar);
   }
 
   ocultarFlecha(): void {
-    this.flecha.hidden = true;
+    this.flecha.ocultar();
+  }
+
+  mostrarAviso(): void {
+    if (this.aviso.estaVisible) return;
+    this.aviso.mostrar([crearDibujo(TRAZO_DE_GLOBITO)]);
+  }
+
+  apuntarAviso(lugar: LugarEnPantalla): void {
+    this.aviso.apuntar(lugar);
+  }
+
+  ocultarAviso(): void {
+    this.aviso.ocultar();
+  }
+
+  ponerFundido(opacidad: number): void {
+    this.fundido.style.opacity = String(opacidad);
+    this.fundido.hidden = opacidad <= 0;
+  }
+
+  mostrarFranjasDeCine(alSaltar: (() => void) | undefined): void {
+    this.franjas.hidden = false;
+    this.panelDeSaltar.replaceChildren();
+    if (alSaltar === undefined) return;
+
+    // El botón no lleva texto: los dos triángulos de «adelantar» se entienden sin leer.
+    const boton = crearBotonConDibujo('boton-de-saltar', 'Saltar', TRAZO_DE_SALTAR);
+    boton.addEventListener('click', alSaltar);
+    this.panelDeSaltar.replaceChildren(boton);
+    this.panelDeSaltar.hidden = false;
+  }
+
+  ocultarFranjasDeCine(): void {
+    this.franjas.hidden = true;
+    this.panelDeSaltar.hidden = true;
+    this.panelDeSaltar.replaceChildren();
   }
 
   abrirEspacioDeMinijuego(): HTMLElement {
@@ -222,6 +198,26 @@ export class InterfazDelNavegador implements Interfaz {
     this.marcoDeMinijuego = undefined;
   }
 
+  /**
+   * Muestra un botón grande de jugar sobre el juego y llama a `alTocar` cuando lo tocan.
+   * Ese primer toque es el que deja al navegador reproducir sonido (docs/DISENO-3.0.md §7.5).
+   */
+  mostrarBotonDeInicio(alTocar: () => void): void {
+    // El botón no lleva texto: el triángulo de «reproducir» se entiende sin leer.
+    const boton = crearBotonConDibujo('boton-de-inicio', 'Jugar', TRAZO_DE_REPRODUCIR);
+    boton.addEventListener(
+      'click',
+      () => {
+        this.panelDeInicio.hidden = true;
+        this.panelDeInicio.replaceChildren();
+        alTocar();
+      },
+      { once: true },
+    );
+    this.panelDeInicio.replaceChildren(boton);
+    this.panelDeInicio.hidden = false;
+  }
+
   /** Modo salón de clases: todo más grande. Se puede cambiar en cualquier momento. */
   ajustarProyeccion(estaActiva: boolean): void {
     const escala = estaActiva ? ESCALA_DE_PROYECCION : ESCALA_NORMAL;
@@ -237,29 +233,6 @@ export class InterfazDelNavegador implements Interfaz {
     this.funcionesDeEleccion = [];
     this.cerrarEspacioDeMinijuego();
     this.anfitrion.remove();
-  }
-
-  private crearTarjeta(opcion: OpcionPorMostrar, posicion: number): HTMLElement {
-    const tarjeta = document.createElement('button');
-    tarjeta.className = 'tarjeta';
-    tarjeta.type = 'button';
-    tarjeta.append(crearConTexto('span', 'numero-de-tarjeta', String(posicion + 1)));
-
-    if (opcion.direccionDeLaImagen !== undefined) {
-      const imagen = document.createElement('img');
-      imagen.src = opcion.direccionDeLaImagen;
-      // La imagen repite lo que ya dice el texto de la tarjeta; un lector de pantalla no debe leerla dos veces.
-      imagen.alt = '';
-      tarjeta.append(imagen);
-    }
-    if (opcion.texto !== undefined) {
-      tarjeta.append(crearConTexto('span', 'texto', opcion.texto));
-    }
-    if (opcion.traduccion !== undefined) {
-      tarjeta.append(crearConTexto('span', 'traduccion', opcion.traduccion));
-    }
-    tarjeta.addEventListener('click', () => this.avisarEleccion(posicion));
-    return tarjeta;
   }
 
   private avisarEleccion(posicion: number): void {
@@ -279,10 +252,9 @@ export class InterfazDelNavegador implements Interfaz {
 
   /** Con teclado: Enter o la barra espaciadora siguen el diálogo, y las teclas 1 a 9 eligen una tarjeta. */
   private readonly alOprimirUnaTecla = (evento: KeyboardEvent): void => {
-    const hayOpcionesEnPantalla = this.tarjetas.length > 0;
-    if (hayOpcionesEnPantalla) {
+    if (this.opciones.cantidad > 0) {
       const numero = Number(evento.key);
-      const esUnaTarjeta = Number.isInteger(numero) && numero >= 1 && numero <= this.tarjetas.length;
+      const esUnaTarjeta = Number.isInteger(numero) && numero >= 1 && numero <= this.opciones.cantidad;
       if (esUnaTarjeta) {
         evento.preventDefault();
         this.avisarEleccion(numero - 1);
@@ -296,34 +268,4 @@ export class InterfazDelNavegador implements Interfaz {
       this.alTocarLaCapa();
     }
   };
-}
-
-function crearOculto(etiqueta: string, clase: string): HTMLElement {
-  const elemento = document.createElement(etiqueta);
-  elemento.className = clase;
-  elemento.hidden = true;
-  return elemento;
-}
-
-/** Crea un elemento con un texto. El texto se pone con `textContent`, que nunca lo interpreta como HTML. */
-function crearConTexto(etiqueta: string, clase: string, texto: string): HTMLElement {
-  const elemento = document.createElement(etiqueta);
-  elemento.className = clase;
-  elemento.textContent = texto;
-  return elemento;
-}
-
-/**
- * Crea un dibujo SVG de 24 × 24 con una sola figura. `trazo` es el recorrido de la figura en el lenguaje
- * de SVG; por ejemplo, 'M6 3 L21 12 L6 21 Z' es el triángulo de «reproducir».
- */
-function crearDibujo(trazo: string): SVGElement {
-  const dibujo = document.createElementNS(ESPACIO_SVG, 'svg');
-  dibujo.setAttribute('viewBox', '0 0 24 24');
-  // Es un adorno: lo que significa ya lo dice la etiqueta del botón o el contexto.
-  dibujo.setAttribute('aria-hidden', 'true');
-  const figura = document.createElementNS(ESPACIO_SVG, 'path');
-  figura.setAttribute('d', trazo);
-  dibujo.append(figura);
-  return dibujo;
 }
