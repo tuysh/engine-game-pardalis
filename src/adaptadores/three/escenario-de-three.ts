@@ -18,6 +18,7 @@ import type {
 } from '../../puertos/escenario.ts';
 import { buscarToque } from './buscar-toque.ts';
 import { CamaraQueSigue } from './camara-que-sigue.ts';
+import { EfectoDeParticulas } from './efecto-de-particulas.ts';
 import {
   crearHojaAcostada,
   crearHojaParada,
@@ -32,6 +33,8 @@ import type { FabricaDeTexturas } from './texturas.ts';
 
 /** Si el dedo se movió más que esto entre apoyar y soltar, fue un arrastre y no un toque. */
 const MOVIMIENTO_MAXIMO_DE_UN_TOQUE_EN_PUNTOS = 12;
+
+const ALTURA_DE_LOS_EFECTOS_EN_METROS = 0.9;
 
 /** Las pantallas muy finas no se aprovechan completas: dibujar tantos píxeles calienta las tablets. */
 const DENSIDAD_MAXIMA_DE_DIBUJO = 2;
@@ -50,6 +53,8 @@ export class EscenarioDeThree implements Escenario {
   private readonly altoDeCadaPersonajeEnMetros = new Map<string, number>();
   /** Los objetos que responden al toque, con el toque que les corresponde. */
   private readonly tocables = new Map<Object3D, Toque>();
+  /** Los efectos que se están animando ahora. */
+  private efectos: EfectoDeParticulas[] = [];
   private readonly observadorDeTamano: ResizeObserver;
   private funcionesDeToque: ((toque: Toque) => void)[] = [];
   /** Dónde se apoyó el dedo, para saber al soltarlo si fue un toque o un arrastre. */
@@ -152,6 +157,15 @@ export class EscenarioDeThree implements Escenario {
     };
   }
 
+  reproducirEfecto(nombre: string, punto: Punto): void {
+    if (this.estaDestruido) return;
+    // El efecto nace a la altura del pecho de un personaje parado en ese punto.
+    const efecto = EfectoDeParticulas.crear(nombre, { x: punto.x, y: ALTURA_DE_LOS_EFECTOS_EN_METROS, z: punto.y });
+    if (efecto === undefined) return;
+    this.efectos.push(efecto);
+    this.escena.add(efecto.puntos);
+  }
+
   enfocar(punto: Punto, camara: AjustesDeCamara, opciones: { readonly deInmediato: boolean }): void {
     this.camara.enfocar(punto, camara, opciones.deInmediato);
   }
@@ -159,6 +173,7 @@ export class EscenarioDeThree implements Escenario {
   dibujar(segundos: number): void {
     if (this.estaDestruido) return;
     this.camara.actualizar(segundos);
+    this.animarEfectos(segundos);
     this.dibujante.render(this.escena, this.camara.camara);
   }
 
@@ -187,9 +202,29 @@ export class EscenarioDeThree implements Escenario {
     this.personajes.clear();
     this.altoDeCadaPersonajeEnMetros.clear();
     this.tocables.clear();
+    for (const efecto of this.efectos) {
+      this.escena.remove(efecto.puntos);
+      efecto.liberar();
+    }
+    this.efectos = [];
 
     this.dibujante.dispose();
     lienzo.remove();
+  }
+
+  /** Mueve cada efecto y quita los que ya terminaron. */
+  private animarEfectos(segundos: number): void {
+    const efectosQueSiguen: EfectoDeParticulas[] = [];
+    for (const efecto of this.efectos) {
+      const sigueVivo = efecto.actualizar(segundos);
+      if (sigueVivo) {
+        efectosQueSiguen.push(efecto);
+      } else {
+        this.escena.remove(efecto.puntos);
+        efecto.liberar();
+      }
+    }
+    this.efectos = efectosQueSiguen;
   }
 
   private async crearDecorado(objeto: DecoradoDeEscena): Promise<Mesh> {

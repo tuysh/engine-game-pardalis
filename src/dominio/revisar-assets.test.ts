@@ -133,3 +133,36 @@ test('se revisan también los pasos de adentro de una opción', () => {
     'secuencias.prueba[0].opciones[0].secuencia[0].audio: no existe la voz "vo_si"; se usará voz sintetizada',
   ]);
 });
+
+test('una música que no existe es solo una advertencia; una clave de otro tipo, un error', () => {
+  const contenidoBase: Contenido = {
+    meta: { id: 'barrio', titulo: 'El barrio', personajes: {} },
+    mundo: AJUSTES_DEL_MUNDO_POR_DEFECTO,
+    estado: { objetivos: [], variables: [], lista: {} },
+    secuencias: {},
+    npcs: {},
+    interactivos: {},
+    comentarios: {},
+  };
+  const conMusicaQueFalta: Contenido = {
+    ...contenidoBase,
+    mundo: { ...AJUSTES_DEL_MUNDO_POR_DEFECTO, sonidos: { musica: 'mus_barrio' } },
+  };
+  const conUnaImagenComoMusica: Contenido = {
+    ...contenidoBase,
+    mundo: { ...AJUSTES_DEL_MUNDO_POR_DEFECTO, sonidos: { musica: 'spr_tortu' } },
+  };
+  const diagnosticoDeLaQueFalta = crearDiagnostico();
+  const diagnosticoDeLaImagen = crearDiagnostico();
+
+  revisarAssets(conMusicaQueFalta, ASSETS, diagnosticoDeLaQueFalta);
+  revisarAssets(conUnaImagenComoMusica, ASSETS, diagnosticoDeLaImagen);
+
+  expect(diagnosticoDeLaQueFalta).toEqual({
+    errores: [],
+    advertencias: ['mundo.sonidos.musica: no existe el audio "mus_barrio"; el nivel se jugará sin música'],
+  });
+  expect(diagnosticoDeLaImagen.errores).toEqual([
+    'mundo.sonidos.musica: "spr_tortu" es un asset de tipo imagen, y aquí va un audio',
+  ]);
+});

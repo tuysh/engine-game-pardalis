@@ -49,6 +49,7 @@ async function crearEscena() {
   const piezas: PiezasDeEscena = {
     contenido: CONTENIDO,
     puntos: {},
+    centroDelLugar: { x: 5, y: 2 },
     idiomaBase: 'es',
     escenario,
     interfaz,

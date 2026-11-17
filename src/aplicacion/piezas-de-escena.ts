@@ -17,6 +17,8 @@ export interface PiezasDeEscena {
   readonly contenido: Contenido;
   /** Los puntos con nombre del mapa: los destinos de los pasos `camina`. */
   readonly puntos: Readonly<Record<string, Punto>>;
+  /** El centro del mapa: donde aparecen los efectos en un nivel sin jugador. */
+  readonly centroDelLugar: Punto;
   /** El idioma del sitio. Las líneas de un personaje que habla otro idioma muestran y dicen su traducción. */
   readonly idiomaBase: Idioma;
   readonly escenario: Escenario;

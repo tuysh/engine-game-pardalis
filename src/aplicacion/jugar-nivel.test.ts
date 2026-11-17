@@ -364,3 +364,61 @@ test('una salida sin condición para su flecha la muestra desde el principio', a
   expect(interfaz.hayFlecha).toBe(true);
   expect(interfaz.textoDeLaFlecha).toBeUndefined();
 });
+
+test('si el nivel lleva música, empieza al jugar y se detiene al terminar', async () => {
+  const nivelConMusica: Nivel = {
+    ...NIVEL,
+    contenido: {
+      ...NIVEL.contenido,
+      mundo: { ...AJUSTES_DEL_MUNDO_POR_DEFECTO, sonidos: { musica: 'mus_barrio' } },
+    },
+    assets: { ...NIVEL.assets, mus_barrio: { carpeta: '.', asset: { tipo: 'audio', archivo: 'musica/mus_barrio.mp3' } } },
+  };
+  const { nivelEnJuego, audio } = await empezar(nivelConMusica);
+
+  expect(audio.musica).toBe('/niveles/barrio/musica/mus_barrio.mp3');
+  nivelEnJuego.terminar();
+
+  expect(audio.musica).toBeUndefined();
+});
+
+test('un efecto de un diálogo aparece sobre el jugador', async () => {
+  const nivelConEfecto: Nivel = {
+    ...NIVEL,
+    contenido: { ...NIVEL.contenido, npcs: { tortu: { dialogo: [{ pasos: [{ tipo: 'efecto', nombre: 'magia' }] }] } } },
+  };
+  const { escenario, reloj } = await empezar(nivelConEfecto);
+
+  escenario.simularToque({ tipo: 'personaje', id: 'tortu' });
+  await reloj.avanzar(3);
+
+  expect(escenario.efectosReproducidos).toEqual([{ nombre: 'magia', punto: { x: 5.1, y: 2.1 } }]);
+});
+
+test('entrar a la salida caminando con el teclado también intenta salir, una sola vez', async () => {
+  const { controles, reloj, salidas } = await empezar(NIVEL, { tortillas: true });
+
+  // De (2, 3) hacia la derecha: la salida empieza en x = 9 y abarca de y = 3 a y = 4.
+  controles.direccion = { x: 1, y: 0 };
+  await reloj.avanzar(1);
+  for (let cuadro = 0; cuadro < 30; cuadro++) {
+    await reloj.avanzar(0.1);
+  }
+
+  expect(salidas).toEqual(['Selector']);
+});
+
+test('tocar la salida estando ya dentro vuelve a intentar salir', async () => {
+  const { escenario, interfaz, reloj } = await empezar(NIVEL);
+  escenario.simularToque({ tipo: 'piso', punto: { x: 9.5, y: 3.5 } });
+  await reloj.avanzar(5);
+  expect(interfaz.globo?.texto).toBe('¡Espérate!');
+  interfaz.simularToqueParaSeguir();
+  await reloj.avanzar(0.1);
+  expect(interfaz.globo).toBeUndefined();
+
+  escenario.simularToque({ tipo: 'piso', punto: { x: 9.6, y: 3.5 } });
+  await reloj.avanzar(0.5);
+
+  expect(interfaz.globo?.texto).toBe('¡Espérate!');
+});

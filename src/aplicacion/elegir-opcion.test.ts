@@ -32,6 +32,7 @@ function crearEscena() {
       comentarios: {},
     },
     puntos: {},
+    centroDelLugar: { x: 5, y: 2 },
     idiomaBase: 'es',
     escenario,
     interfaz,

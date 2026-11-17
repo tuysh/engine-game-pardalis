@@ -93,6 +93,12 @@ export interface Escenario {
   lugarEnPantallaDelPunto(punto: Punto, alturaEnMetros: number): LugarEnPantalla;
 
   /**
+   * Empieza un efecto visual (`magia`, `confeti`) alrededor de un punto del lugar.
+   * No espera a que termine: el efecto se anima solo en los cuadros siguientes y luego se quita.
+   */
+  reproducirEfecto(nombre: string, punto: Punto): void;
+
+  /**
    * Apunta la cámara a un punto del piso. Con `deInmediato` la cámara salta ahí;
    * sin él, se acerca con suavidad en los cuadros siguientes.
    */

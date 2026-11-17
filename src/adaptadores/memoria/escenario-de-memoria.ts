@@ -21,6 +21,8 @@ export class EscenarioDeMemoria implements Escenario {
   /** El último punto al que se apuntó la cámara. */
   puntoEnfocado: Punto | undefined;
   cuadrosDibujados = 0;
+  /** Los efectos que se han pedido, en orden. */
+  readonly efectosReproducidos: { nombre: string; punto: Punto }[] = [];
   estaDestruido = false;
 
   private funcionesDeToque: ((toque: Toque) => void)[] = [];
@@ -60,6 +62,10 @@ export class EscenarioDeMemoria implements Escenario {
 
   lugarEnPantallaDelPunto(punto: Punto, alturaEnMetros: number): LugarEnPantalla {
     return { x: punto.x, y: punto.y };
+  }
+
+  reproducirEfecto(nombre: string, punto: Punto): void {
+    this.efectosReproducidos.push({ nombre, punto });
   }
 
   enfocar(punto: Punto, camara: AjustesDeCamara, opciones: { readonly deInmediato: boolean }): void {

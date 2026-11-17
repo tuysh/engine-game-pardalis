@@ -25,6 +25,8 @@ export function revisarAssets(contenido: Contenido, assets: AssetsDeNivel, diagn
     revisarImagen(personaje.sprite, `meta.personajes.${id}.sprite`, revision);
   }
 
+  revisarMusica(contenido.mundo.sonidos.musica, revision);
+
   recorrerPasos(contenido, {
     alVerPaso(paso, ruta) {
       revisarAssetsDePaso(paso, ruta, revision);
@@ -90,6 +92,21 @@ function revisarVoz(clave: string | undefined, ruta: string, revision: RevisionD
   const asset = buscarAsset(clave, revision.assets);
   if (asset === undefined) {
     revision.diagnostico.advertencias.push(`${ruta}: no existe la voz "${clave}"; se usará voz sintetizada`);
+    return;
+  }
+  if (asset.tipo !== 'audio') {
+    revision.diagnostico.errores.push(`${ruta}: "${clave}" es un asset de tipo ${asset.tipo}, y aquí va un audio`);
+  }
+}
+
+/** La música es como una voz: si falta, el nivel funciona igual, solo que en silencio. */
+function revisarMusica(clave: string | undefined, revision: RevisionDeAssets): void {
+  if (clave === undefined) return;
+
+  const ruta = 'mundo.sonidos.musica';
+  const asset = buscarAsset(clave, revision.assets);
+  if (asset === undefined) {
+    revision.diagnostico.advertencias.push(`${ruta}: no existe el audio "${clave}"; el nivel se jugará sin música`);
     return;
   }
   if (asset.tipo !== 'audio') {

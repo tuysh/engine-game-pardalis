@@ -7,6 +7,10 @@ export class AudioDeMemoria implements Audio {
   /** Todo lo que se ha pedido decir, en orden. */
   readonly frasesDichas: FrasePorDecir[] = [];
   readonly sonidosTocados: string[] = [];
+  /** Las frecuencias de los tonos que se han tocado, en orden. */
+  readonly tonosTocados: number[] = [];
+  /** La música que está puesta. `undefined` = ninguna. */
+  musica: string | undefined;
   /** Lo que `decir` responde. Con `'sin_voz'` responde de inmediato, como un dispositivo sin voz sintetizada. */
   resultadoAlDecir: ResultadoDeDecir = 'dicho';
   estaPausado = false;
@@ -40,6 +44,14 @@ export class AudioDeMemoria implements Audio {
 
   tocar(direccionDelSonido: string): void {
     this.sonidosTocados.push(direccionDelSonido);
+  }
+
+  tocarTono(frecuenciaEnHertz: number, duracionEnSegundos: number): void {
+    this.tonosTocados.push(frecuenciaEnHertz);
+  }
+
+  ponerMusica(direccionDeLaMusica: string | undefined): void {
+    this.musica = direccionDeLaMusica;
   }
 
   pausar(): void {

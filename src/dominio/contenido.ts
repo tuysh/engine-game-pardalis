@@ -46,6 +46,13 @@ export interface AjustesDelMundo {
   readonly pixelesPorMetro: number;
   /** Cómo sigue la cámara al jugador. */
   readonly camara: AjustesDeCamara;
+  readonly sonidos: SonidosDelMundo;
+}
+
+/** Los sonidos generales del nivel. */
+export interface SonidosDelMundo {
+  /** Clave de la música de fondo, que se repite mientras se juega. `undefined` = el nivel no lleva música. */
+  readonly musica?: string;
 }
 
 export const VELOCIDAD_DEL_JUGADOR_POR_DEFECTO = 2.4; // metros por segundo: el paso de alguien que camina sin prisa
@@ -53,6 +60,7 @@ export const VELOCIDAD_DEL_JUGADOR_POR_DEFECTO = 2.4; // metros por segundo: el 
 export const AJUSTES_DEL_MUNDO_POR_DEFECTO: AjustesDelMundo = {
   pixelesPorMetro: 100,
   camara: { distanciaEnMetros: 8, alturaEnMetros: 4, giroEnGrados: 0 },
+  sonidos: {},
 };
 
 /** Una rama del diálogo de alguien: se usa la primera cuya condición se cumple. */

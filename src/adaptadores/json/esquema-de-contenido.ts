@@ -55,6 +55,7 @@ const esquemaDeMundo: z.ZodType<AjustesDelMundo> = z.strictObject({
   pixelesPorMetro: z.number().positive().default(AJUSTES_DEL_MUNDO_POR_DEFECTO.pixelesPorMetro),
   // `prefault({})`: si falta la sección, se lee como si viniera vacía y entran sus valores por defecto.
   camara: esquemaDeCamara.prefault({}),
+  sonidos: z.strictObject({ musica: z.string().min(1).optional() }).prefault({}),
 });
 
 const esquemaDeEstado = z.strictObject({

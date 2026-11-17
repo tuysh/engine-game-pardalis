@@ -117,7 +117,10 @@ function crearContexto(
   };
 }
 
-/** Deja el resultado con la forma esperada: `exito` verdadero o falso, y en `otorgar` solo valores que el estado guarda. */
+/**
+ * Deja el resultado con la forma esperada: `exito` verdadero o falso,
+ * y en `otorgar` solo valores que el estado puede guardar.
+ */
 function limpiarResultado(resultado: unknown): ResultadoDeMinijuego {
   if (!esObjetoPlano(resultado)) return SIN_EXITO;
 

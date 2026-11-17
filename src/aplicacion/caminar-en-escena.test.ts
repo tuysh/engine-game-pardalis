@@ -39,6 +39,7 @@ async function crearEscena() {
       comentarios: {},
     },
     puntos: { frente: { x: 9, y: 2 } },
+    centroDelLugar: { x: 5, y: 2 },
     idiomaBase: 'es',
     escenario,
     interfaz: new InterfazDeMemoria(),

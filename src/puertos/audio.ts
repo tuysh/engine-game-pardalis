@@ -29,6 +29,15 @@ export interface Audio {
   /** Toca un sonido corto sin esperar a que termine. */
   tocar(direccionDelSonido: string): void;
 
+  /** Toca una nota corta hecha por el dispositivo, sin archivo. La usan los efectos. */
+  tocarTono(frecuenciaEnHertz: number, duracionEnSegundos: number): void;
+
+  /**
+   * Pone la música de fondo, que se repite sin parar. Reemplaza la que hubiera.
+   * Con `undefined`, la música se detiene.
+   */
+  ponerMusica(direccionDeLaMusica: string | undefined): void;
+
   /** Congela y reanuda todo lo que suena. */
   pausar(): void;
   reanudar(): void;

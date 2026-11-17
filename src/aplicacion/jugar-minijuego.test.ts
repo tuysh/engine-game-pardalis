@@ -28,6 +28,7 @@ function crearEscena(minijuegos: Record<string, Minijuego>) {
       comentarios: {},
     },
     puntos: {},
+    centroDelLugar: { x: 5, y: 2 },
     idiomaBase: 'es',
     escenario,
     interfaz,

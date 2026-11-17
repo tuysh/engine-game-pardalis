@@ -1,7 +1,6 @@
 // Caso de uso: poner a jugar un nivel ya validado. Monta la escenografía y los personajes,
 // conecta los toques y el teclado del jugador con el nivel (caminar, hablar, salir) y dibuja un cuadro tras otro.
 //
-// Estado: faltan los efectos (ver crear-acciones-de-paso.ts).
 
 import { crearEstadoDeNivel } from '../dominio/estado.ts';
 import type { VariablesDeEstado } from '../dominio/estado.ts';
@@ -30,6 +29,7 @@ import { FlechaDeSalida } from './flecha-de-salida.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { prepararEscenografia, prepararPersonajes } from './preparar-escena.ts';
 import { Reparto } from './reparto.ts';
+import { SalidaDelNivel } from './salida-del-nivel.ts';
 
 const SIN_DIRECCION = { x: 0, y: 0 };
 
@@ -90,17 +90,18 @@ export async function jugarNivel(
   await Promise.all(personajes.map((personaje) => reparto.agregar(personaje)));
 
   const exploracion = crearExploracion(nivel, escenario, reparto);
-  if (exploracion === undefined) {
-    // Un nivel sin jugador no tiene a quién seguir: la cámara mira al centro del lugar.
-    const centro = { x: nivel.mundo.anchoEnMetros / 2, y: nivel.mundo.profundidadEnMetros / 2 };
-    escenario.enfocar(centro, nivel.contenido.mundo.camara, { deInmediato: true });
-  }
 
   const estadoInicial = crearEstadoDeNivel(nivel.contenido.estado, pedido.variablesGuardadas);
   const estado = new EstadoEnJuego(estadoInicial, (objetivo) => avisos.alCumplirObjetivo(objetivo));
+  const centroDelLugar = { x: nivel.mundo.anchoEnMetros / 2, y: nivel.mundo.profundidadEnMetros / 2 };
+  const direccionDeAsset = (clave: string): string | undefined => {
+    return buscarDireccionDeAsset(clave, nivel.assets, ubicacion);
+  };
+
   const piezasDeEscena: PiezasDeEscena = {
     contenido: nivel.contenido,
     puntos: nivel.mundo.puntos,
+    centroDelLugar,
     idiomaBase: pedido.idiomaBase,
     escenario,
     interfaz,
@@ -109,9 +110,19 @@ export async function jugarNivel(
     reparto,
     estado,
     minijuegos: pedido.minijuegos,
-    direccionDeAsset: (clave) => buscarDireccionDeAsset(clave, nivel.assets, ubicacion),
+    direccionDeAsset,
     alVerPalabra: (palabra) => avisos.alVerPalabra(palabra),
   };
+
+  if (exploracion === undefined) {
+    // Un nivel sin jugador no tiene a quién seguir: la cámara mira al centro del lugar.
+    escenario.enfocar(centroDelLugar, nivel.contenido.mundo.camara, { deInmediato: true });
+  }
+  const musica = nivel.contenido.mundo.sonidos.musica;
+  if (musica !== undefined) {
+    // Si la música no está en los assets, la validación ya lo advirtió: el nivel se juega sin ella.
+    audio.ponerMusica(direccionDeAsset(musica));
+  }
 
   const comentarios = new ComentariosDeZona({
     contenido: nivel.contenido,
@@ -134,7 +145,9 @@ export async function jugarNivel(
 
   const flecha = new FlechaDeSalida({ nivel, estado, escenario, interfaz });
 
-  const piezasParaToques = { nivel, reparto, conversacion, estado, exploracion, alSalir: avisos.alSalir };
+  const salida = new SalidaDelNivel({ nivel, estado, conversacion, alSalir: (destino) => avisos.alSalir(destino) });
+
+  const piezasParaToques = { nivel, reparto, conversacion, salida, exploracion };
   const dejarDeAtenderToques = escenario.alTocar((toque) => atenderToque(toque, piezasParaToques));
   const dejarDeDibujar = reloj.enCadaCuadro((segundos) => {
     if (exploracion !== undefined) {
@@ -142,6 +155,7 @@ export async function jugarNivel(
       const direccion = conversacion.hayDialogoEnCurso ? SIN_DIRECCION : controles.leerDireccion();
       exploracion.avanzar(segundos, direccion);
       comentarios.avanzar(segundos, exploracion.posicion, !conversacion.hayDialogoEnCurso);
+      salida.vigilar(exploracion.posicion);
     }
     escenario.dibujar(segundos);
     // La flecha se coloca después de dibujar, cuando la cámara ya está en su lugar de este cuadro.
@@ -159,6 +173,7 @@ export async function jugarNivel(
       conversacion.interrumpir();
       comentarios.callar();
       flecha.ocultar();
+      audio.ponerMusica(undefined);
       dejarDeAtenderToques();
       dejarDeDibujar();
     },
