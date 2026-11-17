@@ -20,6 +20,11 @@ const ACENTO_POR_IDIOMA: Readonly<Record<Idioma, string>> = { es: 'es-MX', en: '
 export class AudioDelNavegador implements Audio {
   /** Lo que está sonando ahora, para poder pausarlo y callarlo. */
   private readonly sonando = new Set<HTMLAudioElement>();
+  /**
+   * Las frases que la voz sintetizada está diciendo. Se guardan aquí a propósito: algunos navegadores
+   * descartan una frase que nadie más guarda, y entonces nunca avisan que terminó de decirse.
+   */
+  private readonly frasesEnCurso = new Set<SpeechSynthesisUtterance>();
   /** El reproductor de la música de fondo. `undefined` = no hay música puesta. */
   private musica: HTMLAudioElement | undefined;
   /** El generador de tonos del navegador. Se crea la primera vez que hace falta. */
@@ -183,8 +188,10 @@ export class AudioDelNavegador implements Audio {
     return new Promise((terminar) => {
       const frase = new SpeechSynthesisUtterance(texto);
       frase.lang = ACENTO_POR_IDIOMA[idioma];
+      this.frasesEnCurso.add(frase);
 
       const finalizar = (resultado: ResultadoDeDecir): void => {
+        this.frasesEnCurso.delete(frase);
         frase.onend = null;
         frase.onerror = null;
         senal.removeEventListener('abort', alCancelar);

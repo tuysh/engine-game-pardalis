@@ -31,8 +31,11 @@ import {
 import { cargarTextura } from './texturas.ts';
 import type { FabricaDeTexturas } from './texturas.ts';
 
-/** Si el dedo se movió más que esto entre apoyar y soltar, fue un arrastre y no un toque. */
-const MOVIMIENTO_MAXIMO_DE_UN_TOQUE_EN_PUNTOS = 12;
+/**
+ * Si el dedo se movió más que esto entre apoyar y soltar, fue un arrastre y no un toque.
+ * Es generoso a propósito: un dedo pequeño sobre una tablet resbala bastante más que un ratón.
+ */
+const MOVIMIENTO_MAXIMO_DE_UN_TOQUE_EN_PUNTOS = 24;
 
 const ALTURA_DE_LOS_EFECTOS_EN_METROS = 0.9;
 

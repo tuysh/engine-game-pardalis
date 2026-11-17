@@ -129,15 +129,14 @@ test('el globo sigue a quien habla cuando se mueve', async () => {
 });
 
 test('la traducción se muestra y se dice solo si el personaje habla otro idioma que el del sitio', async () => {
-  const { piezas, interfaz, audio } = await crearEscena();
+  const { piezas, interfaz, audio, reloj } = await crearEscena();
   const gracias: PasoDeLinea = { tipo: 'linea', hablante: 'tommy', texto: 'Thank you!', traduccion: '¡Gracias!' };
 
   void decirLinea({ paso: gracias, textoCompleto: 'Thank you!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
   expect(interfaz.globo?.traduccion).toBe('¡Gracias!');
   audio.terminarDeHablar();
-  // La segunda frase se pide después de que la primera termina de resolverse.
-  await Promise.resolve();
-  await Promise.resolve();
+  // La segunda frase se pide después de que la primera termina de resolverse: se le da turno a ese código.
+  await reloj.avanzar(0.01);
 
   expect(audio.frasesDichas).toEqual([
     { texto: 'Thank you!', idioma: 'en', direccionDeLaVoz: undefined },
@@ -177,4 +176,35 @@ test('en un dispositivo sin voz, el globo se queda el tiempo que tomaría leerlo
 
   // 50 letras × 0.06 segundos = 3 segundos.
   expect(interfaz.globo).toBeUndefined();
+});
+
+test('si la voz sintetizada nunca avisa que terminó, la línea se cierra sola al pasar un tiempo holgado', async () => {
+  const { piezas, interfaz, audio, reloj } = await crearEscena();
+  const sinVozGrabada: PasoDeLinea = { tipo: 'linea', hablante: 'tortu', texto: '¡Hola!' };
+  let termino = false;
+
+  void decirLinea({ paso: sinVozGrabada, textoCompleto: '¡Hola!', seCierraConUnToque: false }, SIN_INTERRUMPIR, piezas).then(
+    () => {
+      termino = true;
+    },
+  );
+  // La prueba nunca llama a `audio.terminarDeHablar()`: es una voz que se queda «hablando» para siempre.
+  await reloj.avanzar(5);
+  expect(termino).toBe(false);
+  await reloj.avanzar(1.1); // se cumple el tope de 6 segundos: la voz se calla
+  await reloj.avanzar(0.8); // y pasa la pausa de siempre antes de cerrar el globo
+
+  expect(termino).toBe(true);
+  expect(interfaz.globo).toBeUndefined();
+  expect(audio.hayAlguienHablando).toBe(false);
+});
+
+test('una voz grabada se espera completa, dure lo que dure', async () => {
+  const { piezas, interfaz, audio, reloj } = await crearEscena();
+
+  void decirLinea({ paso: HOLA, textoCompleto: '¡Hola!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(60);
+
+  expect(interfaz.globo).toBeDefined();
+  expect(audio.hayAlguienHablando).toBe(true);
 });
