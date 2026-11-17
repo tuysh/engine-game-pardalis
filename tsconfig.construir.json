@@ -10,5 +10,6 @@
     "sourceMap": true
   },
   "include": ["src"],
-  "exclude": ["src/**/*.test.ts"]
+  // No se publican las pruebas ni los adaptadores falsos que solo usan las pruebas.
+  "exclude": ["src/**/*.test.ts", "src/adaptadores/memoria"]
 }

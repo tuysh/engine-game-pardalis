@@ -27,5 +27,6 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src"]
+  // `ejemplo` se revisa pero no se publica: tsconfig.construir.json solo incluye `src`.
+  "include": ["src", "ejemplo"]
 }
