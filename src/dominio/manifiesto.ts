@@ -40,6 +40,12 @@ export type Asset = AssetDeImagen | AssetDeAnimacion | AssetDeAudio | AssetDeVid
 /** Los assets de una carpeta, por clave. */
 export type Manifiesto = Readonly<Record<string, Asset>>;
 
+/** Los ajustes opcionales que el generador del manifiesto lee de `assets.config.json`. */
+export interface ConfiguracionDeAssets {
+  /** Velocidad de cada animación que no usa la velocidad por defecto, por clave. */
+  readonly cuadrosPorSegundo: Readonly<Record<string, number>>;
+}
+
 /** Velocidad de una animación cuando `assets.config.json` no dice otra. */
 export const CUADROS_POR_SEGUNDO_POR_DEFECTO = 8;
 

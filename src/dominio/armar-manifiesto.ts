@@ -1,0 +1,193 @@
+// Arma el manifiesto de una carpeta a partir de la lista de sus archivos de assets (docs/DISENO-3.0.md §8.1).
+//
+// Reglas:
+// - La clave de un asset es el nombre de su archivo sin extensión: `img/spr_mama.svg` → `spr_mama`.
+// - Las imágenes numeradas (`clave_1.svg`, `clave_2.svg`…) se agrupan solas en una animación llamada `clave`,
+//   en orden numérico. Hacen falta al menos dos; una sola imagen numerada se queda como imagen normal.
+// - Todos los cuadros de una animación deben medir lo mismo.
+// - Dos archivos no pueden dar la misma clave.
+
+import { CUADROS_POR_SEGUNDO_POR_DEFECTO } from './manifiesto.ts';
+import type { Asset, Manifiesto, Medidas } from './manifiesto.ts';
+import { nombreSinExtensionDe } from './ruta-de-asset.ts';
+
+/** Un archivo de la carpeta que ya se reconoció como asset. `ruta` es relativa a la carpeta. */
+export type ArchivoDeAsset =
+  | { readonly tipo: 'imagen'; readonly ruta: string; readonly medidas: Medidas }
+  | { readonly tipo: 'audio'; readonly ruta: string }
+  | { readonly tipo: 'video'; readonly ruta: string };
+
+export interface ManifiestoArmado {
+  readonly manifiesto: Manifiesto;
+  readonly errores: readonly string[];
+  readonly advertencias: readonly string[];
+}
+
+/** Un cuadro de una posible animación: una imagen cuyo nombre termina en `_<número>`. */
+interface Cuadro {
+  readonly numero: number;
+  readonly ruta: string;
+  readonly medidas: Medidas;
+}
+
+/** Lo que se va llenando mientras se arma el manifiesto. */
+interface Armado {
+  readonly manifiesto: Record<string, Asset>;
+  /** De qué archivo salió cada clave, para explicar una clave repetida. */
+  readonly origenDeCadaClave: Map<string, string>;
+  readonly errores: string[];
+  readonly advertencias: string[];
+}
+
+// Un nombre que termina en guion bajo y un número. En "tommy_viendo_tele_12" captura "tommy_viendo_tele" y "12".
+const NOMBRE_NUMERADO = /^(.+)_(\d+)$/;
+
+const CUADROS_MINIMOS_DE_UNA_ANIMACION = 2;
+
+/**
+ * `cuadrosPorSegundo` son las velocidades que pide `assets.config.json`, por clave de animación.
+ * Las animaciones que no aparecen ahí usan la velocidad por defecto.
+ */
+export function armarManifiesto(
+  archivos: readonly ArchivoDeAsset[],
+  cuadrosPorSegundo: Readonly<Record<string, number>>,
+): ManifiestoArmado {
+  const armado: Armado = { manifiesto: {}, origenDeCadaClave: new Map(), errores: [], advertencias: [] };
+  const archivosEnOrden = [...archivos].sort((uno, otro) => compararTextos(uno.ruta, otro.ruta));
+  const animaciones = agruparCuadros(archivosEnOrden);
+
+  for (const archivo of archivosEnOrden) {
+    const clave = nombreSinExtensionDe(archivo.ruta);
+    switch (archivo.tipo) {
+      case 'audio':
+      case 'video':
+        registrar(clave, { tipo: archivo.tipo, archivo: archivo.ruta }, archivo.ruta, armado);
+        break;
+      case 'imagen':
+        if (esCuadroDeUnaAnimacion(clave, animaciones)) break; // se registra abajo, con su animación
+        registrar(clave, { tipo: 'imagen', archivo: archivo.ruta, ...archivo.medidas }, archivo.ruta, armado);
+        break;
+    }
+  }
+
+  for (const [clave, cuadros] of animaciones) {
+    registrarAnimacion(clave, cuadros, cuadrosPorSegundo, armado);
+  }
+  avisarVelocidadesSinAnimacion(cuadrosPorSegundo, animaciones, armado);
+
+  return { manifiesto: armado.manifiesto, errores: armado.errores, advertencias: armado.advertencias };
+}
+
+/** Junta las imágenes numeradas por su nombre sin número y deja solo los grupos que forman una animación. */
+function agruparCuadros(archivos: readonly ArchivoDeAsset[]): Map<string, Cuadro[]> {
+  const grupos = new Map<string, Cuadro[]>();
+
+  for (const archivo of archivos) {
+    if (archivo.tipo !== 'imagen') continue;
+    const partes = NOMBRE_NUMERADO.exec(nombreSinExtensionDe(archivo.ruta));
+    if (partes === null) continue;
+
+    const clave = partes[1]!; // los grupos 1 y 2 siempre existen cuando la expresión coincide
+    const numero = Number(partes[2]);
+    let cuadros = grupos.get(clave);
+    if (cuadros === undefined) {
+      cuadros = [];
+      grupos.set(clave, cuadros);
+    }
+    cuadros.push({ numero, ruta: archivo.ruta, medidas: archivo.medidas });
+  }
+
+  for (const [clave, cuadros] of grupos) {
+    if (cuadros.length < CUADROS_MINIMOS_DE_UNA_ANIMACION) {
+      grupos.delete(clave);
+    }
+  }
+  return grupos;
+}
+
+function esCuadroDeUnaAnimacion(nombre: string, animaciones: ReadonlyMap<string, Cuadro[]>): boolean {
+  const partes = NOMBRE_NUMERADO.exec(nombre);
+  if (partes === null) return false;
+  return animaciones.has(partes[1]!); // el grupo 1 siempre existe cuando la expresión coincide
+}
+
+function registrarAnimacion(
+  clave: string,
+  cuadros: readonly Cuadro[],
+  cuadrosPorSegundo: Readonly<Record<string, number>>,
+  armado: Armado,
+): void {
+  const enOrden = [...cuadros].sort((uno, otro) => uno.numero - otro.numero);
+  const primero = enOrden[0]!; // una animación tiene al menos dos cuadros
+
+  for (const cuadro of enOrden) {
+    const mideLoMismo =
+      cuadro.medidas.anchoEnPixeles === primero.medidas.anchoEnPixeles &&
+      cuadro.medidas.altoEnPixeles === primero.medidas.altoEnPixeles;
+    if (!mideLoMismo) {
+      armado.errores.push(
+        `animación "${clave}": ${cuadro.ruta} mide ${describirMedidas(cuadro.medidas)} y ${primero.ruta} mide ` +
+          `${describirMedidas(primero.medidas)}; todos los cuadros deben tener el mismo tamaño (viewBox)`,
+      );
+    }
+  }
+
+  let velocidad = CUADROS_POR_SEGUNDO_POR_DEFECTO;
+  if (Object.hasOwn(cuadrosPorSegundo, clave)) {
+    velocidad = cuadrosPorSegundo[clave]!; // `hasOwn` acaba de comprobar que existe
+  }
+
+  const rutasDeLosCuadros = enOrden.map((cuadro) => cuadro.ruta);
+  const asset: Asset = {
+    tipo: 'animacion',
+    cuadros: rutasDeLosCuadros,
+    cuadrosPorSegundo: velocidad,
+    ...primero.medidas,
+  };
+  registrar(clave, asset, `los cuadros ${primero.ruta}…`, armado);
+}
+
+/** Guarda un asset en el manifiesto, o anota un error si su clave ya salió de otro archivo. */
+function registrar(clave: string, asset: Asset, origen: string, armado: Armado): void {
+  // Guardar la clave "__proto__" cambiaría el prototipo del objeto en vez de agregar un asset.
+  if (clave === '__proto__') {
+    armado.errores.push(`${origen}: "__proto__" no se puede usar como nombre de archivo; cámbialo`);
+    return;
+  }
+
+  const origenAnterior = armado.origenDeCadaClave.get(clave);
+  if (origenAnterior !== undefined) {
+    armado.errores.push(
+      `la clave "${clave}" sale de dos archivos: ${origenAnterior} y ${origen}; cambia el nombre de uno`,
+    );
+    return;
+  }
+  armado.origenDeCadaClave.set(clave, origen);
+  armado.manifiesto[clave] = asset;
+}
+
+function avisarVelocidadesSinAnimacion(
+  cuadrosPorSegundo: Readonly<Record<string, number>>,
+  animaciones: ReadonlyMap<string, Cuadro[]>,
+  armado: Armado,
+): void {
+  for (const clave of Object.keys(cuadrosPorSegundo)) {
+    if (!animaciones.has(clave)) {
+      armado.advertencias.push(`assets.config.json: "fps" nombra "${clave}", que no es una animación de esta carpeta`);
+    }
+  }
+}
+
+/**
+ * Orden alfabético simple, letra por letra. Se usa en vez de `localeCompare` para que el manifiesto
+ * salga en el mismo orden en cualquier computadora, sin importar su idioma.
+ */
+function compararTextos(uno: string, otro: string): number {
+  if (uno < otro) return -1;
+  if (uno > otro) return 1;
+  return 0;
+}
+
+function describirMedidas(medidas: Medidas): string {
+  return `${medidas.anchoEnPixeles}×${medidas.altoEnPixeles}`;
+}
