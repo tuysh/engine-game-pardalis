@@ -5,9 +5,11 @@ import { InterfazDeMemoria } from '../adaptadores/memoria/interfaz-de-memoria.ts
 import { RelojDeMemoria } from '../adaptadores/memoria/reloj-de-memoria.ts';
 import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from '../dominio/contenido.ts';
 import type { Contenido } from '../dominio/contenido.ts';
+import { crearEstadoDeNivel } from '../dominio/estado.ts';
 import type { PalabraDeVocabulario, PasoDeLinea } from '../dominio/paso.ts';
 import type { ImagenDeEscena } from '../puertos/escenario.ts';
 import { decirLinea } from './decir-linea.ts';
+import { EstadoEnJuego } from './estado-en-juego.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { Reparto } from './reparto.ts';
 
@@ -53,6 +55,8 @@ async function crearEscena() {
     audio,
     reloj,
     reparto,
+    estado: new EstadoEnJuego(crearEstadoDeNivel({ objetivos: [], variables: [], lista: {} }), () => {}),
+    minijuegos: {},
     direccionDeAsset: (clave) => (clave === 'vo_tortu_hola' ? '/voz/vo_tortu_hola.mp3' : undefined),
     alVerPalabra: (palabra) => palabrasVistas.push(palabra),
   };

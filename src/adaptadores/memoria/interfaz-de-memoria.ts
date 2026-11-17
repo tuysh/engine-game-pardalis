@@ -20,6 +20,8 @@ export class InterfazDeMemoria implements Interfaz {
   opciones: OpcionesMostradas | undefined;
   /** Las posiciones que se han resaltado, en orden. */
   readonly opcionesResaltadas: (number | undefined)[] = [];
+  /** `true` mientras hay un minijuego abierto. */
+  hayEspacioDeMinijuego = false;
   estaDestruida = false;
 
   private funcionesParaSeguir: (() => void)[] = [];
@@ -63,6 +65,17 @@ export class InterfazDeMemoria implements Interfaz {
     return () => {
       this.funcionesDeEleccion = this.funcionesDeEleccion.filter((registrada) => registrada !== funcion);
     };
+  }
+
+  abrirEspacioDeMinijuego(): HTMLElement {
+    this.hayEspacioDeMinijuego = true;
+    // Las pruebas corren sin navegador, así que no hay elementos de verdad. Este objeto vacío ocupa su lugar:
+    // los minijuegos falsos de las pruebas no dibujan nada en él.
+    return {} as HTMLElement;
+  }
+
+  cerrarEspacioDeMinijuego(): void {
+    this.hayEspacioDeMinijuego = false;
   }
 
   destruir(): void {

@@ -1,8 +1,8 @@
 // Caso de uso: poner a jugar un nivel ya validado. Monta la escenografía y los personajes,
 // conecta los toques del jugador con el nivel (caminar, hablar, salir) y dibuja un cuadro tras otro.
 //
-// Estado: faltan las zonas con comentarios, la flecha de la salida, los efectos y los minijuegos
-// (ver crear-acciones-de-paso.ts). Llegan en las fases siguientes (docs/DISENO-3.0.md §13).
+// Estado: faltan las zonas con comentarios, la flecha de la salida y los efectos
+// (ver crear-acciones-de-paso.ts).
 
 import { crearEstadoDeNivel } from '../dominio/estado.ts';
 import type { VariablesDeEstado } from '../dominio/estado.ts';
@@ -13,6 +13,7 @@ import { crearTerreno } from '../dominio/terreno.ts';
 import type { Audio } from '../puertos/audio.ts';
 import type { Escenario } from '../puertos/escenario.ts';
 import type { Interfaz } from '../puertos/interfaz.ts';
+import type { Minijuego } from '../puertos/minijuego.ts';
 import type { Reloj } from '../puertos/reloj.ts';
 import { atenderToque } from './atender-toque.ts';
 import { Conversacion } from './conversacion.ts';
@@ -30,6 +31,8 @@ export interface PedidoDeJuego {
   readonly ubicacion: UbicacionDeAssets;
   /** El idioma del sitio. */
   readonly idiomaBase: Idioma;
+  /** Los minijuegos que registró el host, por nombre. */
+  readonly minijuegos: Readonly<Record<string, Minijuego>>;
   /** Las variables del nivel en una partida guardada. `undefined` = el nivel empieza de cero. */
   readonly variablesGuardadas?: VariablesDeEstado;
 }
@@ -94,6 +97,8 @@ export async function jugarNivel(
     audio,
     reloj,
     reparto,
+    estado,
+    minijuegos: pedido.minijuegos,
     direccionDeAsset: (clave) => buscarDireccionDeAsset(clave, nivel.assets, ubicacion),
     alVerPalabra: (palabra) => avisos.alVerPalabra(palabra),
   });

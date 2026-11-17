@@ -49,6 +49,14 @@ export interface Interfaz {
   /** Avisa de la posición de la tarjeta que el jugador eligió. Devuelve una función que deja de escuchar. */
   alElegirOpcion(funcion: (posicion: number) => void): () => void;
 
+  /**
+   * Crea un elemento vacío a pantalla completa, encima de todo, para que un minijuego del host dibuje dentro.
+   * Está en la página normal (no aislado), así que le aplican los estilos del host.
+   */
+  abrirEspacioDeMinijuego(): HTMLElement;
+  /** Quita el espacio del minijuego con todo lo que tenga dentro. Si no hay ninguno, no hace nada. */
+  cerrarEspacioDeMinijuego(): void;
+
   /** Quita todo lo que la interfaz puso en la página. Se puede llamar más de una vez. */
   destruir(): void;
 }

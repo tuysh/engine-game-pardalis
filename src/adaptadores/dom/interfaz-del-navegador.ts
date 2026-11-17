@@ -22,7 +22,12 @@ const ESCALA_DE_PROYECCION = 1.4;
 const ESPACIO_SVG = 'http://www.w3.org/2000/svg';
 
 export class InterfazDelNavegador implements Interfaz {
+  /** El elemento del host donde vive el juego. */
+  private readonly elementoDelJuego: HTMLElement;
+  /** El elemento que aloja el «shadow root» con la interfaz. */
   private readonly anfitrion: HTMLElement;
+  /** El marco que sostiene a pantalla completa el espacio del minijuego abierto. `undefined` = no hay ninguno. */
+  private marcoDeMinijuego: HTMLElement | undefined;
   private readonly capaDeToque: HTMLElement;
   private readonly globo: HTMLElement;
   private readonly panelDeOpciones: HTMLElement;
@@ -40,6 +45,7 @@ export class InterfazDelNavegador implements Interfaz {
     if (getComputedStyle(elemento).position === 'static') {
       elemento.style.position = 'relative';
     }
+    this.elementoDelJuego = elemento;
     this.anfitrion = document.createElement('div');
     const raiz = this.anfitrion.attachShadow({ mode: 'open' });
 
@@ -166,6 +172,34 @@ export class InterfazDelNavegador implements Interfaz {
     this.panelDeInicio.hidden = false;
   }
 
+  abrirEspacioDeMinijuego(): HTMLElement {
+    this.cerrarEspacioDeMinijuego();
+
+    // El marco es del motor y lo coloca a pantalla completa. Es una rejilla de una sola celda:
+    // lo que tenga dentro se estira para llenarla, sin depender de los estilos que el minijuego
+    // le ponga a su elemento (que puede reemplazarlos todos sin romper nada).
+    const marco = document.createElement('div');
+    marco.style.position = 'absolute';
+    marco.style.inset = '0';
+    marco.style.display = 'grid';
+
+    const espacio = document.createElement('div');
+    // El host puede dar estilo a sus minijuegos con el selector [data-escenario-minijuego].
+    espacio.setAttribute('data-escenario-minijuego', '');
+    marco.append(espacio);
+
+    // Va fuera del «shadow root» y después de todo lo demás: así queda encima y con los estilos del host.
+    this.elementoDelJuego.appendChild(marco);
+    this.marcoDeMinijuego = marco;
+    return espacio;
+  }
+
+  cerrarEspacioDeMinijuego(): void {
+    if (this.marcoDeMinijuego === undefined) return;
+    this.marcoDeMinijuego.remove();
+    this.marcoDeMinijuego = undefined;
+  }
+
   /** Modo salón de clases: todo más grande. Se puede cambiar en cualquier momento. */
   ajustarProyeccion(estaActiva: boolean): void {
     const escala = estaActiva ? ESCALA_DE_PROYECCION : ESCALA_NORMAL;
@@ -179,6 +213,7 @@ export class InterfazDelNavegador implements Interfaz {
     document.removeEventListener('keydown', this.alOprimirUnaTecla);
     this.funcionesParaSeguir = [];
     this.funcionesDeEleccion = [];
+    this.cerrarEspacioDeMinijuego();
     this.anfitrion.remove();
   }
 

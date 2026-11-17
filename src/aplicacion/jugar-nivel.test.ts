@@ -81,7 +81,7 @@ async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
 
   const ubicacion = { direccionDelNivel: '/niveles/barrio/nivel.json', cargador: new CargadorDeMemoria({}) };
   const nivelEnJuego = await jugarNivel(
-    { nivel, ubicacion, idiomaBase: 'es', variablesGuardadas },
+    { nivel, ubicacion, idiomaBase: 'es', minijuegos: {}, variablesGuardadas },
     { escenario, interfaz, audio, reloj },
     {
       alCumplirObjetivo: (objetivo) => objetivosCumplidos.push(objetivo),

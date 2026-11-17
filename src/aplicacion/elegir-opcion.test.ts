@@ -4,8 +4,10 @@ import { EscenarioDeMemoria } from '../adaptadores/memoria/escenario-de-memoria.
 import { InterfazDeMemoria } from '../adaptadores/memoria/interfaz-de-memoria.ts';
 import { RelojDeMemoria } from '../adaptadores/memoria/reloj-de-memoria.ts';
 import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from '../dominio/contenido.ts';
+import { crearEstadoDeNivel } from '../dominio/estado.ts';
 import type { Opcion } from '../dominio/paso.ts';
 import { elegirOpcion } from './elegir-opcion.ts';
+import { EstadoEnJuego } from './estado-en-juego.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { Reparto } from './reparto.ts';
 
@@ -36,6 +38,8 @@ function crearEscena() {
     audio,
     reloj: new RelojDeMemoria(),
     reparto: new Reparto(escenario),
+    estado: new EstadoEnJuego(crearEstadoDeNivel({ objetivos: [], variables: [], lista: {} }), () => {}),
+    minijuegos: {},
     direccionDeAsset: (clave) => `/assets/${clave}`,
     alVerPalabra: () => {},
   };

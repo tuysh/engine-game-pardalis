@@ -24,7 +24,10 @@ export interface AssetsParaMinijuego {
 
 /** Lo que el motor le entrega a un minijuego al empezar. */
 export interface ContextoDeMinijuego {
-  /** Elemento vacío a pantalla completa. El motor lo crea antes y lo borra después. */
+  /**
+   * Elemento vacío a pantalla completa, encima del escenario. El motor lo crea antes y lo borra después.
+   * El minijuego puede ponerle los estilos que quiera: seguirá ocupando toda la pantalla del juego.
+   */
   readonly elemento: HTMLElement;
   /** Lo que venga en el campo `config` del paso `juego` del nivel. El minijuego debe revisarlo. */
   readonly config: unknown;

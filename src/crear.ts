@@ -1,9 +1,8 @@
 // `crearEscenario()`: la única puerta de entrada del motor en el navegador (docs/DISENO-3.0.md §4).
 // Es la raíz de composición: el único lugar que crea los adaptadores del navegador y se los entrega a la aplicación.
 //
-// Estado: carga y valida un nivel, lo dibuja, y deja caminar, hablar con personajes y salir.
-// Todavía no usa `cinematicas`, `alCargar`, `depurar` ni `semilla`, y los minijuegos solo se usan
-// para validar que el nivel los nombre bien. Cada cosa llega en su fase (§13).
+// Estado: carga y valida un nivel, lo dibuja, y deja caminar, hablar con personajes, jugar minijuegos y salir.
+// Todavía no usa `cinematicas`, `alCargar`, `depurar` ni `semilla`. Cada cosa llega en su fase (§13).
 
 import { AudioDelNavegador } from './adaptadores/audio/audio-del-navegador.ts';
 import { crearLienzo, leerDensidadDePantalla } from './adaptadores/dom/crear-lienzo.ts';
@@ -76,6 +75,7 @@ export async function crearEscenario(elemento: HTMLElement, opciones: OpcionesDe
       nivel,
       ubicacion: { direccionDelNivel, raizDeAssets: opciones.raizDeAssets, cargador },
       idiomaBase: opciones.idioma ?? 'es',
+      minijuegos: opciones.minijuegos ?? {},
       variablesGuardadas: variablesGuardadasDe(partidaInicial, idDelNivel),
     };
     nivelEnJuego = await jugarNivel(pedido, { escenario, interfaz, audio, reloj }, avisos);

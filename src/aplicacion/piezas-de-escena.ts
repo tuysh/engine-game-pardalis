@@ -8,7 +8,9 @@ import type { PalabraDeVocabulario } from '../dominio/paso.ts';
 import type { Audio } from '../puertos/audio.ts';
 import type { Escenario } from '../puertos/escenario.ts';
 import type { Interfaz } from '../puertos/interfaz.ts';
+import type { Minijuego } from '../puertos/minijuego.ts';
 import type { Reloj } from '../puertos/reloj.ts';
+import type { EstadoEnJuego } from './estado-en-juego.ts';
 import type { Reparto } from './reparto.ts';
 
 export interface PiezasDeEscena {
@@ -22,6 +24,10 @@ export interface PiezasDeEscena {
   readonly audio: Audio;
   readonly reloj: Reloj;
   readonly reparto: Reparto;
+  /** El estado del nivel. Los minijuegos lo leen; solo el ejecutor de pasos lo cambia. */
+  readonly estado: EstadoEnJuego;
+  /** Los minijuegos que registró el host, por nombre. */
+  readonly minijuegos: Readonly<Record<string, Minijuego>>;
   /** La dirección completa de un asset por su clave, o `undefined` si el nivel no lo tiene (una voz sin grabar). */
   readonly direccionDeAsset: (clave: string) => string | undefined;
   /** Se llama cada vez que una línea muestra una tarjeta de vocabulario. */
