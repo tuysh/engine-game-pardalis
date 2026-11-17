@@ -17,6 +17,7 @@ const CAPAS_DEL_CENTRO = ['dominio', 'puertos', 'aplicacion'];
 const PAQUETES_POR_ADAPTADOR: Record<string, readonly string[]> = {
   three: ['three'],
   json: ['zod'],
+  archivos: ['node:fs', 'node:path'],
 };
 
 /** Únicos adaptadores que pueden usar `window` y `document`. */
