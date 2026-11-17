@@ -3,6 +3,7 @@
 
 import type { Contenido } from '../dominio/contenido.ts';
 import type { DescripcionDeNivel } from '../dominio/descripcion-de-nivel.ts';
+import type { Manifiesto } from '../dominio/manifiesto.ts';
 
 /** Resultado de leer un archivo: o el valor ya revisado, o la lista de lo que está mal. */
 export type Lectura<Valor> =
@@ -14,4 +15,6 @@ export interface LectorDeNiveles {
   leerDescripcionDeNivel(json: unknown): Lectura<DescripcionDeNivel>;
   /** Lee el JSON de un archivo de contenido. Cada error lleva la ruta del problema dentro del archivo. */
   leerContenido(json: unknown): Lectura<Contenido>;
+  /** Lee el JSON de un manifiesto de assets (`assets.json`). */
+  leerManifiesto(json: unknown): Lectura<Manifiesto>;
 }
