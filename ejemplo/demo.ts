@@ -2,15 +2,7 @@
 // Se abre con `bun ejemplo/servidor.ts`. Es también un ejemplo de cómo usa el paquete un host sin framework.
 
 import { crearEscenario } from '../src/index.ts';
-import type { Minijuego } from '../src/index.ts';
-
-/**
- * Minijuego provisional: termina de inmediato con éxito y entrega las tortillas.
- * El motor todavía no abre minijuegos; hace falta registrarlo para que el nivel pase la validación.
- */
-const Tortilleria: Minijuego = async () => {
-  return { exito: true, otorgar: { tortillas: true } };
-};
+import { Tortilleria } from './tortilleria.ts';
 
 const elemento = document.querySelector<HTMLElement>('#juego');
 const aviso = document.querySelector<HTMLElement>('#aviso');
