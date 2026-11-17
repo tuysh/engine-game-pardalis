@@ -4,7 +4,7 @@
 import type { AjustesDeCamara } from '../../dominio/contenido.ts';
 import type { Punto } from '../../dominio/geometria.ts';
 import type { Mira } from '../../dominio/mundo.ts';
-import type { Escenario, Escenografia, PersonajeDeEscena, Toque } from '../../puertos/escenario.ts';
+import type { Escenario, Escenografia, LugarEnPantalla, PersonajeDeEscena, Toque } from '../../puertos/escenario.ts';
 
 /** Cómo está un personaje en el escenario falso. */
 export interface PersonajeRecordado {
@@ -49,6 +49,13 @@ export class EscenarioDeMemoria implements Escenario {
     if (personaje !== undefined) {
       personaje.mira = mira;
     }
+  }
+
+  /** En el escenario falso, la «pantalla» es el propio plano: un metro es un punto. */
+  lugarEnPantallaDe(id: string): LugarEnPantalla | undefined {
+    const personaje = this.personajes.get(id);
+    if (personaje === undefined) return undefined;
+    return { x: personaje.posicion.x, y: personaje.posicion.y };
   }
 
   enfocar(punto: Punto, camara: AjustesDeCamara, opciones: { readonly deInmediato: boolean }): void {

@@ -11,6 +11,7 @@ import type { Reloj } from '../puertos/reloj.ts';
 import type { UbicacionDeAssets } from './direccion-de-asset.ts';
 import { Exploracion } from './exploracion.ts';
 import { prepararEscenografia, prepararPersonajes } from './preparar-escena.ts';
+import { Reparto } from './reparto.ts';
 
 export interface PuertosParaJugar {
   readonly escenario: Escenario;
@@ -32,11 +33,12 @@ export async function jugarNivel(
   const { escenario, reloj } = puertos;
 
   await escenario.montar(prepararEscenografia(nivel, ubicacion));
+  const reparto = new Reparto(escenario);
   const personajes = prepararPersonajes(nivel, ubicacion);
   // Todas las imágenes de personajes se piden a la vez, para que la carga dure lo que dura la más lenta.
-  await Promise.all(personajes.map((personaje) => escenario.agregarPersonaje(personaje)));
+  await Promise.all(personajes.map((personaje) => reparto.agregar(personaje)));
 
-  const exploracion = crearExploracion(nivel, escenario);
+  const exploracion = crearExploracion(nivel, escenario, reparto);
   if (exploracion === undefined) {
     // Un nivel sin jugador no tiene a quién seguir: la cámara mira al centro del lugar.
     const centro = { x: nivel.mundo.anchoEnMetros / 2, y: nivel.mundo.profundidadEnMetros / 2 };
@@ -64,17 +66,15 @@ export async function jugarNivel(
 }
 
 /** El control libre del jugador, o `undefined` si el nivel no tiene jugador. */
-function crearExploracion(nivel: Nivel, escenario: Escenario): Exploracion | undefined {
+function crearExploracion(nivel: Nivel, escenario: Escenario, reparto: Reparto): Exploracion | undefined {
   const jugador = nivel.contenido.jugador;
   if (jugador === undefined) return undefined;
 
-  const inicio = nivel.mundo.iniciosDelJugador[0]!; // la validación garantiza un inicio si hay jugador
   return new Exploracion({
     escenario,
+    reparto,
     terreno: crearTerreno(nivel.mundo),
     idDelJugador: jugador.personaje,
-    posicionInicial: inicio.posicion,
-    miraInicial: inicio.mira,
     velocidadEnMetrosPorSegundo: jugador.velocidadEnMetrosPorSegundo,
     camara: nivel.contenido.mundo.camara,
   });

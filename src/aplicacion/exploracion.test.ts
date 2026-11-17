@@ -3,6 +3,7 @@ import { EscenarioDeMemoria } from '../adaptadores/memoria/escenario-de-memoria.
 import type { Terreno } from '../dominio/terreno.ts';
 import type { ImagenDeEscena } from '../puertos/escenario.ts';
 import { Exploracion } from './exploracion.ts';
+import { Reparto } from './reparto.ts';
 
 /** Una calle de 10 × 4 metros con una caja de 1 × 1 en medio. */
 const TERRENO: Terreno = {
@@ -24,13 +25,13 @@ const IMAGEN: ImagenDeEscena = {
 /** Un escenario falso con Tommy parado en (2, 3), y la exploración que lo controla a 2 metros por segundo. */
 async function crearExploracion(): Promise<{ escenario: EscenarioDeMemoria; exploracion: Exploracion }> {
   const escenario = new EscenarioDeMemoria();
-  await escenario.agregarPersonaje({ id: 'tommy', imagen: IMAGEN, posicion: { x: 2, y: 3 }, mira: 'derecha', sePuedeTocar: false });
+  const reparto = new Reparto(escenario);
+  await reparto.agregar({ id: 'tommy', imagen: IMAGEN, posicion: { x: 2, y: 3 }, mira: 'derecha', sePuedeTocar: false });
   const exploracion = new Exploracion({
     escenario,
+    reparto,
     terreno: TERRENO,
     idDelJugador: 'tommy',
-    posicionInicial: { x: 2, y: 3 },
-    miraInicial: 'derecha',
     velocidadEnMetrosPorSegundo: 2,
     camara: CAMARA,
   });
@@ -117,4 +118,29 @@ test('detener lo deja quieto donde está', async () => {
   exploracion.avanzar(0.5);
 
   expect(exploracion.posicion).toEqual({ x: 3, y: 3 });
+});
+
+test('al terminar de caminar avisa a quien lo pidió, una sola vez', async () => {
+  const { exploracion } = await crearExploracion();
+  let avisos = 0;
+
+  exploracion.irA({ x: 3, y: 3 }, () => avisos++);
+  exploracion.avanzar(0.25);
+  expect(avisos).toBe(0);
+  exploracion.avanzar(1);
+  exploracion.avanzar(1);
+
+  expect(avisos).toBe(1);
+});
+
+test('si se le manda a otro lugar antes de llegar, el aviso anterior ya no se da', async () => {
+  const { exploracion } = await crearExploracion();
+  let avisos = 0;
+
+  exploracion.irA({ x: 8, y: 3 }, () => avisos++);
+  exploracion.avanzar(0.25);
+  exploracion.irA({ x: 2, y: 3 });
+  exploracion.avanzar(5);
+
+  expect(avisos).toBe(0);
 });

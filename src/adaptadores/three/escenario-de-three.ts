@@ -2,13 +2,20 @@
 //
 // Se verifica a mano en la demo (`bun ejemplo/servidor.ts`); no tiene pruebas automáticas porque necesita WebGL.
 
-import { Color, Group, Mesh, Scene, WebGLRenderer } from 'three';
+import { Color, Group, Mesh, Scene, Vector3, WebGLRenderer } from 'three';
 import type { Object3D } from 'three';
 import type { AjustesDeCamara } from '../../dominio/contenido.ts';
 import { centroDeRectangulo } from '../../dominio/forma.ts';
 import type { Punto } from '../../dominio/geometria.ts';
 import type { Mira } from '../../dominio/mundo.ts';
-import type { DecoradoDeEscena, Escenario, Escenografia, PersonajeDeEscena, Toque } from '../../puertos/escenario.ts';
+import type {
+  DecoradoDeEscena,
+  Escenario,
+  Escenografia,
+  LugarEnPantalla,
+  PersonajeDeEscena,
+  Toque,
+} from '../../puertos/escenario.ts';
 import { buscarToque } from './buscar-toque.ts';
 import { CamaraQueSigue } from './camara-que-sigue.ts';
 import {
@@ -39,6 +46,8 @@ export class EscenarioDeThree implements Escenario {
   private readonly escenografia = new Group();
   /** Cada personaje es un grupo con su hoja y su sombra, por id. */
   private readonly personajes = new Map<string, Group>();
+  /** Cuánto mide de alto cada personaje, para saber dónde queda su cabeza. */
+  private readonly altoDeCadaPersonajeEnMetros = new Map<string, number>();
   /** Los objetos que responden al toque, con el toque que les corresponde. */
   private readonly tocables = new Map<Object3D, Toque>();
   private readonly observadorDeTamano: ResizeObserver;
@@ -99,6 +108,7 @@ export class EscenarioDeThree implements Escenario {
     grupo.add(crearSombra(personaje.imagen.anchoEnMetros));
     grupo.add(hoja);
     this.personajes.set(personaje.id, grupo);
+    this.altoDeCadaPersonajeEnMetros.set(personaje.id, personaje.imagen.altoEnMetros);
     this.escena.add(grupo);
     if (personaje.sePuedeTocar) {
       this.tocables.set(hoja, { tipo: 'personaje', id: personaje.id });
@@ -119,6 +129,22 @@ export class EscenarioDeThree implements Escenario {
     const grupo = this.personajes.get(id);
     if (grupo === undefined) return;
     grupo.scale.x = mira === 'derecha' ? 1 : -1;
+  }
+
+  lugarEnPantallaDe(id: string): LugarEnPantalla | undefined {
+    const grupo = this.personajes.get(id);
+    const altoEnMetros = this.altoDeCadaPersonajeEnMetros.get(id);
+    if (grupo === undefined || altoEnMetros === undefined) return undefined;
+
+    // `project` convierte un punto del espacio 3D a la medida de pantalla de Three.js:
+    // de -1 a 1, con el centro en 0 y la `y` hacia arriba. De ahí se pasa a puntos de CSS.
+    const cabeza = new Vector3(grupo.position.x, altoEnMetros, grupo.position.z);
+    cabeza.project(this.camara.camara);
+    const lienzo = this.dibujante.domElement;
+    return {
+      x: ((cabeza.x + 1) / 2) * lienzo.clientWidth,
+      y: ((1 - cabeza.y) / 2) * lienzo.clientHeight,
+    };
   }
 
   enfocar(punto: Punto, camara: AjustesDeCamara, opciones: { readonly deInmediato: boolean }): void {
@@ -154,6 +180,7 @@ export class EscenarioDeThree implements Escenario {
       liberarPiezasDe(grupo);
     }
     this.personajes.clear();
+    this.altoDeCadaPersonajeEnMetros.clear();
     this.tocables.clear();
 
     this.dibujante.dispose();

@@ -62,6 +62,12 @@ export interface PersonajeDeEscena {
   readonly sePuedeTocar: boolean;
 }
 
+/** Un lugar de la pantalla, en puntos de CSS desde la esquina superior izquierda del juego. */
+export interface LugarEnPantalla {
+  readonly x: number;
+  readonly y: number;
+}
+
 /** Lo que el jugador tocó. */
 export type Toque =
   | { readonly tipo: 'piso'; readonly punto: Punto }
@@ -76,6 +82,12 @@ export interface Escenario {
   agregarPersonaje(personaje: PersonajeDeEscena): Promise<void>;
   moverPersonaje(id: string, posicion: Punto): void;
   voltearPersonaje(id: string, mira: Mira): void;
+
+  /**
+   * Dónde se ve en la pantalla el punto justo encima de la cabeza de un personaje: ahí apunta su globo.
+   * `undefined` si el personaje no está en el escenario.
+   */
+  lugarEnPantallaDe(id: string): LugarEnPantalla | undefined;
 
   /**
    * Apunta la cámara a un punto del piso. Con `deInmediato` la cámara salta ahí;
