@@ -61,15 +61,25 @@ function revisarAssetsDePaso(paso: Paso, ruta: string, revision: RevisionDeAsset
   }
 }
 
-/** Una imagen puede ser fija o una animación. */
-function revisarImagen(clave: string, ruta: string, revision: RevisionDeAssets): void {
-  const asset = buscarAsset(clave, revision.assets);
+/**
+ * Por qué una clave no sirve como imagen, o `undefined` si sí sirve.
+ * Una imagen puede ser fija o una animación.
+ */
+export function problemaDeImagen(clave: string, assets: AssetsDeNivel): string | undefined {
+  const asset = buscarAsset(clave, assets);
   if (asset === undefined) {
-    revision.diagnostico.errores.push(`${ruta}: no existe la imagen "${clave}" en los assets del nivel`);
-    return;
+    return `no existe la imagen "${clave}" en los assets del nivel`;
   }
   if (asset.tipo !== 'imagen' && asset.tipo !== 'animacion') {
-    revision.diagnostico.errores.push(`${ruta}: "${clave}" es un asset de tipo ${asset.tipo}, y aquí va una imagen`);
+    return `"${clave}" es un asset de tipo ${asset.tipo}, y aquí va una imagen`;
+  }
+  return undefined;
+}
+
+function revisarImagen(clave: string, ruta: string, revision: RevisionDeAssets): void {
+  const problema = problemaDeImagen(clave, revision.assets);
+  if (problema !== undefined) {
+    revision.diagnostico.errores.push(`${ruta}: ${problema}`);
   }
 }
 
