@@ -2,16 +2,20 @@
 // Línea de comandos del motor: valida niveles y genera manifiestos de assets, sin navegador.
 // Corre en Bun y en Node. Uso: `escenario-engine ayuda`.
 //
-// Estado: los comandos todavía no hacen su trabajo. `validar` llega con la fase 2 del diseño
-// y `assets` con la fase 3 (docs/DISENO-3.0.md §13). Por ahora avisan y terminan con error,
-// para que ningún script de CI crea que un nivel quedó validado.
+// Estado:
+// - `validar` revisa nivel.json y el contenido. Todavía NO revisa el mapa ni los assets, y lo dice al terminar.
+// - `assets` todavía no hace su trabajo: avisa y termina con error. Llega con la fase 3 (docs/DISENO-3.0.md §13).
 
+import { CargadorDeArchivos } from './adaptadores/archivos/cargador-de-archivos.ts';
+import { LectorDeNivelesDeJson } from './adaptadores/json/lector-de-niveles-de-json.ts';
 import { interpretarComando, TEXTO_DE_AYUDA } from './aplicacion/interpretar-comando.ts';
+import { redactarInformeDeValidacion } from './aplicacion/redactar-informe-de-validacion.ts';
+import { validarNivel } from './aplicacion/validar-nivel.ts';
 
 const CODIGO_DE_EXITO = 0;
 const CODIGO_DE_ERROR = 1;
 
-function ejecutar(argumentos: readonly string[]): number {
+async function ejecutar(argumentos: readonly string[]): Promise<number> {
   const comando = interpretarComando(argumentos);
 
   switch (comando.tipo) {
@@ -20,8 +24,7 @@ function ejecutar(argumentos: readonly string[]): number {
       return CODIGO_DE_EXITO;
 
     case 'validar':
-      console.error(`[escenario-engine] "validar" todavía no está disponible (no se revisó ${comando.rutaDelNivel})`);
-      return CODIGO_DE_ERROR;
+      return validar(comando.rutaDelNivel, comando.minijuegos);
 
     case 'assets':
       console.error(`[escenario-engine] "assets" todavía no está disponible (no se generó nada en ${comando.carpeta})`);
@@ -34,6 +37,19 @@ function ejecutar(argumentos: readonly string[]): number {
   }
 }
 
+async function validar(rutaDelNivel: string, minijuegos: readonly string[] | undefined): Promise<number> {
+  const puertos = { cargador: new CargadorDeArchivos(), lector: new LectorDeNivelesDeJson() };
+  const resultado = await validarNivel({ direccionDelNivel: rutaDelNivel, minijuegos }, puertos);
+
+  for (const linea of redactarInformeDeValidacion(rutaDelNivel, resultado)) {
+    console.log(linea);
+  }
+  console.log('Nota: esta versión todavía no revisa el mapa ni los assets del nivel.');
+
+  if (resultado.errores.length > 0) return CODIGO_DE_ERROR;
+  return CODIGO_DE_EXITO;
+}
+
 // Los dos primeros argumentos son el ejecutable y la ruta de este archivo.
 const argumentosDelUsuario = process.argv.slice(2);
-process.exitCode = ejecutar(argumentosDelUsuario);
+process.exitCode = await ejecutar(argumentosDelUsuario);
