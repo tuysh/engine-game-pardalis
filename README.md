@@ -4,7 +4,8 @@ Motor del **modo Aventura de Pardalis**: juegos educativos libres para que niña
 aprendan inglés. Dibuja personajes y objetos 2D «de papel» parados dentro de un escenario 3D.
 
 > **Estado: versión 3.0 en construcción.** Es una reescritura completa.
-> Hoy el paquete ya se instala, trae sus tipos y **valida el contenido de un nivel**, pero
+> Hoy el paquete ya se instala, trae sus tipos, **valida el contenido y los assets de un nivel** y genera
+> manifiestos de assets, pero
 > `crearEscenario()` todavía no dibuja nada: rechaza con un `ErrorDeEscenario` que lo dice.
 > El avance por fases está en [`docs/DISENO-3.0.md` §13](docs/DISENO-3.0.md).
 
@@ -12,7 +13,7 @@ aprendan inglés. Dibuja personajes y objetos 2D «de papel» parados dentro de 
 | --- | --- | --- |
 | 1. Paquete | Estructura, construcción a JavaScript con tipos, pruebas, CLI vacío | Hecha |
 | 2. Núcleo | Contenido, pasos, condiciones, estado, partida, validación | Hecha (el cruce con el mapa llega en la fase 4) |
-| 3. Assets | Manifiesto, validación cruzada, carga de SVG | Pendiente |
+| 3. Assets | Manifiesto, validación cruzada, carga de SVG | En curso: falta la carga en el navegador (`raizDeAssets`, SVG como textura) |
 | 4. Escenario | Mapa de Tiled, piso, telones, personajes, cámara | Pendiente |
 | 5. Interfaz y audio | Globos, opciones, tarjetas, voces | Pendiente |
 | 6. Minijuegos | Minijuegos en un elemento del DOM | Pendiente |
@@ -42,8 +43,14 @@ La API completa (opciones, eventos, minijuegos, cinemáticas) está en [`docs/DI
 bunx escenario-engine validar niveles/barrio/nivel.json --minijuegos Tortilleria
 ```
 
-Revisa `nivel.json` y el contenido, y lista cada problema con la ruta de donde está. Todavía no revisa
-el mapa ni los assets. Cómo se escribe un nivel: [`docs/NIVELES.md`](docs/NIVELES.md).
+Revisa `nivel.json`, el contenido y que existan sus imágenes y voces, y lista cada problema con la ruta
+de donde está. Todavía no revisa el mapa. Cómo se escribe un nivel: [`docs/NIVELES.md`](docs/NIVELES.md).
+
+Para generar el manifiesto de una carpeta de assets (`assets.json`):
+
+```bash
+bunx escenario-engine assets niveles/barrio
+```
 
 ## Desarrollo
 
@@ -55,6 +62,7 @@ bun check            # tipos: debe decir "No type errors"
 bun test             # pruebas, incluida la de arquitectura
 bun run construir    # genera dist/ (JavaScript y tipos)
 bun src/cli.ts validar ejemplo/niveles/barrio/nivel.json --minijuegos Tortilleria
+bun src/cli.ts assets ejemplo/niveles/barrio
 ```
 
 Antes de cambiar código, lee [`AGENTS.md`](AGENTS.md): explica la arquitectura y las reglas para que

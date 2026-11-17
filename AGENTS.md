@@ -59,6 +59,7 @@ Todo lo de afuera (Three.js, el DOM, el audio, la red, Tiled) se conecta por med
         │        │ implementan
         │        ▼
         │   puertos/       Escenario · Interfaz · Audio · Video · Cargador · LectorDeNiveles · Reloj · Azar
+        │                  (y los de la línea de comandos: Carpetas · EscritorDeManifiestos)
         │        ▲ usan
         │        │
         │   aplicacion/    cargar un nivel · ejecutar pasos · cinemáticas · minijuegos · guardar
@@ -88,8 +89,8 @@ Todo lo de afuera (Three.js, el DOM, el audio, la red, Tiled) se conecta por med
 | `adaptadores/dom/` | DOM y CSS | `Interfaz`: globos, opciones, tarjetas, botones, franjas de cine; `Video` |
 | `adaptadores/audio/` | Web Audio y voz del navegador | `Audio`: voces, sonidos, música |
 | `adaptadores/red/` | `fetch` | `Cargador`: descarga niveles, manifiestos y assets |
-| `adaptadores/archivos/` | Archivos del disco (`node:fs`) | `Cargador` para la línea de comandos |
-| `adaptadores/json/` | Zod | `LectorDeNiveles`: convierte el JSON de `nivel.json` y del contenido en tipos del dominio |
+| `adaptadores/archivos/` | Archivos del disco (`node:fs`) | `Cargador` y `Carpetas` para la línea de comandos |
+| `adaptadores/json/` | Zod | `LectorDeNiveles`: convierte el JSON de `nivel.json`, del contenido y de `assets.json` en tipos del dominio. `EscritorDeManifiestos`: escribe `assets.json` |
 | `adaptadores/tiled/` | Formato `.tmj` | Convierte el mapa de Tiled en el `Mundo` del dominio |
 | `adaptadores/memoria/` | Ninguna | Versiones falsas de cada puerto, para las pruebas |
 
@@ -339,11 +340,14 @@ bun run construir   # genera dist/: JavaScript (ESM) y tipos .d.ts
 `bun run construir` y no `bun build`: ese último es el empaquetador de Bun y aquí no se usa.
 `dist/` lleva un archivo por cada archivo de `src/`, sin empaquetar, para que se pueda leer.
 
-Para validar un nivel (el formato está en [`docs/NIVELES.md`](docs/NIVELES.md)):
+Para validar un nivel y regenerar un manifiesto de assets (el formato está en [`docs/NIVELES.md`](docs/NIVELES.md)):
 
 ```bash
 bun src/cli.ts validar ejemplo/niveles/barrio/nivel.json --minijuegos Tortilleria
+bun src/cli.ts assets ejemplo/niveles/barrio
 ```
+
+Si agregas, quitas o renombras un archivo de `ejemplo/niveles/`, regenera su `assets.json` en el mismo cambio.
 
 Los comandos de demo se documentan aquí conforme se agreguen.
 Usa Bun para todo; no Node, npm ni vitest. Ver `CLAUDE.md`.
