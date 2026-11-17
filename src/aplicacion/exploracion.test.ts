@@ -1,0 +1,120 @@
+import { expect, test } from 'bun:test';
+import { EscenarioDeMemoria } from '../adaptadores/memoria/escenario-de-memoria.ts';
+import type { Terreno } from '../dominio/terreno.ts';
+import type { ImagenDeEscena } from '../puertos/escenario.ts';
+import { Exploracion } from './exploracion.ts';
+
+/** Una calle de 10 × 4 metros con una caja de 1 × 1 en medio. */
+const TERRENO: Terreno = {
+  pisos: [[{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 4 }, { x: 0, y: 4 }]],
+  obstaculos: [{ x: 4.5, y: 1.5, ancho: 1, alto: 1 }],
+};
+
+const CAMARA = { distanciaEnMetros: 8, alturaEnMetros: 4, giroEnGrados: 0 };
+
+const IMAGEN: ImagenDeEscena = {
+  direcciones: ['spr_tommy.svg'],
+  cuadrosPorSegundo: 0,
+  anchoEnPixeles: 90,
+  altoEnPixeles: 160,
+  anchoEnMetros: 0.9,
+  altoEnMetros: 1.6,
+};
+
+/** Un escenario falso con Tommy parado en (2, 3), y la exploración que lo controla a 2 metros por segundo. */
+async function crearExploracion(): Promise<{ escenario: EscenarioDeMemoria; exploracion: Exploracion }> {
+  const escenario = new EscenarioDeMemoria();
+  await escenario.agregarPersonaje({ id: 'tommy', imagen: IMAGEN, posicion: { x: 2, y: 3 }, mira: 'derecha', sePuedeTocar: false });
+  const exploracion = new Exploracion({
+    escenario,
+    terreno: TERRENO,
+    idDelJugador: 'tommy',
+    posicionInicial: { x: 2, y: 3 },
+    miraInicial: 'derecha',
+    velocidadEnMetrosPorSegundo: 2,
+    camara: CAMARA,
+  });
+  return { escenario, exploracion };
+}
+
+test('al empezar, la cámara ya está sobre el jugador', async () => {
+  const { escenario } = await crearExploracion();
+
+  expect(escenario.puntoEnfocado).toEqual({ x: 2, y: 3 });
+});
+
+test('sin destino, el jugador no se mueve', async () => {
+  const { escenario, exploracion } = await crearExploracion();
+
+  exploracion.avanzar(1);
+
+  expect(exploracion.estaCaminando).toBe(false);
+  expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 2, y: 3 });
+});
+
+test('camina hacia donde se le manda a su velocidad, y la cámara lo sigue', async () => {
+  const { escenario, exploracion } = await crearExploracion();
+
+  exploracion.irA({ x: 8, y: 3 });
+  exploracion.avanzar(0.5);
+
+  expect(exploracion.estaCaminando).toBe(true);
+  expect(exploracion.posicion).toEqual({ x: 3, y: 3 });
+  expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 3, y: 3 });
+  expect(escenario.puntoEnfocado).toEqual({ x: 3, y: 3 });
+});
+
+test('al llegar se detiene justo en el destino', async () => {
+  const { exploracion } = await crearExploracion();
+
+  exploracion.irA({ x: 3, y: 3 });
+  exploracion.avanzar(2);
+
+  expect(exploracion.estaCaminando).toBe(false);
+  expect(exploracion.posicion).toEqual({ x: 3, y: 3 });
+});
+
+test('voltea hacia el lado al que camina', async () => {
+  const { escenario, exploracion } = await crearExploracion();
+
+  exploracion.irA({ x: 0.5, y: 3 });
+  exploracion.avanzar(0.1);
+
+  expect(escenario.personajes.get('tommy')?.mira).toBe('izquierda');
+});
+
+test('un destino fuera del piso se cambia por la orilla más cercana', async () => {
+  const { exploracion } = await crearExploracion();
+
+  exploracion.irA({ x: 2, y: 9 });
+  exploracion.avanzar(5);
+
+  expect(exploracion.posicion.x).toBeCloseTo(2, 1);
+  expect(exploracion.posicion.y).toBeLessThan(4);
+  expect(exploracion.posicion.y).toBeGreaterThan(3.9);
+});
+
+test('si algo le tapa el paso, se detiene en vez de quedarse empujando', async () => {
+  const { exploracion } = await crearExploracion();
+
+  exploracion.irA({ x: 2, y: 2 });
+  exploracion.avanzar(1);
+  exploracion.irA({ x: 8, y: 2 }); // de frente contra la caja
+  for (let cuadro = 0; cuadro < 200; cuadro++) {
+    exploracion.avanzar(0.02);
+  }
+
+  expect(exploracion.estaCaminando).toBe(false);
+  expect(exploracion.posicion.x).toBeLessThan(4.5);
+});
+
+test('detener lo deja quieto donde está', async () => {
+  const { exploracion } = await crearExploracion();
+
+  exploracion.irA({ x: 8, y: 3 });
+  exploracion.avanzar(0.5);
+  exploracion.detener();
+  exploracion.avanzar(0.5);
+
+  expect(exploracion.posicion).toEqual({ x: 3, y: 3 });
+});
