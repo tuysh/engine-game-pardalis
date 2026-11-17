@@ -4,8 +4,9 @@ Motor del **modo Aventura de Pardalis**: juegos educativos libres para que niña
 aprendan inglés. Dibuja personajes y objetos 2D «de papel» parados dentro de un escenario 3D.
 
 > **Estado: versión 3.0 en construcción.** Es una reescritura completa.
-> Hoy el paquete ya **valida un nivel completo** (mapa, contenido y assets), genera manifiestos de assets y
-> **dibuja el nivel en 3D con el jugador caminando**. Todavía no hay diálogos, sonido, minijuegos ni cinemáticas.
+> Hoy el paquete ya **valida un nivel completo** (mapa, contenido y assets), genera manifiestos de assets,
+> **dibuja el nivel en 3D** y deja **caminar, hablar con personajes y salir**. Todavía no abre minijuegos
+> ni reproduce cinemáticas, y solo carga un nivel a la vez.
 > El avance por fases está en [`docs/DISENO-3.0.md` §13](docs/DISENO-3.0.md).
 
 | Fase | Qué incluye | Estado |
@@ -14,7 +15,7 @@ aprendan inglés. Dibuja personajes y objetos 2D «de papel» parados dentro de 
 | 2. Núcleo | Contenido, pasos, condiciones, estado, partida, validación | Hecha |
 | 3. Assets | Manifiesto, validación cruzada, carga de SVG | Hecha (`raizDeAssets` no se ha probado contra un CDN real) |
 | 4. Escenario | Mapa de Tiled, piso, telones, personajes, cámara | Hecha |
-| 5. Interfaz y audio | Globos, opciones, tarjetas, voces | Pendiente |
+| 5. Interfaz y audio | Globos, opciones, tarjetas, voces | En curso: faltan los comentarios de las zonas, la flecha de la salida, los efectos y la música |
 | 6. Minijuegos | Minijuegos en un elemento del DOM | Pendiente |
 | 7. Cinemáticas | Pasos nuevos, saltar, video, modo código | Pendiente |
 | 8. Varios niveles | La casa y el barrio de punta a punta | Pendiente |
@@ -26,7 +27,8 @@ bun install
 bun ejemplo/servidor.ts     # y abrir http://localhost:3000
 ```
 
-Carga el nivel de ejemplo `ejemplo/niveles/barrio`. Toca el piso y Tommy camina hasta ahí.
+Carga el nivel de ejemplo `ejemplo/niveles/barrio`. Toca el piso y Tommy camina hasta ahí; toca a Doña Tortu
+y Tommy va a hablar con ella. Las voces del ejemplo no están grabadas, así que se oye la voz sintetizada del navegador.
 
 ## Uso (como quedará)
 

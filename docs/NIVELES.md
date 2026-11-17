@@ -7,8 +7,9 @@ Referencia para quien dibuja mapas y escribe diálogos. El ejemplo completo est�
 > Las cinemáticas se documentan aquí cuando se construya su fase ([`DISENO-3.0.md` §13](DISENO-3.0.md));
 > mientras tanto, su diseño está en `DISENO-3.0.md` §7.
 >
-> Al jugar, hoy el motor dibuja el nivel y deja caminar al jugador. Los diálogos, la salida, las zonas y los
-> minijuegos ya se validan, pero todavía no se pueden jugar.
+> Al jugar, hoy el motor dibuja el nivel y deja caminar, hablar con personajes y objetos, y salir.
+> Ya se validan pero **todavía no se pueden jugar**: los minijuegos (el diálogo sigue por `siNo`),
+> los efectos (solo hacen una pausa), los comentarios de las zonas y la flecha de la salida.
 
 Un nivel es **una carpeta** con estos archivos, que se unen por `id` y por clave:
 
