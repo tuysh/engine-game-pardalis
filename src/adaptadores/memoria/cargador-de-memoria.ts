@@ -20,13 +20,20 @@ export class CargadorDeMemoria implements Cargador {
     return this.archivos[direccion];
   }
 
-  /**
-   * Pone la ruta en la misma carpeta que el archivo base.
-   * Limitación conocida: no entiende `..`; en las pruebas basta con nombres de archivo simples.
-   */
+  /** Pone la ruta en la misma carpeta que el archivo base, resolviendo los `.` y `..` que traiga. */
   resolverJuntoA(direccionBase: string, rutaRelativa: string): string {
-    const posicionDeLaUltimaBarra = direccionBase.lastIndexOf('/');
-    const carpeta = direccionBase.slice(0, posicionDeLaUltimaBarra + 1);
-    return carpeta + rutaRelativa;
+    const partesDeLaBase = direccionBase.split('/');
+    partesDeLaBase.pop(); // se quita el nombre del archivo base: queda su carpeta
+
+    const partes = [...partesDeLaBase];
+    for (const parte of rutaRelativa.split('/')) {
+      if (parte === '' || parte === '.') continue;
+      if (parte === '..') {
+        partes.pop();
+        continue;
+      }
+      partes.push(parte);
+    }
+    return partes.join('/');
   }
 }

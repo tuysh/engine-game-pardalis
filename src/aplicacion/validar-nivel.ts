@@ -25,6 +25,8 @@ export interface PedidoDeValidacion {
   readonly direccionDelNivel: string;
   /** Nombres de los minijuegos que registró el host. `undefined` = no se sabe, así que no se revisan. */
   readonly minijuegos?: readonly string[];
+  /** Carpeta o CDN donde están los assets. `undefined` = junto a cada `nivel.json`. */
+  readonly raizDeAssets?: string;
 }
 
 export interface PuertosParaValidar {
@@ -100,8 +102,8 @@ async function leerYRevisar(
   revisarCruce(contenido, mundo, diagnostico);
   if (diagnostico.errores.length > 0) return undefined;
 
-  const pedidoDeAssets = { direccionDelNivel, descripcion, cargador: puertos.cargador, lector: puertos.lector };
-  const assets = await cargarAssetsDeNivel(pedidoDeAssets, diagnostico);
+  const ubicacion = { direccionDelNivel, raizDeAssets: pedido.raizDeAssets, cargador: puertos.cargador };
+  const assets = await cargarAssetsDeNivel({ descripcion, ubicacion, lector: puertos.lector }, diagnostico);
   if (diagnostico.errores.length > 0) return undefined;
 
   revisarAssets(contenido, assets, diagnostico);
