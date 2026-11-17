@@ -47,15 +47,17 @@ El formato del contenido puede cambiar donde haga falta para quedar más simple.
 
 ```
 src/
-  nucleo/        lógica pura: esquema, validación, pasos, estado, condiciones, partida, geometría, manifiesto de assets
-  escenario/     Three.js: piso, telones, personajes de papel, cámara, efectos
-  interfaz/      DOM: globos, opciones, tarjetas, botones, franjas de cine, video
-  audio/         voces, sonidos, música, voz sintetizada
-  crear.ts       crearEscenario(): la única puerta de entrada
+  dominio/       reglas puras: nivel, pasos, condiciones, estado, partida, geometría, validación, manifiesto de assets
+  puertos/       interfaces de lo que la aplicación necesita del exterior
+  aplicacion/    casos de uso: validar y cargar un nivel, ejecutar pasos, cinemáticas, minijuegos, guardar
+  adaptadores/   una carpeta por tecnología: three/ dom/ audio/ red/ archivos/ tiled/ json/ memoria/
+  crear.ts       crearEscenario(): la única puerta de entrada en el navegador
+  validar.ts     entrada sin navegador, para validar niveles en CI
   cli.ts         validar y generar manifiestos
 ```
 
-`nucleo/` nunca importa `three` ni toca el DOM.
+`dominio/` nunca importa `three` ni toca el DOM. La arquitectura (hexagonal) y sus reglas están en
+[`AGENTS.md` §3](../AGENTS.md).
 
 ## 3. Uso mínimo
 
@@ -286,12 +288,15 @@ bunx escenario-engine assets niveles/casa
 {
   "spr_mama":          { "tipo": "imagen", "archivo": "img/spr_mama.svg", "ancho": 110, "alto": 170 },
   "tommy_viendo_tele": { "tipo": "animacion", "cuadros": ["img/tommy_viendo_tele_1.svg", "img/tommy_viendo_tele_2.svg"], "fps": 4, "ancho": 90, "alto": 160 },
-  "vo_mama_tortillas": { "tipo": "audio", "archivo": "voz/vo_mama_tortillas.mp3", "duracion": 2.1 },
-  "intro_tele":        { "tipo": "video", "archivo": "video/intro_tele.mp4", "duracion": 12 }
+  "vo_mama_tortillas": { "tipo": "audio", "archivo": "voz/vo_mama_tortillas.mp3" },
+  "intro_tele":        { "tipo": "video", "archivo": "video/intro_tele.mp4" }
 }
 ```
 
 - La **clave** es el nombre del archivo sin extensión.
+- La duración de audios y videos no se guarda: el navegador la conoce al cargarlos.
+- Si la misma clave está en dos carpetas de `assets` de un nivel, **gana la primera de la lista**
+  (la del nivel antes que `comun`) y el validador lo advierte.
 - **Animación:** archivos numerados `clave_1.svg`, `clave_2.svg`… se agrupan solos en una animación, en orden numérico.
   Todos los cuadros deben tener el mismo `viewBox`; si no, el generador da error.
   Los `fps` (por defecto 8) se ajustan en un archivo opcional `assets.config.json` que el generador respeta.
@@ -475,9 +480,8 @@ Cada fase termina con tipos y pruebas en verde, el validador aceptando el nivel 
 
 ## 14. Pendiente
 
-- **Lenguaje del código del motor:** este documento asume TypeScript por dentro (como la versión 2.0) y JavaScript
-  compilado hacia afuera, de modo que los hosts en JavaScript no notan la diferencia. La alternativa es JavaScript con JSDoc.
-
 - Nombres finales de los eventos (§4): se ajustan al usarlos en el primer host real.
-- Reescribir `README.md`, `AGENTS.md`, `docs/ESTILO.md` (la API pública pasa a español) y `docs/NIVELES.md`
-  conforme avance cada fase.
+- Completar `README.md` y `docs/NIVELES.md` conforme avance cada fase.
+
+Resuelto: el motor se escribe en **TypeScript estricto** y se publica como JavaScript compilado con tipos
+(ver `AGENTS.md` §4.5).
