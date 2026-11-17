@@ -58,6 +58,10 @@ export class EscenarioDeMemoria implements Escenario {
     return { x: personaje.posicion.x, y: personaje.posicion.y };
   }
 
+  lugarEnPantallaDelPunto(punto: Punto, alturaEnMetros: number): LugarEnPantalla {
+    return { x: punto.x, y: punto.y };
+  }
+
   enfocar(punto: Punto, camara: AjustesDeCamara, opciones: { readonly deInmediato: boolean }): void {
     this.puntoEnfocado = punto;
   }

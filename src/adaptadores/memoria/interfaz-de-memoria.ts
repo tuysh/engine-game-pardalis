@@ -20,6 +20,10 @@ export class InterfazDeMemoria implements Interfaz {
   opciones: OpcionesMostradas | undefined;
   /** Las posiciones que se han resaltado, en orden. */
   readonly opcionesResaltadas: (number | undefined)[] = [];
+  /** `true` mientras la flecha de la salida está en pantalla. */
+  hayFlecha = false;
+  textoDeLaFlecha: string | undefined;
+  lugarDeLaFlecha: LugarEnPantalla | undefined;
   /** `true` mientras hay un minijuego abierto. */
   hayEspacioDeMinijuego = false;
   estaDestruida = false;
@@ -65,6 +69,19 @@ export class InterfazDeMemoria implements Interfaz {
     return () => {
       this.funcionesDeEleccion = this.funcionesDeEleccion.filter((registrada) => registrada !== funcion);
     };
+  }
+
+  mostrarFlecha(texto: string | undefined): void {
+    this.hayFlecha = true;
+    this.textoDeLaFlecha = texto;
+  }
+
+  apuntarFlecha(lugar: LugarEnPantalla): void {
+    this.lugarDeLaFlecha = lugar;
+  }
+
+  ocultarFlecha(): void {
+    this.hayFlecha = false;
   }
 
   abrirEspacioDeMinijuego(): HTMLElement {

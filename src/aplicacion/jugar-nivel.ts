@@ -1,7 +1,7 @@
 // Caso de uso: poner a jugar un nivel ya validado. Monta la escenografía y los personajes,
 // conecta los toques y el teclado del jugador con el nivel (caminar, hablar, salir) y dibuja un cuadro tras otro.
 //
-// Estado: faltan la flecha de la salida y los efectos (ver crear-acciones-de-paso.ts).
+// Estado: faltan los efectos (ver crear-acciones-de-paso.ts).
 
 import { crearEstadoDeNivel } from '../dominio/estado.ts';
 import type { VariablesDeEstado } from '../dominio/estado.ts';
@@ -26,6 +26,7 @@ import { buscarDireccionDeAsset } from './direccion-de-asset.ts';
 import type { UbicacionDeAssets } from './direccion-de-asset.ts';
 import { EstadoEnJuego } from './estado-en-juego.ts';
 import { Exploracion } from './exploracion.ts';
+import { FlechaDeSalida } from './flecha-de-salida.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { prepararEscenografia, prepararPersonajes } from './preparar-escena.ts';
 import { Reparto } from './reparto.ts';
@@ -131,6 +132,8 @@ export async function jugarNivel(
     alEmpezar: () => comentarios.callar(),
   });
 
+  const flecha = new FlechaDeSalida({ nivel, estado, escenario, interfaz });
+
   const piezasParaToques = { nivel, reparto, conversacion, estado, exploracion, alSalir: avisos.alSalir };
   const dejarDeAtenderToques = escenario.alTocar((toque) => atenderToque(toque, piezasParaToques));
   const dejarDeDibujar = reloj.enCadaCuadro((segundos) => {
@@ -141,6 +144,8 @@ export async function jugarNivel(
       comentarios.avanzar(segundos, exploracion.posicion, !conversacion.hayDialogoEnCurso);
     }
     escenario.dibujar(segundos);
+    // La flecha se coloca después de dibujar, cuando la cámara ya está en su lugar de este cuadro.
+    flecha.actualizar();
   });
 
   return {
@@ -153,6 +158,7 @@ export async function jugarNivel(
     terminar(): void {
       conversacion.interrumpir();
       comentarios.callar();
+      flecha.ocultar();
       dejarDeAtenderToques();
       dejarDeDibujar();
     },

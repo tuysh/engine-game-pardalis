@@ -89,6 +89,9 @@ export interface Escenario {
    */
   lugarEnPantallaDe(id: string): LugarEnPantalla | undefined;
 
+  /** Dónde se ve en la pantalla un punto del lugar que está a cierta altura sobre el piso. */
+  lugarEnPantallaDelPunto(punto: Punto, alturaEnMetros: number): LugarEnPantalla;
+
   /**
    * Apunta la cámara a un punto del piso. Con `deInmediato` la cámara salta ahí;
    * sin él, se acerca con suavidad en los cuadros siguientes.

@@ -136,14 +136,19 @@ export class EscenarioDeThree implements Escenario {
     const altoEnMetros = this.altoDeCadaPersonajeEnMetros.get(id);
     if (grupo === undefined || altoEnMetros === undefined) return undefined;
 
+    const dondePisa = { x: grupo.position.x, y: grupo.position.z };
+    return this.lugarEnPantallaDelPunto(dondePisa, altoEnMetros);
+  }
+
+  lugarEnPantallaDelPunto(punto: Punto, alturaEnMetros: number): LugarEnPantalla {
     // `project` convierte un punto del espacio 3D a la medida de pantalla de Three.js:
     // de -1 a 1, con el centro en 0 y la `y` hacia arriba. De ahí se pasa a puntos de CSS.
-    const cabeza = new Vector3(grupo.position.x, altoEnMetros, grupo.position.z);
-    cabeza.project(this.camara.camara);
+    const enElEspacio = new Vector3(punto.x, alturaEnMetros, punto.y);
+    enElEspacio.project(this.camara.camara);
     const lienzo = this.dibujante.domElement;
     return {
-      x: ((cabeza.x + 1) / 2) * lienzo.clientWidth,
-      y: ((1 - cabeza.y) / 2) * lienzo.clientHeight,
+      x: ((enElEspacio.x + 1) / 2) * lienzo.clientWidth,
+      y: ((1 - enElEspacio.y) / 2) * lienzo.clientHeight,
     };
   }
 

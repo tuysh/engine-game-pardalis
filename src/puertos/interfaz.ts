@@ -50,6 +50,15 @@ export interface Interfaz {
   alElegirOpcion(funcion: (posicion: number) => void): () => void;
 
   /**
+   * Muestra la flecha que señala la salida del nivel. Se entiende por su dibujo y su movimiento;
+   * `texto` es una leyenda opcional. Si ya estaba, solo cambia su leyenda.
+   */
+  mostrarFlecha(texto: string | undefined): void;
+  /** Pone la punta de la flecha en un lugar de la pantalla. */
+  apuntarFlecha(lugar: LugarEnPantalla): void;
+  ocultarFlecha(): void;
+
+  /**
    * Crea un elemento vacío a pantalla completa, encima de todo, para que un minijuego del host dibuje dentro.
    * Está en la página normal (no aislado), así que le aplican los estilos del host.
    */

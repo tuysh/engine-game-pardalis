@@ -30,6 +30,7 @@ export class InterfazDelNavegador implements Interfaz {
   private marcoDeMinijuego: HTMLElement | undefined;
   private readonly capaDeToque: HTMLElement;
   private readonly globo: HTMLElement;
+  private readonly flecha: HTMLElement;
   private readonly panelDeOpciones: HTMLElement;
   private readonly panelDeInicio: HTMLElement;
   private tarjetas: HTMLElement[] = [];
@@ -55,9 +56,11 @@ export class InterfazDelNavegador implements Interfaz {
     this.globo = crearOculto('div', 'globo');
     // Quien usa un lector de pantalla escucha cada globo nuevo sin tener que buscarlo.
     this.globo.setAttribute('role', 'status');
+    this.flecha = crearOculto('div', 'flecha');
     this.panelDeOpciones = crearOculto('div', 'opciones');
     this.panelDeInicio = crearOculto('div', 'inicio');
-    raiz.append(estilos, this.capaDeToque, this.globo, this.panelDeOpciones, this.panelDeInicio);
+    // El orden importa: lo que va después se dibuja encima.
+    raiz.append(estilos, this.flecha, this.capaDeToque, this.globo, this.panelDeOpciones, this.panelDeInicio);
 
     this.capaDeToque.addEventListener('click', this.alTocarLaCapa);
     document.addEventListener('keydown', this.alOprimirUnaTecla);
@@ -158,7 +161,7 @@ export class InterfazDelNavegador implements Interfaz {
     boton.type = 'button';
     // El botón no lleva texto: el triángulo de «reproducir» se entiende sin leer.
     boton.setAttribute('aria-label', 'Jugar');
-    boton.append(crearTrianguloDeReproducir());
+    boton.append(crearDibujo('M6 3 L21 12 L6 21 Z'));
     boton.addEventListener(
       'click',
       () => {
@@ -170,6 +173,25 @@ export class InterfazDelNavegador implements Interfaz {
     );
     this.panelDeInicio.replaceChildren(boton);
     this.panelDeInicio.hidden = false;
+  }
+
+  mostrarFlecha(texto: string | undefined): void {
+    const dibujo = crearDibujo('M12 22 L3 11 H9 V2 H15 V11 H21 Z');
+    this.flecha.replaceChildren();
+    if (texto !== undefined) {
+      this.flecha.append(crearConTexto('div', 'leyenda-de-la-flecha', texto));
+    }
+    this.flecha.append(dibujo);
+    this.flecha.hidden = false;
+  }
+
+  apuntarFlecha(lugar: LugarEnPantalla): void {
+    // La punta de la flecha (el centro de su borde de abajo) queda en el lugar pedido.
+    this.flecha.style.transform = `translate(${lugar.x}px, ${lugar.y}px) translate(-50%, -100%)`;
+  }
+
+  ocultarFlecha(): void {
+    this.flecha.hidden = true;
   }
 
   abrirEspacioDeMinijuego(): HTMLElement {
@@ -291,12 +313,17 @@ function crearConTexto(etiqueta: string, clase: string, texto: string): HTMLElem
   return elemento;
 }
 
-function crearTrianguloDeReproducir(): SVGElement {
+/**
+ * Crea un dibujo SVG de 24 × 24 con una sola figura. `trazo` es el recorrido de la figura en el lenguaje
+ * de SVG; por ejemplo, 'M6 3 L21 12 L6 21 Z' es el triángulo de «reproducir».
+ */
+function crearDibujo(trazo: string): SVGElement {
   const dibujo = document.createElementNS(ESPACIO_SVG, 'svg');
   dibujo.setAttribute('viewBox', '0 0 24 24');
+  // Es un adorno: lo que significa ya lo dice la etiqueta del botón o el contexto.
   dibujo.setAttribute('aria-hidden', 'true');
-  const triangulo = document.createElementNS(ESPACIO_SVG, 'path');
-  triangulo.setAttribute('d', 'M6 3 L21 12 L6 21 Z');
-  dibujo.append(triangulo);
+  const figura = document.createElementNS(ESPACIO_SVG, 'path');
+  figura.setAttribute('d', trazo);
+  dibujo.append(figura);
   return dibujo;
 }

@@ -326,3 +326,41 @@ test('un diálogo que empieza reemplaza el comentario, y el comentario no le bor
 
   expect(interfaz.globo?.texto).toBe('¡Aquí tienes!');
 });
+
+test('la flecha de la salida aparece cuando se cumple su condición y apunta a la salida', async () => {
+  const nivelConFlecha: Nivel = {
+    ...NIVEL,
+    contenido: {
+      ...NIVEL.contenido,
+      salida: {
+        destino: 'Selector',
+        flecha: { visibleCuando: leerCondicionDeTexto('objetivosCompletos'), texto: '¡A casa!' },
+      },
+    },
+  };
+  const { escenario, interfaz, reloj } = await empezar(nivelConFlecha);
+
+  await reloj.avanzar(0.016);
+  expect(interfaz.hayFlecha).toBe(false);
+
+  // Hablar con Doña Tortu entrega las tortillas, que son el único objetivo.
+  escenario.simularToque({ tipo: 'personaje', id: 'tortu' });
+  await reloj.avanzar(3);
+  interfaz.simularToqueParaSeguir();
+  await reloj.avanzar(0.1);
+  await reloj.avanzar(0.016);
+
+  expect(interfaz.hayFlecha).toBe(true);
+  expect(interfaz.textoDeLaFlecha).toBe('¡A casa!');
+  // La salida es el cuadro de (9, 3) a (10, 4): su centro es (9.5, 3.5).
+  expect(interfaz.lugarDeLaFlecha).toEqual({ x: 9.5, y: 3.5 });
+});
+
+test('una salida sin condición para su flecha la muestra desde el principio', async () => {
+  const { interfaz, reloj } = await empezar(NIVEL);
+
+  await reloj.avanzar(0.016);
+
+  expect(interfaz.hayFlecha).toBe(true);
+  expect(interfaz.textoDeLaFlecha).toBeUndefined();
+});

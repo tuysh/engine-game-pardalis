@@ -90,6 +90,46 @@ export const ESTILOS_DE_LA_INTERFAZ = `
   white-space: nowrap;
 }
 
+/* La flecha que señala la salida: apunta hacia abajo y sube y baja para llamar la atención. */
+.flecha {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(4px * var(--escala));
+}
+
+.flecha svg {
+  width: calc(64px * var(--escala));
+  height: calc(64px * var(--escala));
+  fill: var(--acento);
+  stroke: var(--tinta);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  animation: subir-y-bajar 0.9s ease-in-out infinite alternate;
+}
+
+.leyenda-de-la-flecha {
+  padding: calc(4px * var(--escala)) calc(14px * var(--escala));
+  border: calc(3px * var(--escala)) solid var(--tinta);
+  border-radius: calc(14px * var(--escala));
+  background: var(--fondo);
+  font-size: calc(22px * var(--escala));
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@keyframes subir-y-bajar {
+  from {
+    transform: translateY(calc(-14px * var(--escala)));
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 .opciones {
   position: absolute;
   left: 0;
@@ -199,6 +239,9 @@ export const ESTILOS_DE_LA_INTERFAZ = `
 @media (prefers-reduced-motion: reduce) {
   .tarjeta {
     transition: none;
+  }
+  .flecha svg {
+    animation: none;
   }
 }
 `;
