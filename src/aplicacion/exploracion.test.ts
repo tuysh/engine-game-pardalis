@@ -169,7 +169,7 @@ test('con el teclado voltea hacia donde camina y no se sale del piso', async () 
   expect(exploracion.posicion.x).toBeLessThan(0.1);
 });
 
-test('oprimir una dirección cancela la caminata hacia el lugar tocado y su aviso', async () => {
+test('oprimir una dirección después de tocar un lugar cancela esa caminata y su aviso', async () => {
   const { exploracion } = await crearExploracion();
   let avisos = 0;
 
@@ -181,4 +181,34 @@ test('oprimir una dirección cancela la caminata hacia el lugar tocado y su avis
   expect(exploracion.estaCaminando).toBe(false);
   expect(avisos).toBe(0);
   expect(exploracion.posicion.x).toBeCloseTo(2.5, 5);
+});
+
+test('una dirección que ya estaba oprimida al dar la orden no la cancela', async () => {
+  const { exploracion } = await crearExploracion();
+  let avisos = 0;
+
+  // El jugador viene caminando a la izquierda y, sin soltar la tecla, pide ir a un lugar (o hablar con alguien).
+  exploracion.avanzar(0.25, { x: -1, y: 0 });
+  exploracion.irA({ x: 4, y: 3 }, () => avisos++);
+  for (let cuadro = 0; cuadro < 30; cuadro++) {
+    exploracion.avanzar(0.05, { x: -1, y: 0 });
+  }
+
+  expect(avisos).toBe(1);
+  expect(exploracion.posicion).toEqual({ x: 4, y: 3 });
+});
+
+test('después de soltar esa dirección, volver a oprimirla sí cancela la orden', async () => {
+  const { exploracion } = await crearExploracion();
+  let avisos = 0;
+
+  exploracion.avanzar(0.25, { x: -1, y: 0 });
+  exploracion.irA({ x: 8, y: 3 }, () => avisos++);
+  exploracion.avanzar(0.25, { x: -1, y: 0 }); // sigue oprimida: no cuenta
+  exploracion.avanzar(0.25); // la suelta
+  exploracion.avanzar(0.25, { x: -1, y: 0 }); // la oprime otra vez: ahora sí manda
+  exploracion.avanzar(5);
+
+  expect(avisos).toBe(0);
+  expect(exploracion.estaCaminando).toBe(false);
 });

@@ -449,3 +449,18 @@ test('la tecla de hablar no hace nada si no hay nadie cerca, ni durante un diál
   expect(interfaz.hayAviso).toBe(false);
   expect(interfaz.globo).toBeUndefined();
 });
+
+test('pedir hablar con una tecla de movimiento todavía oprimida inicia el diálogo igual', async () => {
+  const { escenario, interfaz, controles, reloj } = await empezar(NIVEL);
+  escenario.simularToque({ tipo: 'piso', punto: { x: 4.5, y: 2 } });
+  await reloj.avanzar(3);
+
+  // El jugador sigue con la tecla de la izquierda oprimida cuando oprime la de hablar.
+  controles.direccion = { x: -1, y: 0 };
+  controles.simularTeclaDeHablar();
+  for (let cuadro = 0; cuadro < 40; cuadro++) {
+    await reloj.avanzar(0.05);
+  }
+
+  expect(interfaz.globo?.texto).toBe('¡Aquí tienes!');
+});

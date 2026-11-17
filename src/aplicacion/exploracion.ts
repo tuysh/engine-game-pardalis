@@ -1,7 +1,10 @@
 // El control libre del jugador, con la cámara siguiéndolo. Hay dos formas de moverlo:
 //   - tocar (o hacer clic en) un lugar del piso: su personaje camina hasta ahí;
 //   - mantener oprimida una dirección en el teclado: camina hacia ese lado mientras se oprime.
-// El teclado manda: al oprimir una dirección, se olvida el lugar que se había tocado.
+//
+// Manda la orden más reciente. Oprimir una dirección hace olvidar el lugar que se había tocado; y al revés,
+// tocar un lugar (o pedir hablar con alguien) hace que no cuente la dirección que ya estaba oprimida,
+// hasta que el jugador la suelte y oprima otra vez.
 
 import { avanzarEnDireccion, avanzarHacia } from '../dominio/caminar.ts';
 import type { AjustesDeCamara } from '../dominio/contenido.ts';
@@ -30,6 +33,12 @@ export class Exploracion {
   private destino: Punto | undefined;
   /** Qué hacer cuando termine la caminata actual. */
   private alTerminarDeCaminar: (() => void) | undefined;
+  /**
+   * `true` desde que se manda al jugador a un lugar hasta que el teclado queda sin dirección oprimida.
+   * Mientras tanto la dirección oprimida no cuenta: si contara, cancelaría la orden que se acaba de dar
+   * (por ejemplo, pedir hablar con alguien sin haber soltado todavía la tecla con la que se venía caminando).
+   */
+  private laDireccionOprimidaEsAnteriorALaOrden = false;
 
   constructor(piezas: PiezasDeExploracion) {
     this.piezas = piezas;
@@ -54,6 +63,7 @@ export class Exploracion {
   irA(punto: Punto, alTerminar?: () => void): void {
     this.destino = ajustarAlPiso(punto, this.piezas.terreno);
     this.alTerminarDeCaminar = alTerminar;
+    this.laDireccionOprimidaEsAnteriorALaOrden = true;
   }
 
   /** Deja al jugador quieto donde está. */
@@ -69,7 +79,11 @@ export class Exploracion {
    */
   avanzar(segundos: number, direccionDelTeclado: Punto = SIN_DIRECCION): void {
     const hayDireccionDelTeclado = direccionDelTeclado.x !== 0 || direccionDelTeclado.y !== 0;
-    if (hayDireccionDelTeclado) {
+    if (!hayDireccionDelTeclado) {
+      this.laDireccionOprimidaEsAnteriorALaOrden = false;
+    }
+
+    if (hayDireccionDelTeclado && !this.laDireccionOprimidaEsAnteriorALaOrden) {
       // El teclado manda: se olvida el lugar tocado y lo que hubiera que hacer al llegar.
       this.detener();
       const distanciaEnMetros = this.piezas.velocidadEnMetrosPorSegundo * segundos;
