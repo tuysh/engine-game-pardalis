@@ -54,7 +54,7 @@ const SIN_INTERRUMPIR = new AbortController().signal;
 test('el personaje avanza cuadro a cuadro hacia el punto, a la velocidad del jugador', async () => {
   const { piezas, reloj, reparto } = await crearEscena();
 
-  void caminarEnEscena('tortu', 'frente', SIN_INTERRUMPIR, piezas);
+  void caminarEnEscena({ personaje: 'tortu', punto: 'frente' }, SIN_INTERRUMPIR, piezas);
   await reloj.avanzar(0.5);
 
   expect(reparto.posicionDe('tortu')).toEqual({ x: 6, y: 2 });
@@ -64,7 +64,7 @@ test('termina cuando el personaje llega justo al punto', async () => {
   const { piezas, reloj, reparto } = await crearEscena();
   let termino = false;
 
-  void caminarEnEscena('tortu', 'frente', SIN_INTERRUMPIR, piezas).then(() => {
+  void caminarEnEscena({ personaje: 'tortu', punto: 'frente' }, SIN_INTERRUMPIR, piezas).then(() => {
     termino = true;
   });
   await reloj.avanzar(1.9);
@@ -78,7 +78,7 @@ test('termina cuando el personaje llega justo al punto', async () => {
 test('voltea hacia donde camina', async () => {
   const { piezas, escenario, reloj } = await crearEscena();
 
-  void caminarEnEscena('tortu', 'frente', SIN_INTERRUMPIR, piezas);
+  void caminarEnEscena({ personaje: 'tortu', punto: 'frente' }, SIN_INTERRUMPIR, piezas);
   await reloj.avanzar(0.1);
 
   expect(escenario.personajes.get('tortu')?.mira).toBe('derecha');
@@ -88,7 +88,7 @@ test('al interrumpir, el personaje se queda donde iba y deja de avanzar', async 
   const { piezas, reloj, reparto } = await crearEscena();
   const interrupcion = new AbortController();
 
-  const caminata = caminarEnEscena('tortu', 'frente', interrupcion.signal, piezas);
+  const caminata = caminarEnEscena({ personaje: 'tortu', punto: 'frente' }, interrupcion.signal, piezas);
   await reloj.avanzar(0.5);
   interrupcion.abort();
   await caminata;
@@ -100,7 +100,7 @@ test('al interrumpir, el personaje se queda donde iba y deja de avanzar', async 
 test('si quien camina no está en el escenario, termina de inmediato', async () => {
   const { piezas } = await crearEscena();
 
-  await caminarEnEscena('mama', 'frente', SIN_INTERRUMPIR, piezas);
+  await caminarEnEscena({ personaje: 'mama', punto: 'frente' }, SIN_INTERRUMPIR, piezas);
 
   expect(piezas.reparto.estaEnEscena('mama')).toBe(false);
 });

@@ -90,7 +90,9 @@ function revisarPisoEInicio(contenido: Contenido, mundo: Mundo, diagnostico: Dia
   const inicio = inicios[0]!; // acabamos de comprobar que hay exactamente uno
   const estaSobreElPiso = mundo.pisos.some((piso) => puntoDentroDePoligono(inicio.posicion, piso));
   if (!estaSobreElPiso) {
-    diagnostico.errores.push(`mapa: ${inicio.descripcion} (inicioJugador) debe estar dentro de un polígono de la capa "piso"`);
+    diagnostico.errores.push(
+      `mapa: ${inicio.descripcion} (inicioJugador) debe estar dentro de un polígono de la capa "piso"`,
+    );
   }
 }
 
@@ -98,7 +100,9 @@ function revisarZonas(contenido: Contenido, mundo: Mundo, diagnostico: Diagnosti
   for (const nombre of Object.keys(mundo.zonas)) {
     const zona = mundo.zonas[nombre]!; // `nombre` viene de `Object.keys`, así que existe
     if (zona.grupo !== undefined && !Object.hasOwn(contenido.comentarios, zona.grupo)) {
-      diagnostico.errores.push(`mapa: ${zona.descripcion} (zona) usa el grupo "${zona.grupo}", que no existe en comentarios`);
+      diagnostico.errores.push(
+        `mapa: ${zona.descripcion} (zona) usa el grupo "${zona.grupo}", que no existe en comentarios`,
+      );
     }
   }
 }

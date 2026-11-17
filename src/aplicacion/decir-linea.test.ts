@@ -65,7 +65,7 @@ const HOLA: PasoDeLinea = { tipo: 'linea', hablante: 'tortu', texto: '¡Hola!', 
 test('muestra el globo sobre quien habla y dice el texto con su voz grabada', async () => {
   const { piezas, interfaz, audio } = await crearEscena();
 
-  void decirLinea(HOLA, '¡Hola!', SIN_INTERRUMPIR, piezas);
+  void decirLinea({ paso: HOLA, textoCompleto: '¡Hola!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
 
   expect(interfaz.globo).toEqual({ texto: '¡Hola!', traduccion: undefined, palabra: undefined });
   expect(interfaz.lugarDelGlobo).toEqual({ x: 5, y: 2 });
@@ -75,7 +75,7 @@ test('muestra el globo sobre quien habla y dice el texto con su voz grabada', as
 test('un toque cierra la línea: se quita el globo y se calla la voz', async () => {
   const { piezas, interfaz, audio } = await crearEscena();
 
-  const linea = decirLinea(HOLA, '¡Hola!', SIN_INTERRUMPIR, piezas);
+  const linea = decirLinea({ paso: HOLA, textoCompleto: '¡Hola!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
   interfaz.simularToqueParaSeguir();
   await linea;
 
@@ -88,7 +88,7 @@ test('si nadie toca, la línea se cierra sola un momento después de que termina
   const { piezas, interfaz, audio, reloj } = await crearEscena();
   let termino = false;
 
-  void decirLinea(HOLA, '¡Hola!', SIN_INTERRUMPIR, piezas).then(() => {
+  void decirLinea({ paso: HOLA, textoCompleto: '¡Hola!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas).then(() => {
     termino = true;
   });
   audio.terminarDeHablar();
@@ -104,7 +104,7 @@ test('al interrumpir el diálogo, la línea termina y no deja nada en pantalla',
   const { piezas, interfaz, reloj } = await crearEscena();
   const interrupcion = new AbortController();
 
-  const linea = decirLinea(HOLA, '¡Hola!', interrupcion.signal, piezas);
+  const linea = decirLinea({ paso: HOLA, textoCompleto: '¡Hola!', seCierraConUnToque: true }, interrupcion.signal, piezas);
   interrupcion.abort();
   await linea;
 
@@ -116,7 +116,7 @@ test('al interrumpir el diálogo, la línea termina y no deja nada en pantalla',
 test('el globo sigue a quien habla cuando se mueve', async () => {
   const { piezas, interfaz, reloj, reparto } = await crearEscena();
 
-  void decirLinea(HOLA, '¡Hola!', SIN_INTERRUMPIR, piezas);
+  void decirLinea({ paso: HOLA, textoCompleto: '¡Hola!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
   reparto.mover('tortu', { x: 6, y: 3 });
   await reloj.avanzar(0.016);
 
@@ -127,7 +127,7 @@ test('la traducción se muestra y se dice solo si el personaje habla otro idioma
   const { piezas, interfaz, audio } = await crearEscena();
   const gracias: PasoDeLinea = { tipo: 'linea', hablante: 'tommy', texto: 'Thank you!', traduccion: '¡Gracias!' };
 
-  void decirLinea(gracias, 'Thank you!', SIN_INTERRUMPIR, piezas);
+  void decirLinea({ paso: gracias, textoCompleto: 'Thank you!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
   expect(interfaz.globo?.traduccion).toBe('¡Gracias!');
   audio.terminarDeHablar();
   // La segunda frase se pide después de que la primera termina de resolverse.
@@ -136,7 +136,7 @@ test('la traducción se muestra y se dice solo si el personaje habla otro idioma
 
   expect(audio.frasesDichas).toEqual([
     { texto: 'Thank you!', idioma: 'en', direccionDeLaVoz: undefined },
-    { texto: '¡Gracias!', idioma: 'es', direccionDeLaVoz: undefined },
+    { texto: '¡Gracias!', idioma: 'es' },
   ]);
 });
 
@@ -144,7 +144,7 @@ test('la traducción de alguien que habla el idioma del sitio se ignora', async 
   const { piezas, interfaz } = await crearEscena();
   const linea: PasoDeLinea = { tipo: 'linea', hablante: 'tortu', texto: '¡Hola!', traduccion: 'Hello!' };
 
-  void decirLinea(linea, '¡Hola!', SIN_INTERRUMPIR, piezas);
+  void decirLinea({ paso: linea, textoCompleto: '¡Hola!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
 
   expect(interfaz.globo?.traduccion).toBeUndefined();
 });
@@ -153,7 +153,7 @@ test('una línea con vocabulario muestra la tarjeta y avisa de la palabra', asyn
   const { piezas, interfaz, palabrasVistas } = await crearEscena();
   const linea: PasoDeLinea = { tipo: 'linea', hablante: 'tortu', texto: '¡Está caliente!', palabra: { en: 'hot', es: 'caliente' } };
 
-  void decirLinea(linea, '¡Está caliente!', SIN_INTERRUMPIR, piezas);
+  void decirLinea({ paso: linea, textoCompleto: '¡Está caliente!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
 
   expect(interfaz.globo?.palabra).toEqual({ en: 'hot', es: 'caliente' });
   expect(palabrasVistas).toEqual([{ en: 'hot', es: 'caliente' }]);
@@ -165,7 +165,7 @@ test('en un dispositivo sin voz, el globo se queda el tiempo que tomaría leerlo
   const textoDeCincuentaLetras = 'a'.repeat(50);
   const linea: PasoDeLinea = { tipo: 'linea', hablante: 'tortu', texto: textoDeCincuentaLetras };
 
-  void decirLinea(linea, textoDeCincuentaLetras, SIN_INTERRUMPIR, piezas);
+  void decirLinea({ paso: linea, textoCompleto: textoDeCincuentaLetras, seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
   await reloj.avanzar(2.9);
   expect(interfaz.globo).toBeDefined();
   await reloj.avanzar(0.2);

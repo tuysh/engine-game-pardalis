@@ -146,6 +146,7 @@ function leerClaseDeDecorado(
     if (objeto.clase === clase) return clase;
   }
   const clasesValidas = CLASES_DE_DECORADO.join(', ');
-  anotarError(objeto, capa, `la clase "${objeto.clase}" no existe; las clases de decorado son: ${clasesValidas}`, conversion);
+  const problema = `la clase "${objeto.clase}" no existe; las clases de decorado son: ${clasesValidas}`;
+  anotarError(objeto, capa, problema, conversion);
   return undefined;
 }

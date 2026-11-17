@@ -5,7 +5,7 @@
 // Se verifica a mano en la demo; no tiene pruebas automáticas porque necesita un navegador con sonido.
 
 import type { Idioma } from '../../dominio/idioma.ts';
-import type { Audio, ResultadoDeDecir } from '../../puertos/audio.ts';
+import type { Audio, FrasePorDecir, ResultadoDeDecir } from '../../puertos/audio.ts';
 
 /** Con qué acento habla la voz sintetizada en cada idioma. */
 const ACENTO_POR_IDIOMA: Readonly<Record<Idioma, string>> = { es: 'es-MX', en: 'en-US' };
@@ -15,20 +15,15 @@ export class AudioDelNavegador implements Audio {
   private readonly sonando = new Set<HTMLAudioElement>();
   private estaDestruido = false;
 
-  async decir(
-    texto: string,
-    idioma: Idioma,
-    direccionDeLaVoz: string | undefined,
-    senal: AbortSignal,
-  ): Promise<ResultadoDeDecir> {
+  async decir(frase: FrasePorDecir, senal: AbortSignal): Promise<ResultadoDeDecir> {
     if (senal.aborted || this.estaDestruido) return 'dicho';
 
-    if (direccionDeLaVoz !== undefined) {
-      const seReprodujo = await this.reproducirGrabacion(direccionDeLaVoz, senal);
+    if (frase.direccionDeLaVoz !== undefined) {
+      const seReprodujo = await this.reproducirGrabacion(frase.direccionDeLaVoz, senal);
       if (seReprodujo) return 'dicho';
-      console.warn(`[escenario-engine] no se pudo reproducir la voz ${direccionDeLaVoz}; se usa voz sintetizada`);
+      console.warn(`[escenario-engine] no se pudo reproducir la voz ${frase.direccionDeLaVoz}; se usa voz sintetizada`);
     }
-    return this.decirConVozSintetizada(texto, idioma, senal);
+    return this.decirConVozSintetizada(frase.texto, frase.idioma, senal);
   }
 
   tocar(direccionDelSonido: string): void {

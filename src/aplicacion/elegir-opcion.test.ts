@@ -52,7 +52,7 @@ const SIN_INTERRUMPIR = new AbortController().signal;
 test('muestra la pregunta y una tarjeta por opción, con la dirección de su imagen', () => {
   const { piezas, interfaz } = crearEscena();
 
-  void elegirOpcion('¿Cuál quieres?', OPCIONES, SIN_INTERRUMPIR, piezas);
+  void elegirOpcion({ pregunta: '¿Cuál quieres?', opciones: OPCIONES }, SIN_INTERRUMPIR, piezas);
 
   expect(interfaz.opciones).toEqual({
     pregunta: '¿Cuál quieres?',
@@ -66,7 +66,7 @@ test('muestra la pregunta y una tarjeta por opción, con la dirección de su ima
 test('devuelve la posición de la tarjeta que tocó el jugador y quita las opciones', async () => {
   const { piezas, interfaz, audio } = crearEscena();
 
-  const eleccion = elegirOpcion('¿Cuál quieres?', OPCIONES, SIN_INTERRUMPIR, piezas);
+  const eleccion = elegirOpcion({ pregunta: '¿Cuál quieres?', opciones: OPCIONES }, SIN_INTERRUMPIR, piezas);
   interfaz.simularEleccion(1);
 
   expect(await eleccion).toBe(1);
@@ -78,7 +78,7 @@ test('devuelve la posición de la tarjeta que tocó el jugador y quita las opcio
 test('lee en voz alta la pregunta y luego cada opción, resaltando la que dice', async () => {
   const { piezas, interfaz, audio } = crearEscena();
 
-  void elegirOpcion('¿Cuál quieres?', OPCIONES, SIN_INTERRUMPIR, piezas);
+  void elegirOpcion({ pregunta: '¿Cuál quieres?', opciones: OPCIONES }, SIN_INTERRUMPIR, piezas);
   audio.terminarDeHablar(); // termina la pregunta
   await darTurno();
   audio.terminarDeHablar(); // termina "El rosa"
@@ -87,7 +87,7 @@ test('lee en voz alta la pregunta y luego cada opción, resaltando la que dice',
   await darTurno();
 
   expect(audio.frasesDichas).toEqual([
-    { texto: '¿Cuál quieres?', idioma: 'es', direccionDeLaVoz: undefined },
+    { texto: '¿Cuál quieres?', idioma: 'es' },
     { texto: 'El rosa', idioma: 'es', direccionDeLaVoz: '/assets/vo_rosa' },
     { texto: 'El azul', idioma: 'es', direccionDeLaVoz: undefined },
   ]);
@@ -99,7 +99,7 @@ test('lee en voz alta la pregunta y luego cada opción, resaltando la que dice',
 test('una posición que no existe se ignora y se sigue esperando', async () => {
   const { piezas, interfaz } = crearEscena();
 
-  const eleccion = elegirOpcion('¿Cuál quieres?', OPCIONES, SIN_INTERRUMPIR, piezas);
+  const eleccion = elegirOpcion({ pregunta: '¿Cuál quieres?', opciones: OPCIONES }, SIN_INTERRUMPIR, piezas);
   interfaz.simularEleccion(7);
   await darTurno();
   expect(interfaz.opciones).toBeDefined();
@@ -112,7 +112,7 @@ test('al interrumpir el diálogo, termina sin elección y no deja nada en pantal
   const { piezas, interfaz, audio } = crearEscena();
   const interrupcion = new AbortController();
 
-  const eleccion = elegirOpcion('¿Cuál quieres?', OPCIONES, interrupcion.signal, piezas);
+  const eleccion = elegirOpcion({ pregunta: '¿Cuál quieres?', opciones: OPCIONES }, interrupcion.signal, piezas);
   interrupcion.abort();
 
   expect(await eleccion).toBe(-1);

@@ -43,7 +43,11 @@ export function direccionDeArchivoDeAssets(carpeta: string, archivo: string, ubi
  * La dirección completa de un asset por su clave. De una animación, la de su primer cuadro.
  * Devuelve `undefined` si la clave no está en los assets del nivel (por ejemplo, una voz sin grabar).
  */
-export function buscarDireccionDeAsset(clave: string, assets: AssetsDeNivel, ubicacion: UbicacionDeAssets): string | undefined {
+export function buscarDireccionDeAsset(
+  clave: string,
+  assets: AssetsDeNivel,
+  ubicacion: UbicacionDeAssets,
+): string | undefined {
   if (!Object.hasOwn(assets, clave)) return undefined;
   const ubicado = assets[clave]!; // `hasOwn` acaba de comprobar que existe
 

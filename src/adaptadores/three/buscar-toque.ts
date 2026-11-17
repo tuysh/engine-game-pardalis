@@ -20,7 +20,11 @@ const PLANO_DEL_PISO = new Plane(new Vector3(0, 1, 0), 0);
  * `tocables` son los objetos que responden al toque, cada uno con el toque que le corresponde.
  * Devuelve `undefined` si se tocó el cielo: ni un objeto ni el piso.
  */
-export function buscarToque(lugar: LugarEnElLienzo, camara: Camera, tocables: ReadonlyMap<Object3D, Toque>): Toque | undefined {
+export function buscarToque(
+  lugar: LugarEnElLienzo,
+  camara: Camera,
+  tocables: ReadonlyMap<Object3D, Toque>,
+): Toque | undefined {
   // Three.js mide la pantalla de -1 a 1, con el centro en 0 y la `y` hacia arriba.
   const lugarParaThree = new Vector2(
     (lugar.x / lugar.anchoDelLienzo) * 2 - 1,

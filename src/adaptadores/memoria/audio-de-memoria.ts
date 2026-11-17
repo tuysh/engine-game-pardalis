@@ -1,19 +1,11 @@
 // Audio falso para las pruebas: no suena. Anota lo que se le pidió decir, y la prueba decide
 // cuándo «termina de hablar» con `terminarDeHablar()`.
 
-import type { Idioma } from '../../dominio/idioma.ts';
-import type { Audio, ResultadoDeDecir } from '../../puertos/audio.ts';
-
-/** Algo que se pidió decir. */
-export interface FraseDicha {
-  readonly texto: string;
-  readonly idioma: Idioma;
-  readonly direccionDeLaVoz: string | undefined;
-}
+import type { Audio, FrasePorDecir, ResultadoDeDecir } from '../../puertos/audio.ts';
 
 export class AudioDeMemoria implements Audio {
   /** Todo lo que se ha pedido decir, en orden. */
-  readonly frasesDichas: FraseDicha[] = [];
+  readonly frasesDichas: FrasePorDecir[] = [];
   readonly sonidosTocados: string[] = [];
   /** Lo que `decir` responde. Con `'sin_voz'` responde de inmediato, como un dispositivo sin voz sintetizada. */
   resultadoAlDecir: ResultadoDeDecir = 'dicho';
@@ -23,13 +15,8 @@ export class AudioDeMemoria implements Audio {
   /** Termina la frase que se está diciendo. `undefined` = nadie está hablando. */
   private terminarFraseActual: (() => void) | undefined;
 
-  decir(
-    texto: string,
-    idioma: Idioma,
-    direccionDeLaVoz: string | undefined,
-    senal: AbortSignal,
-  ): Promise<ResultadoDeDecir> {
-    this.frasesDichas.push({ texto, idioma, direccionDeLaVoz });
+  decir(frase: FrasePorDecir, senal: AbortSignal): Promise<ResultadoDeDecir> {
+    this.frasesDichas.push(frase);
     if (this.resultadoAlDecir === 'sin_voz') {
       return Promise.resolve('sin_voz');
     }

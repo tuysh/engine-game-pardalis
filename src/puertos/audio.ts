@@ -9,13 +9,22 @@ export type ResultadoDeDecir =
   /** No se pudo decir de ninguna forma: el dispositivo no tiene voz sintetizada. */
   | 'sin_voz';
 
+/** Algo que se va a decir en voz alta. */
+export interface FrasePorDecir {
+  readonly texto: string;
+  /** En qué idioma está el texto: decide el acento de la voz sintetizada. */
+  readonly idioma: Idioma;
+  /** Dirección completa de la voz grabada. `undefined` = no hay grabación: se usa voz sintetizada. */
+  readonly direccionDeLaVoz?: string;
+}
+
 export interface Audio {
   /**
-   * Dice un texto en voz alta. Usa la voz grabada si se da su dirección; si no hay, o si no se puede
-   * reproducir, usa la voz sintetizada del dispositivo en ese idioma.
+   * Dice una frase en voz alta. Usa la voz grabada si la frase trae su dirección; si no la trae, o si
+   * no se puede reproducir, usa la voz sintetizada del dispositivo.
    * La promesa termina cuando acaba de hablar, o en cuanto `senal` se dispara (y entonces se calla).
    */
-  decir(texto: string, idioma: Idioma, direccionDeLaVoz: string | undefined, senal: AbortSignal): Promise<ResultadoDeDecir>;
+  decir(frase: FrasePorDecir, senal: AbortSignal): Promise<ResultadoDeDecir>;
 
   /** Toca un sonido corto sin esperar a que termine. */
   tocar(direccionDelSonido: string): void;

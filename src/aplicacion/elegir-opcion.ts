@@ -5,6 +5,14 @@ import type { Opcion } from '../dominio/paso.ts';
 import type { OpcionPorMostrar } from '../puertos/interfaz.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 
+/** Lo que se le va a preguntar al jugador. */
+export interface EleccionPorHacer {
+  /** La pregunta con `{faltan}` y `{dinero}` ya reemplazados. */
+  readonly pregunta: string;
+  /** Solo las opciones que se pueden ofrecer ahora. */
+  readonly opciones: readonly Opcion[];
+}
+
 /** Lo que se devuelve cuando el diálogo se interrumpe antes de que el jugador elija. */
 const SIN_ELECCION = -1;
 
@@ -13,11 +21,11 @@ const SIN_ELECCION = -1;
  * Si el diálogo se interrumpe antes, devuelve -1.
  */
 export async function elegirOpcion(
-  pregunta: string,
-  opciones: readonly Opcion[],
+  eleccion: EleccionPorHacer,
   senal: AbortSignal,
   piezas: PiezasDeEscena,
 ): Promise<number> {
+  const { pregunta, opciones } = eleccion;
   const tarjetas: OpcionPorMostrar[] = [];
   for (const opcion of opciones) {
     let direccionDeLaImagen: string | undefined;
@@ -36,7 +44,7 @@ export async function elegirOpcion(
   senal.addEventListener('abort', alInterrumpir, { once: true });
 
   let dejarDeEscucharLaEleccion = (): void => {};
-  const eleccion = new Promise<number>((terminar) => {
+  const respuestaDelJugador = new Promise<number>((terminar) => {
     dejarDeEscucharLaEleccion = piezas.interfaz.alElegirOpcion((posicion) => {
       const esUnaPosicionValida = posicion >= 0 && posicion < opciones.length;
       if (!esUnaPosicionValida) return;
@@ -48,9 +56,9 @@ export async function elegirOpcion(
   });
 
   try {
-    const lectura = leerEnVozAlta(pregunta, opciones, cierre.signal, piezas);
+    const lectura = leerEnVozAlta(eleccion, cierre.signal, piezas);
     // Se esperan las dos: la lectura termina enseguida en cuanto hay elección, porque `cierre` ya se disparó.
-    const [posicionElegida] = await Promise.all([eleccion, lectura]);
+    const [posicionElegida] = await Promise.all([respuestaDelJugador, lectura]);
     return posicionElegida;
   } finally {
     senal.removeEventListener('abort', alInterrumpir);
@@ -61,13 +69,9 @@ export async function elegirOpcion(
 }
 
 /** Dice la pregunta y luego cada opción, resaltando la tarjeta de la que se está diciendo. */
-async function leerEnVozAlta(
-  pregunta: string,
-  opciones: readonly Opcion[],
-  senal: AbortSignal,
-  piezas: PiezasDeEscena,
-): Promise<void> {
-  await piezas.audio.decir(pregunta, piezas.idiomaBase, undefined, senal);
+async function leerEnVozAlta(eleccion: EleccionPorHacer, senal: AbortSignal, piezas: PiezasDeEscena): Promise<void> {
+  const { pregunta, opciones } = eleccion;
+  await piezas.audio.decir({ texto: pregunta, idioma: piezas.idiomaBase }, senal);
 
   for (let i = 0; i < opciones.length; i++) {
     if (senal.aborted) return;
@@ -80,7 +84,7 @@ async function leerEnVozAlta(
     }
     const hayAlgoQueDecir = opcion.texto !== undefined || direccionDeLaVoz !== undefined;
     if (hayAlgoQueDecir) {
-      await piezas.audio.decir(opcion.texto ?? '', piezas.idiomaBase, direccionDeLaVoz, senal);
+      await piezas.audio.decir({ texto: opcion.texto ?? '', idioma: piezas.idiomaBase, direccionDeLaVoz }, senal);
     }
   }
   if (!senal.aborted) {

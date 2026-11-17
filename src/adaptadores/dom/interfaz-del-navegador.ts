@@ -30,6 +30,8 @@ export class InterfazDelNavegador implements Interfaz {
   private tarjetas: HTMLElement[] = [];
   private funcionesParaSeguir: (() => void)[] = [];
   private funcionesDeEleccion: ((posicion: number) => void)[] = [];
+  /** Cuántos globos se han mostrado. Sirve para saber si el globo en pantalla sigue siendo el de quien quiere quitarlo. */
+  private globosMostrados = 0;
   private estaDestruida = false;
 
   /** Pone la capa de la interfaz dentro de `elemento`, encima de lo que ya tenga. */
@@ -56,7 +58,10 @@ export class InterfazDelNavegador implements Interfaz {
     elemento.appendChild(this.anfitrion);
   }
 
-  mostrarGlobo(globo: GloboPorMostrar): void {
+  mostrarGlobo(globo: GloboPorMostrar): () => void {
+    this.globosMostrados++;
+    const numeroDeEsteGlobo = this.globosMostrados;
+
     this.globo.replaceChildren();
     if (globo.palabra !== undefined) {
       this.globo.append(crearConTexto('div', 'tarjeta-de-palabra', `${globo.palabra.en} · ${globo.palabra.es}`));
@@ -66,6 +71,13 @@ export class InterfazDelNavegador implements Interfaz {
       this.globo.append(crearConTexto('div', 'traduccion', globo.traduccion));
     }
     this.globo.hidden = false;
+
+    return () => {
+      const sigueSiendoElGloboEnPantalla = this.globosMostrados === numeroDeEsteGlobo;
+      if (sigueSiendoElGloboEnPantalla) {
+        this.globo.hidden = true;
+      }
+    };
   }
 
   apuntarGlobo(lugar: LugarEnPantalla | undefined): void {
@@ -88,10 +100,6 @@ export class InterfazDelNavegador implements Interfaz {
     // Si el globo tuvo que correrse de lado, el piquito se corre al revés para seguir apuntando a quien habla.
     const desvioDelPiquito = izquierdaDeseada - izquierda;
     this.globo.style.setProperty('--desvio-del-piquito', `${desvioDelPiquito}px`);
-  }
-
-  ocultarGlobo(): void {
-    this.globo.hidden = true;
   }
 
   alTocarParaSeguir(funcion: () => void): () => void {

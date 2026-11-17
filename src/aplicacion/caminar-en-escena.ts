@@ -7,12 +7,16 @@ import { acercarse } from '../dominio/caminar.ts';
 import { VELOCIDAD_DEL_JUGADOR_POR_DEFECTO } from '../dominio/contenido.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 
-export function caminarEnEscena(
-  personaje: string,
-  punto: string,
-  senal: AbortSignal,
-  piezas: PiezasDeEscena,
-): Promise<void> {
+/** Quién camina y hasta dónde. */
+export interface CaminataPorHacer {
+  /** Id del personaje que camina. */
+  readonly personaje: string;
+  /** Nombre de un punto del mapa. */
+  readonly punto: string;
+}
+
+export function caminarEnEscena(caminata: CaminataPorHacer, senal: AbortSignal, piezas: PiezasDeEscena): Promise<void> {
+  const { personaje, punto } = caminata;
   const destino = piezas.puntos[punto]!; // la validación garantiza que el punto existe
   if (senal.aborted || !piezas.reparto.estaEnEscena(personaje)) {
     return Promise.resolve();

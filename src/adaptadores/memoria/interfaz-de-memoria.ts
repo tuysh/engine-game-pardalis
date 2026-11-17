@@ -25,17 +25,18 @@ export class InterfazDeMemoria implements Interfaz {
   private funcionesParaSeguir: (() => void)[] = [];
   private funcionesDeEleccion: ((posicion: number) => void)[] = [];
 
-  mostrarGlobo(globo: GloboPorMostrar): void {
+  mostrarGlobo(globo: GloboPorMostrar): () => void {
     this.globo = globo;
     this.globosMostrados.push(globo);
+    return () => {
+      if (this.globo === globo) {
+        this.globo = undefined;
+      }
+    };
   }
 
   apuntarGlobo(lugar: LugarEnPantalla | undefined): void {
     this.lugarDelGlobo = lugar;
-  }
-
-  ocultarGlobo(): void {
-    this.globo = undefined;
   }
 
   alTocarParaSeguir(funcion: () => void): () => void {

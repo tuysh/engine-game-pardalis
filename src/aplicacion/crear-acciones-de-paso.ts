@@ -17,16 +17,16 @@ const DURACION_DE_UN_EFECTO_EN_SEGUNDOS = 0.6;
 export function crearAccionesDePaso(piezas: PiezasDeEscena): AccionesDePaso {
   return {
     decirLinea(linea, textoCompleto, senal) {
-      return decirLinea(linea, textoCompleto, senal, piezas);
+      return decirLinea({ paso: linea, textoCompleto, seCierraConUnToque: true }, senal, piezas);
     },
     elegirOpcion(pregunta, opciones, senal) {
-      return elegirOpcion(pregunta, opciones, senal, piezas);
+      return elegirOpcion({ pregunta, opciones }, senal, piezas);
     },
     reproducirEfecto(nombre, senal) {
       return piezas.reloj.esperar(DURACION_DE_UN_EFECTO_EN_SEGUNDOS, senal);
     },
     caminar(personaje, punto, senal) {
-      return caminarEnEscena(personaje, punto, senal, piezas);
+      return caminarEnEscena({ personaje, punto }, senal, piezas);
     },
     async jugarMinijuego() {
       return { exito: false };

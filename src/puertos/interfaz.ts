@@ -23,14 +23,17 @@ export interface OpcionPorMostrar {
 }
 
 export interface Interfaz {
-  /** Muestra un globo de diálogo. Si ya había uno, lo reemplaza. */
-  mostrarGlobo(globo: GloboPorMostrar): void;
+  /**
+   * Muestra un globo de diálogo. Si ya había uno, lo reemplaza.
+   * Devuelve la función que quita ESE globo: si para entonces ya lo reemplazó otro, no hace nada.
+   * Así quien termina tarde (un comentario que se interrumpe) no borra el globo de quien llegó después.
+   */
+  mostrarGlobo(globo: GloboPorMostrar): () => void;
   /**
    * Pone el piquito del globo en un lugar de la pantalla: encima de la cabeza de quien habla.
    * Con `undefined` (quien habla no está en el escenario), el globo va arriba y al centro.
    */
   apuntarGlobo(lugar: LugarEnPantalla | undefined): void;
-  ocultarGlobo(): void;
 
   /**
    * Mientras alguien escucha, un toque en cualquier parte de la pantalla llama a `funcion`
