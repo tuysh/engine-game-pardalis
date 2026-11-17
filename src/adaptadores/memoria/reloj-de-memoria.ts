@@ -18,6 +18,7 @@ interface EsperaPendiente {
 export class RelojDeMemoria implements Reloj {
   private ahoraEnSegundos = 0;
   private esperasPendientes: EsperaPendiente[] = [];
+  private funcionesDeCadaCuadro: ((segundos: number) => void)[] = [];
 
   esperar(esperaEnSegundos: number, senal: AbortSignal): Promise<void> {
     if (senal.aborted || esperaEnSegundos <= 0) {
@@ -40,12 +41,23 @@ export class RelojDeMemoria implements Reloj {
     });
   }
 
+  enCadaCuadro(funcion: (segundos: number) => void): () => void {
+    this.funcionesDeCadaCuadro.push(funcion);
+    return () => {
+      this.funcionesDeCadaCuadro = this.funcionesDeCadaCuadro.filter((registrada) => registrada !== funcion);
+    };
+  }
+
   /**
-   * Hace pasar el tiempo. Termina las esperas que vencen, en orden, y le da turno al código
-   * que estaba esperando; si ese código pide otra espera que también vence, también termina.
+   * Hace pasar el tiempo. Cuenta como un solo cuadro: llama una vez a las funciones de `enCadaCuadro`.
+   * Luego termina las esperas que vencen, en orden, y le da turno al código que estaba esperando;
+   * si ese código pide otra espera que también vence, también termina.
    */
   async avanzar(segundos: number): Promise<void> {
     const destinoEnSegundos = this.ahoraEnSegundos + segundos;
+    for (const funcion of this.funcionesDeCadaCuadro) {
+      funcion(segundos);
+    }
 
     await dejarCorrerLoPendiente();
     let siguiente = this.buscarEsperaQueVenceAntesDe(destinoEnSegundos);

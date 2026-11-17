@@ -97,3 +97,16 @@ test('avanzar con pasos decimales no deja una espera sin vencer por redondeo', a
 
   expect(termino).toBe(true);
 });
+
+test('cada avance cuenta como un cuadro para quien pidió enterarse', async () => {
+  const reloj = new RelojDeMemoria();
+  const cuadros: number[] = [];
+
+  const cancelar = reloj.enCadaCuadro((segundos) => cuadros.push(segundos));
+  await reloj.avanzar(0.016);
+  await reloj.avanzar(0.02);
+  cancelar();
+  await reloj.avanzar(1);
+
+  expect(cuadros).toEqual([0.016, 0.02]);
+});
