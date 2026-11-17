@@ -14,7 +14,8 @@ export const TEXTO_DE_AYUDA = `Uso:
       Revisa un nivel y lista sus problemas. Con --minijuegos revisa también
       que cada paso "juego" nombre un minijuego de esa lista.
   escenario-engine assets <carpeta>
-      Genera el assets.json de una carpeta.
+      Genera el assets.json de una carpeta de assets, a partir de sus imágenes,
+      sonidos y videos. Hay que volver a generarlo cuando cambian los archivos.
   escenario-engine ayuda
       Muestra este texto.`;
 

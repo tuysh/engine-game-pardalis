@@ -2,11 +2,13 @@
 // Línea de comandos del motor: valida niveles y genera manifiestos de assets, sin navegador.
 // Corre en Bun y en Node. Uso: `escenario-engine ayuda`.
 //
-// Estado:
-// - `validar` revisa nivel.json y el contenido. Todavía NO revisa el mapa ni los assets, y lo dice al terminar.
-// - `assets` todavía no hace su trabajo: avisa y termina con error. Llega con la fase 3 (docs/DISENO-3.0.md §13).
+// Estado: `validar` todavía NO revisa el mapa, y lo dice al terminar. Llega con la fase 4 (docs/DISENO-3.0.md §13).
 
+import { CarpetasDeDisco } from './adaptadores/archivos/carpetas-de-disco.ts';
+import { EscritorDeManifiestosDeJson } from './adaptadores/json/escritor-de-manifiestos-de-json.ts';
+import { generarManifiesto } from './aplicacion/generar-manifiesto.ts';
 import { interpretarComando, TEXTO_DE_AYUDA } from './aplicacion/interpretar-comando.ts';
+import { redactarInformeDeAssets } from './aplicacion/redactar-informe-de-assets.ts';
 import { redactarInformeDeValidacion } from './aplicacion/redactar-informe-de-validacion.ts';
 import { validarNivel } from './validar.ts';
 
@@ -25,8 +27,7 @@ async function ejecutar(argumentos: readonly string[]): Promise<number> {
       return validar(comando.rutaDelNivel, comando.minijuegos);
 
     case 'assets':
-      console.error(`[escenario-engine] "assets" todavía no está disponible (no se generó nada en ${comando.carpeta})`);
-      return CODIGO_DE_ERROR;
+      return generarAssets(comando.carpeta);
 
     case 'invalido':
       console.error(`[escenario-engine] ${comando.mensaje}`);
@@ -41,7 +42,19 @@ async function validar(rutaDelNivel: string, minijuegos: readonly string[] | und
   for (const linea of redactarInformeDeValidacion(rutaDelNivel, resultado)) {
     console.log(linea);
   }
-  console.log('Nota: esta versión todavía no revisa el mapa ni los assets del nivel.');
+  console.log('Nota: esta versión todavía no revisa el mapa del nivel.');
+
+  if (resultado.errores.length > 0) return CODIGO_DE_ERROR;
+  return CODIGO_DE_EXITO;
+}
+
+async function generarAssets(carpeta: string): Promise<number> {
+  const puertos = { carpetas: new CarpetasDeDisco(), escritor: new EscritorDeManifiestosDeJson() };
+  const resultado = await generarManifiesto(carpeta, puertos);
+
+  for (const linea of redactarInformeDeAssets(carpeta, resultado)) {
+    console.log(linea);
+  }
 
   if (resultado.errores.length > 0) return CODIGO_DE_ERROR;
   return CODIGO_DE_EXITO;
