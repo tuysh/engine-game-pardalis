@@ -30,8 +30,10 @@ const EXPRESION_DE_IMPORTACION = /(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g;
 // Encuentra usos de los objetos globales del navegador, como `window.innerWidth` o `document.body`.
 const EXPRESION_DE_GLOBAL_DEL_NAVEGADOR = /\b(window|document)\./;
 
-// Reconoce una línea que es solo comentario: empieza con `//`, con `/*` o con el `*` de un comentario largo.
-const EXPRESION_DE_LINEA_DE_COMENTARIO = /^\s*(\/\/|\/\*|\*)/;
+// Reconocen los comentarios que ocupan sus propias líneas: uno largo, desde un `/*` al inicio de una línea
+// hasta su `*/`, y una línea que empieza con `//`. El código que siga en la misma línea de un `*/` se conserva.
+const EXPRESION_DE_COMENTARIO_LARGO = /^[ \t]*\/\*[\s\S]*?\*\//gm;
+const EXPRESION_DE_LINEA_DE_COMENTARIO = /^[ \t]*\/\/.*$/gm;
 
 /**
  * Dice a qué capa pertenece un archivo según su ruta dentro de `src/`.
@@ -68,12 +70,11 @@ function paquetesQuePuedeImportar(capa: string, esPrueba: boolean): string[] {
 }
 
 /**
- * Quita las líneas que son solo comentario. Un ejemplo de uso escrito en la documentación
+ * Quita los comentarios que ocupan sus propias líneas. Un ejemplo de uso escrito en la documentación
  * (`document.querySelector('#juego')`) no es código del motor, así que no cuenta como usar el navegador.
  */
 function quitarComentarios(contenido: string): string {
-  const lineasDeCodigo = contenido.split('\n').filter((linea) => !EXPRESION_DE_LINEA_DE_COMENTARIO.test(linea));
-  return lineasDeCodigo.join('\n');
+  return contenido.replace(EXPRESION_DE_COMENTARIO_LARGO, '').replace(EXPRESION_DE_LINEA_DE_COMENTARIO, '');
 }
 
 /** Revisa un archivo y devuelve un mensaje por cada regla que rompe. Lista vacía = todo bien. */
@@ -212,6 +213,16 @@ test('un ejemplo de uso dentro de un comentario no cuenta como usar el navegador
   ].join('\n');
 
   expect(revisarArchivo('puertos/minijuego.ts', contenido)).toEqual([]);
+});
+
+test('el código que comparte línea con un comentario, o que empieza con `*`, sí cuenta como usar el navegador', () => {
+  const problema = [
+    'puertos/minijuego.ts: usa window o document; ' +
+      'eso solo se permite en adaptadores/dom, adaptadores/audio, adaptadores/red',
+  ];
+
+  expect(revisarArchivo('puertos/minijuego.ts', '/* nota */ const ancho = window.innerWidth;')).toEqual(problema);
+  expect(revisarArchivo('puertos/minijuego.ts', 'const area = alto\n  * window.innerWidth;')).toEqual(problema);
 });
 
 test('no se permiten archivos index.ts fuera de la entrada del paquete', () => {
