@@ -321,11 +321,15 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   en las opciones de `dice`, y `{ es, en }` en `video`. El diseño solo mostraba `audio` y una clave.
 - **Las opciones de `crearEscenario()` se revisan al llamar.** Lo que impide arrancar es un error (va en
   `error.problemas`); una opción desconocida es solo una advertencia, para no romper a un host que
-  todavía pasa una opción de otra versión.
+  todavía pasa una opción de otra versión. `null` cuenta como no poner la opción. Con `niveles` registrados,
+  un `nivel` que no es ninguno de sus ids ni parece una dirección (no lleva `/` ni `.`) es un error: casi
+  siempre es un id mal escrito.
 - **El id de un nivel** es su clave en `niveles`; si se cargó por su dirección, es el `meta.id` de su contenido.
 - **Desde que un nivel sale hacia otro,** la partida ya dice que el jugador está en el nivel de destino
   (`partida.nivel`), aunque ese nivel todavía esté cargando. Así, si el juego se cierra en ese momento,
   continúa en el destino y no en un nivel intermedio (como la casa) que ya no tiene nada que hacer.
+  Si el destino no carga, el juego vuelve al nivel anterior y la partida lo nombra otra vez; si tampoco
+  se puede volver, la partida sigue nombrando el destino, para intentarlo de nuevo al abrir el juego.
 - **Si el nivel siguiente no logra empezar** (por ejemplo, no cargó una imagen), se vuelve a jugar el anterior
   con su estado guardado y el host recibe el evento `error`.
 - **Cada nivel tiene su propio estado.** Un nivel no puede preguntar por las variables de otro.

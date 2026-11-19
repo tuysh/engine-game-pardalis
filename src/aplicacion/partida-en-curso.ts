@@ -25,9 +25,13 @@ export class PartidaEnCurso {
     return variablesGuardadasDe(this.anotada, idDelNivel);
   }
 
-  /** Anota el estado con el que se deja un nivel, para restaurarlo si el jugador vuelve. */
+  /**
+   * Anota el estado con el que se deja un nivel, para restaurarlo si el jugador vuelve.
+   * Si se deja saliendo hacia otro nivel, lo anotado ya nombra ese destino: así, si después ningún nivel
+   * logra empezar (ni el destino ni el anterior), la partida no regresa al jugador al nivel que dejó.
+   */
   anotarNivel(idDelNivel: string, variables: VariablesDeEstado): void {
-    this.anotada = actualizarPartida(this.anotada, idDelNivel, variables);
+    this.anotada = this.nombrarElDestino(actualizarPartida(this.anotada, idDelNivel, variables));
   }
 
   /** Desde ahora la partida dice que el jugador está en `destino`, aunque ese nivel todavía esté cargando. */

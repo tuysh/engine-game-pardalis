@@ -59,3 +59,27 @@ test('sin nivel en juego y sin nada anotado, la partida nombra al último nivel 
 
   expect(partida.leerSinNivelEnJuego('casa')).toEqual({ v: 1, nivel: 'casa', niveles: { casa: { estado: {} } } });
 });
+
+test('si se dejó un nivel saliendo hacia otro y ninguno logró empezar, la partida sigue nombrando el destino', () => {
+  const partida = new PartidaEnCurso(undefined);
+  partida.salirHacia('barrio');
+  partida.anotarNivel('casa', { 'vista.intro': true });
+
+  // El barrio no cargó y tampoco se pudo volver a la casa: ya no se está saliendo, y no hay nivel en juego.
+  partida.olvidarLaSalida();
+
+  expect(partida.leerSinNivelEnJuego('casa')).toEqual({
+    v: 1,
+    nivel: 'barrio',
+    niveles: { casa: { estado: { 'vista.intro': true } } },
+  });
+});
+
+test('si el destino no cargó pero se volvió al nivel anterior, la partida nombra el nivel que se juega', () => {
+  const partida = new PartidaEnCurso(undefined);
+  partida.salirHacia('barrio');
+  partida.anotarNivel('casa', { 'vista.intro': true });
+  partida.olvidarLaSalida();
+
+  expect(partida.leerJugando('casa', { 'vista.intro': true }).nivel).toBe('casa');
+});
