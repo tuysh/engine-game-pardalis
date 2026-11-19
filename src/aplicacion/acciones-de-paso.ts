@@ -5,7 +5,9 @@
 // (el jugador tocó para seguir, el personaje llegó, el minijuego acabó) y que deben terminar también
 // en cuanto `senal` se dispara. Las que no reciben `senal` ocurren de una vez.
 //
-// Quien las implementa con las piezas de un nivel es crear-acciones-de-paso.ts.
+// Están en dos grupos: las de un diálogo (hablar, elegir, caminar, jugar) y las que dirigen la escena
+// (cámara, personajes, sonido, fundidos, video). Quien las crea con las piezas de un nivel es
+// crear-acciones-de-paso.ts.
 
 import type { Idioma } from '../dominio/idioma.ts';
 import type {
@@ -19,7 +21,8 @@ import type {
 } from '../dominio/paso.ts';
 import type { ResultadoDeMinijuego } from '../puertos/minijuego.ts';
 
-export interface AccionesDePaso {
+/** Las acciones de un diálogo: lo que pasa entre el jugador y quien le habla. */
+export interface AccionesDeDialogo {
   /** Muestra y dice una línea. `textoCompleto` es el texto con `{faltan}` y `{dinero}` ya reemplazados. */
   decirLinea(linea: PasoDeLinea, textoCompleto: string, senal: AbortSignal): Promise<void>;
 
@@ -41,7 +44,10 @@ export interface AccionesDePaso {
 
   /** Una pausa. */
   esperar(esperaEnSegundos: number, senal: AbortSignal): Promise<void>;
+}
 
+/** Las acciones que dirigen la escena: la cámara, quién está en el escenario, lo que suena y lo que se ve. */
+export interface AccionesDeDireccion {
   /** Lleva la cámara a su destino en el tiempo que dice el paso. Sin duración, es un corte. */
   moverCamara(paso: PasoDeCamara, senal: AbortSignal): Promise<void>;
   /** Deja la cámara ya en su destino, sin recorrido: es como queda al terminar `moverCamara`. */
@@ -80,3 +86,6 @@ export interface AccionesDePaso {
   /** Pide que el nivel termine hacia un destino en cuanto acabe la escena en curso. */
   pedirSalida(destino: string): void;
 }
+
+/** Todas las acciones que el ejecutor de pasos puede pedir. */
+export interface AccionesDePaso extends AccionesDeDialogo, AccionesDeDireccion {}

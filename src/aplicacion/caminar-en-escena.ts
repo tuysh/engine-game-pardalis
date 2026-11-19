@@ -1,7 +1,8 @@
 // Hace que un paso `camina` se vea: lleva a un personaje, cuadro a cuadro, hasta un punto del mapa.
 // Estas caminatas van en línea recta a su punto y no miran el terreno: las escribió quien hizo el nivel.
 //
-// Si el diálogo se interrumpe, el personaje se queda donde iba.
+// Si el diálogo se interrumpe, el personaje se queda donde iba. Si una cinemática se salta,
+// el personaje queda ya en su punto (`colocarEnEscena`).
 
 import { acercarse } from '../dominio/caminar.ts';
 import { VELOCIDAD_DEL_JUGADOR_POR_DEFECTO } from '../dominio/contenido.ts';
@@ -52,4 +53,11 @@ export function caminarEnEscena(caminata: CaminataPorHacer, senal: AbortSignal, 
     });
     senal.addEventListener('abort', finalizar, { once: true });
   });
+}
+
+/** Deja al personaje ya parado en su punto, mirando hacia donde caminaba: es como queda al terminar la caminata. */
+export function colocarEnEscena(caminata: CaminataPorHacer, piezas: PiezasDeEscena): void {
+  const destino = piezas.puntos[caminata.punto]!; // la validación garantiza que el punto existe
+  piezas.reparto.mirarHacia(caminata.personaje, destino);
+  piezas.reparto.mover(caminata.personaje, destino);
 }
