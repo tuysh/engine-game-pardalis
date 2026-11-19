@@ -1,0 +1,58 @@
+{
+  "sillon": {
+    "tipo": "imagen",
+    "archivo": "img/sillon.svg",
+    "ancho": 200,
+    "alto": 170
+  },
+  "spr_mama": {
+    "tipo": "imagen",
+    "archivo": "img/spr_mama.svg",
+    "ancho": 110,
+    "alto": 180
+  },
+  "suelo_casa": {
+    "tipo": "imagen",
+    "archivo": "img/suelo_casa.svg",
+    "ancho": 1024,
+    "alto": 640
+  },
+  "tapete": {
+    "tipo": "imagen",
+    "archivo": "img/tapete.svg",
+    "ancho": 360,
+    "alto": 180
+  },
+  "tele": {
+    "tipo": "animacion",
+    "cuadros": [
+      "img/tele_1.svg",
+      "img/tele_2.svg"
+    ],
+    "fps": 2,
+    "ancho": 150,
+    "alto": 170
+  },
+  "telon_pared": {
+    "tipo": "imagen",
+    "archivo": "img/telon_pared.svg",
+    "ancho": 500,
+    "alto": 420
+  },
+  "telon_sala": {
+    "tipo": "imagen",
+    "archivo": "img/telon_sala.svg",
+    "ancho": 1024,
+    "alto": 420
+  },
+  "tommy_viendo_tele": {
+    "tipo": "animacion",
+    "cuadros": [
+      "img/tommy_viendo_tele_1.svg",
+      "img/tommy_viendo_tele_2.svg"
+    ],
+    "fps": 2,
+    "ancho": 100,
+    "alto": 140
+  }
+}

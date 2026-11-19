@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "id": "casa",
+    "titulo": "La casa",
+    "personajes": {
+      "tommy": { "idioma": "en", "sprite": "spr_tommy" },
+      "mama": { "idioma": "es", "sprite": "spr_mama" }
+    }
+  },
+  "mundo": {
+    "camara": { "distancia": 9, "altura": 3.6, "giro": 0 },
+    "planos": {
+      "plano_tele": { "mira": "frente_tele", "distancia": 5.5, "altura": 2.2, "giro": 18 },
+      "plano_sala": { "mira": "centro_sala", "distancia": 8, "altura": 3.2, "giro": 0 },
+      "plano_mama": { "mira": "mama", "distancia": 5, "altura": 2.2, "giro": -12 }
+    }
+  },
+  "cinematicas": {
+    "intro": {
+      "inicia": "alEntrar",
+      "pasos": [
+        { "camara": "plano_tele" },
+        { "anima": "tommy", "con": "tommy_viendo_tele", "repite": true },
+        { "fundido": "abrir", "duracion": 1 },
+        { "espera": 2 },
+        {
+          "juntos": [
+            { "aparece": "mama", "en": "puerta" },
+            { "sonido": "puerta_abre" },
+            { "camara": "plano_sala", "duracion": 1.5 }
+          ]
+        },
+        { "camina": "junto_al_sillon", "quien": "mama" },
+        { "mira": "mama", "hacia": "tommy" },
+        { "camara": "plano_mama", "duracion": 1 },
+        { "dice": "mama", "texto": "¿Me traes tortillas, mijo?", "audio": "vo_mama_tortillas" },
+        { "mira": "tommy", "hacia": "mama" },
+        { "anima": "tommy", "con": "spr_tommy", "repite": true },
+        { "dice": "tommy", "texto": "Yes, mom!", "trad": "¡Sí, mamá!", "audio": "vo_tommy_si" },
+        { "fundido": "cerrar", "duracion": 0.8 },
+        { "sale": "barrio" }
+      ]
+    }
+  }
+}

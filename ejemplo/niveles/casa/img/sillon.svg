@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 170">
+  <!-- Sillón de la sala, visto de frente. Provisional, para el nivel de ejemplo. -->
+  <rect x="24" y="150" width="20" height="18" rx="4" fill="#5a3a22"/>
+  <rect x="156" y="150" width="20" height="18" rx="4" fill="#5a3a22"/>
+  <rect x="26" y="8" width="148" height="120" rx="26" fill="#3f8f8a"/>
+  <rect x="42" y="24" width="116" height="80" rx="16" fill="#4fa7a1"/>
+  <rect x="4" y="66" width="44" height="92" rx="18" fill="#357a76"/>
+  <rect x="152" y="66" width="44" height="92" rx="18" fill="#357a76"/>
+  <rect x="38" y="104" width="124" height="54" rx="14" fill="#4fa7a1"/>
+</svg>

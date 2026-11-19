@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 420">
+  <!-- Pared lateral de la sala: lisa, con su zoclo. Provisional, para el nivel de ejemplo. -->
+  <rect width="500" height="420" fill="#f0d9a6"/>
+  <rect y="0" width="500" height="26" fill="#e2c68b"/>
+  <rect y="388" width="500" height="32" fill="#9a6238"/>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 420">
+  <!-- Pared del fondo de la sala, con ventana, cuadros y la puerta a la derecha. Provisional, para el nivel de ejemplo. -->
+  <rect width="1024" height="420" fill="#f7e3b5"/>
+  <rect y="0" width="1024" height="26" fill="#e9cf96"/>
+  <rect y="388" width="1024" height="32" fill="#a8713f"/>
+  <!-- Ventana con cortinas -->
+  <rect x="330" y="90" width="240" height="180" rx="8" fill="#bfe6f5" stroke="#7a4a2b" stroke-width="10"/>
+  <line x1="450" y1="90" x2="450" y2="270" stroke="#7a4a2b" stroke-width="8"/>
+  <line x1="330" y1="180" x2="570" y2="180" stroke="#7a4a2b" stroke-width="8"/>
+  <circle cx="520" cy="130" r="22" fill="#fff3b0"/>
+  <path d="M312 78 H400 Q386 190 318 282 Z" fill="#e8553d"/>
+  <path d="M588 78 H500 Q514 190 582 282 Z" fill="#e8553d"/>
+  <rect x="300" y="66" width="300" height="16" rx="8" fill="#7a4a2b"/>
+  <!-- Cuadros -->
+  <rect x="80" y="110" width="110" height="90" rx="6" fill="#7fc8a9" stroke="#7a4a2b" stroke-width="8"/>
+  <circle cx="135" cy="150" r="20" fill="#f6c453"/>
+  <rect x="660" y="120" width="80" height="100" rx="6" fill="#f28f6b" stroke="#7a4a2b" stroke-width="8"/>
+  <path d="M676 204 L700 160 L724 204 Z" fill="#fdf3d0"/>
+  <!-- Puerta -->
+  <rect x="826" y="96" width="148" height="292" fill="#5a3a22"/>
+  <rect x="838" y="108" width="124" height="280" rx="4" fill="#9a6238"/>
+  <rect x="854" y="124" width="92" height="104" rx="4" fill="#84522e"/>
+  <rect x="854" y="244" width="92" height="124" rx="4" fill="#84522e"/>
+  <circle cx="850" cy="252" r="8" fill="#f6c453"/>
+</svg>

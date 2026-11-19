@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 170">
+  <!-- Televisión sobre su mueble. Cuadro 1 de la animación: caricatura con sol. Provisional. -->
+  <rect x="10" y="112" width="130" height="56" rx="6" fill="#9a6238"/>
+  <rect x="20" y="124" width="50" height="34" rx="4" fill="#84522e"/>
+  <rect x="80" y="124" width="50" height="34" rx="4" fill="#84522e"/>
+  <path d="M52 8 L75 26 L98 8" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/>
+  <rect x="6" y="24" width="138" height="92" rx="14" fill="#2b2b2b"/>
+  <rect x="16" y="34" width="96" height="72" rx="10" fill="#8fd3f4"/>
+  <circle cx="44" cy="58" r="14" fill="#fff3b0"/>
+  <path d="M16 96 Q50 70 80 92 T112 86 V106 H16 Z" fill="#7fc86a"/>
+  <circle cx="128" cy="50" r="6" fill="#e8553d"/>
+  <circle cx="128" cy="72" r="6" fill="#f6c453"/>
+</svg>

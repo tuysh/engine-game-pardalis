@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140">
+  <!-- Tommy sentado viendo la tele. Cuadro 2: se ríe y se inclina un poco. Provisional, para el nivel de ejemplo. -->
+  <rect x="26" y="112" width="13" height="26" rx="5" fill="#3b5b92"/>
+  <rect x="61" y="112" width="13" height="26" rx="5" fill="#3b5b92"/>
+  <rect x="22" y="100" width="24" height="20" rx="9" fill="#3b5b92"/>
+  <rect x="54" y="100" width="24" height="20" rx="9" fill="#3b5b92"/>
+  <rect x="27" y="60" width="46" height="50" rx="14" fill="#e8553d"/>
+  <rect x="15" y="60" width="12" height="38" rx="6" fill="#f2c9a0"/>
+  <rect x="73" y="60" width="12" height="38" rx="6" fill="#f2c9a0"/>
+  <circle cx="52" cy="37" r="28" fill="#f2c9a0"/>
+  <path d="M24 35 Q27 7 52 7 Q77 7 80 35 Q65 21 52 23 Q39 21 24 35 Z" fill="#5a3a22"/>
+  <path d="M40 38 Q44 34 48 38" fill="none" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/>
+  <path d="M60 38 Q64 34 68 38" fill="none" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/>
+  <path d="M42 48 Q54 62 66 48 Z" fill="#2b2b2b"/>
+</svg>

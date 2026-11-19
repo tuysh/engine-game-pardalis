@@ -1,0 +1,349 @@
+{
+ "compressionlevel": -1,
+ "height": 10,
+ "infinite": false,
+ "layers": [
+  {
+   "id": 1,
+   "name": "suelo",
+   "type": "imagelayer",
+   "image": "img/suelo_casa.svg",
+   "opacity": 1,
+   "visible": true,
+   "x": 0,
+   "y": 0,
+   "properties": [
+    {
+     "name": "asset",
+     "type": "string",
+     "value": "suelo_casa"
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "name": "telones",
+   "type": "objectgroup",
+   "draworder": "topdown",
+   "opacity": 1,
+   "visible": true,
+   "x": 0,
+   "y": 0,
+   "objects": [
+    {
+     "id": 1,
+     "name": "Pared del fondo",
+     "type": "telon",
+     "x": 0,
+     "y": 140,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "polyline": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 1024,
+       "y": 0
+      }
+     ],
+     "properties": [
+      {
+       "name": "asset",
+       "type": "string",
+       "value": "telon_sala"
+      },
+      {
+       "name": "alto",
+       "type": "int",
+       "value": 420
+      }
+     ]
+    },
+    {
+     "id": 11,
+     "name": "Pared izquierda",
+     "type": "telon",
+     "x": 0,
+     "y": 140,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "polyline": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0,
+       "y": 500
+      }
+     ],
+     "properties": [
+      {
+       "name": "asset",
+       "type": "string",
+       "value": "telon_pared"
+      },
+      {
+       "name": "alto",
+       "type": "int",
+       "value": 420
+      }
+     ]
+    },
+    {
+     "id": 12,
+     "name": "Pared derecha",
+     "type": "telon",
+     "x": 1024,
+     "y": 140,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "polyline": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 0,
+       "y": 500
+      }
+     ],
+     "properties": [
+      {
+       "name": "asset",
+       "type": "string",
+       "value": "telon_pared"
+      },
+      {
+       "name": "alto",
+       "type": "int",
+       "value": 420
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "name": "decorado",
+   "type": "objectgroup",
+   "draworder": "topdown",
+   "opacity": 1,
+   "visible": true,
+   "x": 0,
+   "y": 0,
+   "objects": [
+    {
+     "id": 2,
+     "name": "Tele",
+     "type": "parado",
+     "x": 90,
+     "y": 200,
+     "width": 150,
+     "height": 60,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "asset",
+       "type": "string",
+       "value": "tele"
+      }
+     ]
+    },
+    {
+     "id": 3,
+     "name": "Sillón",
+     "type": "parado",
+     "x": 400,
+     "y": 230,
+     "width": 200,
+     "height": 90,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "asset",
+       "type": "string",
+       "value": "sillon"
+      }
+     ]
+    },
+    {
+     "id": 4,
+     "name": "Tapete",
+     "type": "plano",
+     "x": 330,
+     "y": 350,
+     "width": 360,
+     "height": 180,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "asset",
+       "type": "string",
+       "value": "tapete"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "name": "npcs",
+   "type": "objectgroup",
+   "draworder": "topdown",
+   "opacity": 1,
+   "visible": true,
+   "x": 0,
+   "y": 0,
+   "objects": [
+    {
+     "id": 5,
+     "name": "Tommy",
+     "type": "npc",
+     "x": 500,
+     "y": 330,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "id",
+       "type": "string",
+       "value": "tommy"
+      },
+      {
+       "name": "mira",
+       "type": "string",
+       "value": "izquierda"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "name": "interaccion",
+   "type": "objectgroup",
+   "draworder": "topdown",
+   "opacity": 1,
+   "visible": true,
+   "x": 0,
+   "y": 0,
+   "objects": [
+    {
+     "id": 6,
+     "name": "puerta",
+     "type": "punto",
+     "x": 900,
+     "y": 200,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true
+    },
+    {
+     "id": 7,
+     "name": "junto_al_sillon",
+     "type": "punto",
+     "x": 660,
+     "y": 400,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true
+    },
+    {
+     "id": 8,
+     "name": "centro_sala",
+     "type": "punto",
+     "x": 520,
+     "y": 360,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true
+    },
+    {
+     "id": 9,
+     "name": "frente_tele",
+     "type": "punto",
+     "x": 330,
+     "y": 300,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true
+    }
+   ]
+  },
+  {
+   "id": 6,
+   "name": "piso",
+   "type": "objectgroup",
+   "draworder": "topdown",
+   "opacity": 1,
+   "visible": true,
+   "x": 0,
+   "y": 0,
+   "objects": [
+    {
+     "id": 10,
+     "name": "Sala",
+     "type": "piso",
+     "x": 40,
+     "y": 160,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "polygon": [
+      {
+       "x": 0,
+       "y": 0
+      },
+      {
+       "x": 944,
+       "y": 0
+      },
+      {
+       "x": 944,
+       "y": 440
+      },
+      {
+       "x": 0,
+       "y": 440
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "nextlayerid": 7,
+ "nextobjectid": 13,
+ "orientation": "orthogonal",
+ "renderorder": "right-down",
+ "tiledversion": "1.11.0",
+ "tileheight": 64,
+ "tilesets": [],
+ "tilewidth": 64,
+ "type": "map",
+ "version": "1.10",
+ "width": 16
+}

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 180">
+  <!-- Mamá: figura de papel provisional para el nivel de ejemplo. -->
+  <rect x="38" y="146" width="13" height="30" rx="5" fill="#f2c9a0"/>
+  <rect x="59" y="146" width="13" height="30" rx="5" fill="#f2c9a0"/>
+  <path d="M30 70 H80 L92 152 H18 Z" fill="#7a5cc0"/>
+  <rect x="14" y="74" width="13" height="48" rx="6" fill="#f2c9a0"/>
+  <rect x="83" y="74" width="13" height="48" rx="6" fill="#f2c9a0"/>
+  <path d="M38 84 H72 L78 140 H32 Z" fill="#fdf3d0"/>
+  <rect x="44" y="70" width="22" height="16" fill="#fdf3d0"/>
+  <circle cx="55" cy="42" r="28" fill="#f2c9a0"/>
+  <path d="M27 42 Q24 10 55 10 Q86 10 83 42 Q70 24 55 26 Q40 24 27 42 Z" fill="#5a3a22"/>
+  <circle cx="55" cy="10" r="12" fill="#5a3a22"/>
+  <circle cx="45" cy="44" r="3.5" fill="#2b2b2b"/>
+  <circle cx="65" cy="44" r="3.5" fill="#2b2b2b"/>
+  <path d="M45 56 Q55 64 65 56" fill="none" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="38" cy="52" r="5" fill="#f0a58f" opacity="0.7"/>
+  <circle cx="72" cy="52" r="5" fill="#f0a58f" opacity="0.7"/>
+</svg>
