@@ -24,7 +24,7 @@ import type { AccionesDePaso } from './acciones-de-paso.ts';
 import type { Conversacion } from './conversacion.ts';
 import type { EjecucionDePasos } from './ejecucion-de-pasos.ts';
 import { ejecutarPasos } from './ejecutar-pasos.ts';
-import { crearEscenaEnCodigo } from './escena-en-codigo.ts';
+import { EscenaEnCodigo } from './escena-en-codigo.ts';
 import type { LugaresParaCodigo } from './escena-en-codigo.ts';
 import type { EstadoEnJuego } from './estado-en-juego.ts';
 import { IniciosDeCinematicas } from './inicios-de-cinematicas.ts';
@@ -230,7 +230,7 @@ export class Cinematicas {
           );
         }
         const funcion = this.piezas.cinematicasEnCodigo[guion.nombre]!; // `hasOwn` acaba de comprobar que existe
-        const escena = crearEscenaEnCodigo({
+        const escena = new EscenaEnCodigo({
           nombre: guion.nombre,
           ejecucion,
           lugares: this.piezas.lugares,

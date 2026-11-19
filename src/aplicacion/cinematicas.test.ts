@@ -451,3 +451,23 @@ test('entre dos cinemáticas seguidas la pantalla se queda como la dejó la prim
   expect(avisosDeCinematicas).toEqual(['inicio primera', 'fin primera', 'inicio segunda', 'fin segunda']);
   expect(interfaz.opacidadDelFundido).toBe(0);
 });
+
+test('los pasos de una cinemática en código se pueden separar de `escena` y siguen funcionando', async () => {
+  const intro: CinematicaEnCodigo = async ({ aparece, camina, estado }) => {
+    await aparece('mama', 'puerta');
+    await camina('mama', 'sillon');
+    estado.pon('saludo', true);
+  };
+  const cinematicas = { intro: crearCinematica('intro', { guion: { tipo: 'codigo', nombre: 'intro' } }) };
+  const { nivelEnJuego, escenario, reloj, fallas } = await empezar(salaCon(cinematicas), {
+    cinematicasEnCodigo: { intro },
+  });
+
+  await reloj.avanzar(0.1);
+  await reloj.avanzar(2);
+  await reloj.avanzar(0);
+
+  expect(fallas).toEqual([]);
+  expect(escenario.personajes.get('mama')?.posicion).toEqual({ x: 5, y: 2 });
+  expect(nivelEnJuego.leerVariables()).toEqual({ saludo: true, 'vista.intro': true });
+});
