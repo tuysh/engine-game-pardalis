@@ -4,6 +4,7 @@
 
 import type { AjustesDeCamara } from '../dominio/contenido.ts';
 import type { Punto, Rectangulo } from '../dominio/geometria.ts';
+import type { GuiaDeDepuracion } from '../dominio/guias-de-depuracion.ts';
 import type { ClaseDeDecorado, Mira } from '../dominio/mundo.ts';
 
 /** Una imagen lista para dibujarse: de dónde se descarga y cuánto mide. */
@@ -129,6 +130,12 @@ export interface Escenario {
 
   /** Dibuja un cuadro. `segundos` es el tiempo desde el cuadro anterior. */
   dibujar(segundos: number): void;
+
+  /**
+   * Dibuja sobre el piso las guías del modo depuración (contornos y marcas con su etiqueta).
+   * Reemplaza las que hubiera; con una lista vacía, las quita. Termina cuando ya se ven.
+   */
+  mostrarGuias(guias: readonly GuiaDeDepuracion[]): Promise<void>;
 
   /** Avisa de cada toque. Devuelve una función que cancela el aviso. */
   alTocar(funcion: (toque: Toque) => void): () => void;

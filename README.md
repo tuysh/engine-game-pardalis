@@ -17,7 +17,7 @@ aprendan inglés. Dibuja personajes y objetos 2D «de papel» parados dentro de 
 | 4. Escenario | Mapa de Tiled, piso, telones, personajes, cámara | Hecha |
 | 5. Interfaz y audio | Globos, opciones, tarjetas, voces | Hecha (el audio no se ha oído en una prueba: verificar en un navegador con sonido) |
 | 6. Minijuegos | Minijuegos en un elemento del DOM | Hecha |
-| 7. Cinemáticas | Pasos nuevos, saltar, video, modo código | Hecha, salvo la cámara libre de depuración (el video no se ha probado con un MP4 real) |
+| 7. Cinemáticas | Pasos nuevos, saltar, video, modo código, cámara libre | Hecha (el video no se ha probado con un MP4 real) |
 | 8. Varios niveles | La casa y el barrio de punta a punta | Hecha |
 
 ## Ver la demo
@@ -32,7 +32,8 @@ termina saliendo al barrio (`ejemplo/niveles/barrio`). Ahí Tommy se mueve tocan
 `W` `A` `S` `D` y las flechas. Toca a Doña Tortu para hablar con ella y abrir el minijuego de las tortillas
 ([`ejemplo/tortilleria.ts`](ejemplo/tortilleria.ts)); con las tortillas ya se puede salir por la derecha.
 Las cinemáticas se saltan con el botón de abajo a la derecha. Para entrar directo a un nivel:
-`http://localhost:3000/?nivel=barrio`.
+`http://localhost:3000/?nivel=barrio`. Con `&depurar` se ven las guías del mapa y la tecla `C` abre la cámara
+libre con la que se crean los planos de cámara ([`docs/NIVELES.md`](docs/NIVELES.md)).
 Las voces del ejemplo no están grabadas, así que se oye la voz sintetizada del navegador.
 
 ## Uso

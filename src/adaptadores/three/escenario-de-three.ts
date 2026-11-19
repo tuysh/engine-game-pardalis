@@ -9,6 +9,7 @@ import { Color, Group, Scene, Vector3, WebGLRenderer } from 'three';
 import type { Mesh, Object3D, Texture } from 'three';
 import type { AjustesDeCamara } from '../../dominio/contenido.ts';
 import type { Punto } from '../../dominio/geometria.ts';
+import type { GuiaDeDepuracion } from '../../dominio/guias-de-depuracion.ts';
 import type { Mira } from '../../dominio/mundo.ts';
 import type {
   DecoradoDeEscena,
@@ -41,6 +42,7 @@ const DENSIDAD_MAXIMA_DE_DIBUJO = 2;
 
 export class EscenarioDeThree implements Escenario {
   private readonly elemento: HTMLElement;
+  private readonly fabrica: FabricaDeTexturas;
   private readonly dibujante: WebGLRenderer;
   private readonly escena = new Scene();
   private readonly camara = new CamaraEnPerspectiva();
@@ -56,12 +58,17 @@ export class EscenarioDeThree implements Escenario {
   private numeroDeMontaje = 0;
   /** Los efectos que se están animando ahora. */
   private efectos: EfectoDeParticulas[] = [];
+  /** Quita y libera las guías del modo depuración que se ven ahora. `undefined` = no hay ninguna. */
+  private quitarGuiasActuales: (() => void) | undefined;
+  /** Cambia con cada `mostrarGuias`: si dos pedidos se cruzan mientras cargan, gana el último. */
+  private numeroDeGuias = 0;
   private readonly observadorDeTamano: ResizeObserver;
   private estaDestruido = false;
 
   /** Lanza un error si el navegador no puede crear un lienzo con WebGL. */
   constructor(elemento: HTMLElement, fabrica: FabricaDeTexturas) {
     this.elemento = elemento;
+    this.fabrica = fabrica;
     this.almacen = new AlmacenDeTexturas(fabrica);
     this.personajes = new PersonajesDePapel({
       escena: this.escena,
@@ -196,6 +203,27 @@ export class EscenarioDeThree implements Escenario {
     this.dibujante.render(this.escena, this.camara.camara);
   }
 
+  async mostrarGuias(guias: readonly GuiaDeDepuracion[]): Promise<void> {
+    this.numeroDeGuias++;
+    const estePedido = this.numeroDeGuias;
+    // El dibujo de las guías se importa hasta que hace falta: así el modo depuración no pesa en producción.
+    const { crearGrupoDeGuias, liberarGrupoDeGuias } = await import('./guias-en-el-piso.ts');
+    if (this.estaDestruido || estePedido !== this.numeroDeGuias) return;
+
+    if (this.quitarGuiasActuales !== undefined) {
+      this.quitarGuiasActuales();
+      this.quitarGuiasActuales = undefined;
+    }
+    if (guias.length === 0) return;
+
+    const grupo = crearGrupoDeGuias(guias, this.fabrica.crearLienzo);
+    this.escena.add(grupo);
+    this.quitarGuiasActuales = () => {
+      this.escena.remove(grupo);
+      liberarGrupoDeGuias(grupo);
+    };
+  }
+
   alTocar(funcion: (toque: Toque) => void): () => void {
     return this.toques.alTocar(funcion);
   }
@@ -216,6 +244,10 @@ export class EscenarioDeThree implements Escenario {
       efecto.liberar();
     }
     this.efectos = [];
+    if (this.quitarGuiasActuales !== undefined) {
+      this.quitarGuiasActuales();
+      this.quitarGuiasActuales = undefined;
+    }
     this.almacen.liberarTodas();
 
     this.dibujante.dispose();

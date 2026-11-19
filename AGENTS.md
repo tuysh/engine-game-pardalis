@@ -59,7 +59,7 @@ Todo lo de afuera (Three.js, el DOM, el audio, la red, Tiled) se conecta por med
         │        │ implementan
         │        ▼
         │   puertos/       Escenario · Interfaz · Audio · Video · Controles · Cargador · LectorDeNiveles · LectorDeMapas · Reloj · Azar
-        │                  (y los de la línea de comandos: Carpetas · EscritorDeManifiestos)
+        │                  (el de depuración: PanelDeDepuracion; los de la línea de comandos: Carpetas · EscritorDeManifiestos)
         │        ▲ usan
         │        │
         │   aplicacion/    cargar un nivel · ejecutar pasos · cinemáticas · minijuegos · guardar
@@ -86,7 +86,7 @@ Todo lo de afuera (Three.js, el DOM, el audio, la red, Tiled) se conecta por med
 | Carpeta | Tecnología | Implementa |
 | --- | --- | --- |
 | `adaptadores/three/` | Three.js | `Escenario`: piso, telones, personajes de papel, cámara, efectos |
-| `adaptadores/dom/` | DOM y CSS | `Interfaz`: globos, opciones, tarjetas, botones, franjas de cine; `Video`; `Controles` del teclado; `Reloj` del navegador |
+| `adaptadores/dom/` | DOM y CSS | `Interfaz`: globos, opciones, tarjetas, botones, franjas de cine; `Video`; `Controles` del teclado; `Reloj` del navegador; `PanelDeDepuracion` |
 | `adaptadores/audio/` | Web Audio y voz del navegador | `Audio`: voces, sonidos, música |
 | `adaptadores/red/` | `fetch` | `Cargador`: descarga niveles, manifiestos y assets |
 | `adaptadores/archivos/` | Archivos del disco (`node:fs`) | `Cargador` y `Carpetas` para la línea de comandos |
@@ -353,8 +353,11 @@ Si agregas, quitas o renombras un archivo de `ejemplo/niveles/`, regenera su `as
 Para ver el motor funcionando en el navegador:
 
 ```bash
-bun ejemplo/servidor.ts     # la demo, en http://localhost:3000 (con ?nivel=barrio entra directo a ese nivel)
+bun ejemplo/servidor.ts     # la demo, en http://localhost:3000
 ```
+
+En la dirección de la demo, `?nivel=barrio` entra directo a ese nivel y `&depurar` muestra las guías del mapa
+y activa la cámara libre (tecla `C`).
 
 Los comandos de demo se documentan aquí conforme se agreguen.
 Usa Bun para todo; no Node, npm ni vitest. Ver `CLAUDE.md`.

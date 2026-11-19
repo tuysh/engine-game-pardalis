@@ -7,11 +7,13 @@
 import { crearEstadoDeNivel } from '../dominio/estado.ts';
 import type { VariablesDeEstado } from '../dominio/estado.ts';
 import type { Punto } from '../dominio/geometria.ts';
+import { crearGuiasDelMundo } from '../dominio/guias-de-depuracion.ts';
 import type { Nivel } from '../dominio/nivel.ts';
 import { crearTerreno } from '../dominio/terreno.ts';
 import { completarTexto } from '../dominio/texto-con-variables.ts';
 import { atenderToque } from './atender-toque.ts';
 import { CamaraDeEscena } from './camara-de-escena.ts';
+import type { CamaraLibre } from './camara-libre.ts';
 import { Cercania } from './cercania.ts';
 import { Cinematicas } from './cinematicas.ts';
 import { ComentariosDeZona } from './comentarios-de-zona.ts';
@@ -170,8 +172,33 @@ export async function jugarNivel(
   const salida = new SalidaDelNivel({ nivel, estado, conversacion, alSalir: (destino) => avisos.alSalir(destino) });
   const cercania = new Cercania({ nivel, reparto, escenario, interfaz });
 
+  let camaraLibre: CamaraLibre | undefined;
+  if (pedido.depuracion !== undefined) {
+    await escenario.mostrarGuias(crearGuiasDelMundo(nivel.mundo));
+    // La cámara libre se importa hasta que hace falta: así el modo depuración no pesa en producción.
+    const modulo = await import('./camara-libre.ts');
+    camaraLibre = new modulo.CamaraLibre({
+      contenido,
+      puntos: nivel.mundo.puntos,
+      decorado: nivel.mundo.decorado,
+      centroDelLugar,
+      escenario,
+      reparto,
+      panel: pedido.depuracion.panel,
+      pausarElJuego: pedido.depuracion.pausarElJuego,
+      reanudarElJuego: pedido.depuracion.reanudarElJuego,
+    });
+  }
+
   const piezasParaToques = { nivel, reparto, conversacion, salida, exploracion };
-  const dejarDeAtenderToques = escenario.alTocar((toque) => atenderToque(toque, piezasParaToques));
+  const dejarDeAtenderToques = escenario.alTocar((toque) => {
+    // Con la cámara libre activa, un toque no es para el juego: fija a qué mira el plano que se encuadra.
+    if (camaraLibre !== undefined && camaraLibre.estaActiva) {
+      camaraLibre.atenderToque(toque);
+      return;
+    }
+    atenderToque(toque, piezasParaToques);
+  });
   // La tecla de hablar hace lo mismo que tocar al personaje u objeto que el jugador tiene a la mano.
   const dejarDeAtenderLaTecla = controles.alPedirHablar(() => {
     if (exploracion === undefined) return;
@@ -231,6 +258,9 @@ export async function jugarNivel(
       flecha.ocultar();
       cercania.ocultar();
       audio.ponerMusica(undefined);
+      if (camaraLibre !== undefined) {
+        camaraLibre.destruir();
+      }
       dejarDeAtenderToques();
       dejarDeAtenderLaTecla();
       dejarDeDibujar();

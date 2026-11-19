@@ -19,7 +19,7 @@ import type { Minijuego } from '../puertos/minijuego.ts';
 import { jugarNivel } from './jugar-nivel.ts';
 import { leerNivelPorJugar } from './leer-nivel-por-jugar.ts';
 import type { FuenteDeNiveles, NivelPorJugar } from './leer-nivel-por-jugar.ts';
-import type { AvisosDelNivel, NivelEnJuego, PuertosParaJugar } from './nivel-en-juego.ts';
+import type { AvisosDelNivel, HerramientasDeDepuracion, NivelEnJuego, PuertosParaJugar } from './nivel-en-juego.ts';
 
 /** Cómo el juego le avisa de lo que pasa a quien lo creó. */
 export interface AvisosDelJuego {
@@ -48,6 +48,8 @@ export interface PiezasDelJuegoEnCurso {
   readonly cinematicasEnCodigo: Readonly<Record<string, CinematicaEnCodigo>>;
   /** `true` si el sistema pide menos movimiento. */
   readonly conMenosMovimiento: boolean;
+  /** Lo que hace falta para el modo depuración. `undefined` = se juega sin depuración. */
+  readonly depuracion?: HerramientasDeDepuracion;
   readonly puertos: PuertosParaJugar;
   readonly avisos: AvisosDelJuego;
   /** La partida con la que empieza el juego, ya revisada. `undefined` = partida nueva. */
@@ -115,6 +117,7 @@ export class JuegoEnCurso {
       cinematicasEnCodigo: this.piezas.cinematicasEnCodigo,
       variablesGuardadas: variablesGuardadasDe(this.partidaDeOtrosNiveles, porJugar.id),
       conMenosMovimiento: this.piezas.conMenosMovimiento,
+      depuracion: this.piezas.depuracion,
     };
     const enJuego = await jugarNivel(pedido, this.piezas.puertos, this.crearAvisosDelNivel());
     if (this.estaTerminado) {

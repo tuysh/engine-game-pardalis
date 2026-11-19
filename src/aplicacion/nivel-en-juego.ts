@@ -12,9 +12,18 @@ import type { Controles } from '../puertos/controles.ts';
 import type { Escenario } from '../puertos/escenario.ts';
 import type { Interfaz } from '../puertos/interfaz.ts';
 import type { Minijuego } from '../puertos/minijuego.ts';
+import type { PanelDeDepuracion } from '../puertos/panel-de-depuracion.ts';
 import type { Reloj } from '../puertos/reloj.ts';
 import type { Video } from '../puertos/video.ts';
 import type { UbicacionDeAssets } from './direccion-de-asset.ts';
+
+/** Lo que hace falta para el modo depuración (docs/DISENO-3.0.md §9.3). */
+export interface HerramientasDeDepuracion {
+  readonly panel: PanelDeDepuracion;
+  /** Congelan y reanudan el juego: la cámara libre lo pausa mientras se encuadra un plano. */
+  readonly pausarElJuego: () => void;
+  readonly reanudarElJuego: () => void;
+}
 
 /** Lo que se va a jugar. */
 export interface PedidoDeJuego {
@@ -30,6 +39,8 @@ export interface PedidoDeJuego {
   readonly variablesGuardadas?: VariablesDeEstado;
   /** `true` si el sistema pide menos movimiento: los viajes de cámara se vuelven cortes. Por defecto `false`. */
   readonly conMenosMovimiento?: boolean;
+  /** Con esto, el nivel dibuja sus guías y ofrece la cámara libre. `undefined` = se juega sin depuración. */
+  readonly depuracion?: HerramientasDeDepuracion;
 }
 
 export interface PuertosParaJugar {

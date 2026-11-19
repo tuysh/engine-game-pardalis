@@ -3,6 +3,8 @@
 //
 // Para probar un nivel sin pasar por el anterior, se le nombra en la dirección:
 //   http://localhost:3000/?nivel=barrio
+// Y para ver las guías del mapa y usar la cámara libre con la que se crean los planos de cámara:
+//   http://localhost:3000/?nivel=barrio&depurar
 
 import { crearEscenario } from '../src/index.ts';
 import { Tortilleria } from './tortilleria.ts';
@@ -24,6 +26,7 @@ try {
     niveles: NIVELES,
     nivel: leerNivelDeLaDireccion() ?? NIVEL_INICIAL,
     minijuegos: { Tortilleria },
+    depurar: new URLSearchParams(location.search).has('depurar'),
   });
   // El motor avisa con eventos y el host decide qué hacer: aquí solo se muestran en la consola.
   juego.on('objetivo', (objetivo) => console.log('objetivo cumplido:', objetivo));

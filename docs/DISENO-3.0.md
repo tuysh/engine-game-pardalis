@@ -427,13 +427,14 @@ Un personaje de 160 px de alto mide 1.6 m en el escenario.
 | Control | Acción |
 | --- | --- |
 | `C` | Entra o sale de la cámara libre (el juego se pausa mientras tanto) |
-| Arrastrar | Gira alrededor del punto que se mira |
+| Arrastrar | Gira alrededor del punto que se mira; hacia arriba o abajo, baja o sube la cámara |
 | Rueda | Acerca o aleja |
-| Clic en un personaje, objeto o punto | Lo fija como `mira` del plano |
+| Clic en un personaje, en un objeto con `id` o cerca de un punto | Lo fija como `mira` del plano |
 | `P` | Copia el plano actual como JSON, listo para pegar en `mundo.planos` |
 | `1`–`9` | Salta a los planos ya definidos, para compararlos |
 
 Es parte del motor, pero solo se carga con `depurar: true`: no pesa en producción.
+En ese modo se dibujan también las guías del mapa (piso, huellas, zonas, salida y puntos, con su nombre).
 
 ### 9.4 Lo que se dibuja dónde
 

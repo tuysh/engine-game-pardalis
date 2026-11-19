@@ -12,6 +12,7 @@ import type { Partida } from './dominio/partida.ts';
 import type { EmisorDeEventos } from './emisor-de-eventos.ts';
 import type { EventosDeJuego, Juego, NombreDeEvento } from './juego.ts';
 import type { Escenario } from './puertos/escenario.ts';
+import type { PanelDeDepuracion } from './puertos/panel-de-depuracion.ts';
 
 /** Lo que `crearEscenario()` armó y el juego necesita para funcionar y para limpiarse. */
 export interface PiezasDelJuego {
@@ -23,6 +24,8 @@ export interface PiezasDelJuego {
   readonly video: VideoDelNavegador;
   readonly controles: ControlesDelTeclado;
   readonly reloj: RelojDelNavegador;
+  /** Solo existe si el juego se creó con `depurar: true`. */
+  readonly panelDeDepuracion?: PanelDeDepuracion;
 }
 
 export class JuegoCreado implements Juego {
@@ -110,6 +113,9 @@ export class JuegoCreado implements Juego {
     this.piezas.controles.destruir();
     this.piezas.audio.destruir();
     this.piezas.video.destruir();
+    if (this.piezas.panelDeDepuracion !== undefined) {
+      this.piezas.panelDeDepuracion.destruir();
+    }
     this.piezas.interfaz.destruir();
     this.piezas.escenario.destruir();
     this.piezas.emisor.vaciar();

@@ -4,6 +4,7 @@ import { CargadorDeMemoria } from '../adaptadores/memoria/cargador-de-memoria.ts
 import { ControlesDeMemoria } from '../adaptadores/memoria/controles-de-memoria.ts';
 import { EscenarioDeMemoria } from '../adaptadores/memoria/escenario-de-memoria.ts';
 import { InterfazDeMemoria } from '../adaptadores/memoria/interfaz-de-memoria.ts';
+import { PanelDeDepuracionDeMemoria } from '../adaptadores/memoria/panel-de-depuracion-de-memoria.ts';
 import { RelojDeMemoria } from '../adaptadores/memoria/reloj-de-memoria.ts';
 import { VideoDeMemoria } from '../adaptadores/memoria/video-de-memoria.ts';
 import { leerCondicionDeTexto } from '../dominio/condicion.ts';
@@ -468,4 +469,52 @@ test('pedir hablar con una tecla de movimiento todavía oprimida inicia el diál
   }
 
   expect(interfaz.globo?.texto).toBe('¡Aquí tienes!');
+});
+
+test('en modo depuración se ven las guías del mapa, y con la cámara libre activa un toque no mueve al jugador', async () => {
+  const escenario = new EscenarioDeMemoria();
+  const panel = new PanelDeDepuracionDeMemoria();
+  const reloj = new RelojDeMemoria();
+  const ubicacion = { direccionDelNivel: '/niveles/barrio/nivel.json', cargador: new CargadorDeMemoria({}) };
+
+  await jugarNivel(
+    {
+      nivel: NIVEL,
+      ubicacion,
+      idiomaBase: 'es',
+      minijuegos: {},
+      depuracion: { panel, pausarElJuego: () => {}, reanudarElJuego: () => {} },
+    },
+    {
+      escenario,
+      interfaz: new InterfazDeMemoria(),
+      audio: new AudioDeMemoria(),
+      video: new VideoDeMemoria(),
+      controles: new ControlesDeMemoria(),
+      reloj,
+      azar: () => 0,
+    },
+    {
+      alCumplirObjetivo: () => {},
+      alVerPalabra: () => {},
+      alSalir: () => {},
+      alFallar: () => {},
+      alEmpezarCinematica: () => {},
+      alTerminarCinematica: () => {},
+    },
+  );
+
+  // El piso, la huella del comal, la salida y el inicio del jugador.
+  expect(escenario.guias).toHaveLength(4);
+
+  panel.simularOrden({ tipo: 'alternarCamaraLibre' });
+  escenario.simularToque({ tipo: 'piso', punto: { x: 4, y: 3 } });
+  await reloj.avanzar(1);
+  expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 2, y: 3 });
+
+  // Al salir de la cámara libre, los toques vuelven a ser del juego.
+  panel.simularOrden({ tipo: 'alternarCamaraLibre' });
+  escenario.simularToque({ tipo: 'piso', punto: { x: 4, y: 3 } });
+  await reloj.avanzar(1);
+  expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 4, y: 3 });
 });

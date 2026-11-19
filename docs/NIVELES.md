@@ -178,6 +178,9 @@ Un plano dice **a qué** mira la cámara y **desde dónde**:
 - Para ir de un giro a otro la cámara toma el camino recto entre los dos números: de `350` a `10` daría la vuelta
   larga. Escribe giros cercanos (por ejemplo `-10` y `10`).
 
+Los números de un plano no se adivinan: se encuadra a mano con la **cámara libre** y se copia el resultado
+(ver [«Crear planos con la cámara libre»](#crear-planos-con-la-cámara-libre)).
+
 ### `estado`
 
 ```json
@@ -481,6 +484,35 @@ const resultado = await validarNivel('niveles/barrio/nivel.json', { minijuegos: 
 
 Después, pruébalo como lo usarán: en una tablet con el dedo, con teclado y en modo proyección.
 Revisa que nada requiera leer.
+
+### Crear planos con la cámara libre
+
+Abre el nivel en modo depuración: en la demo, agrega `depurar` a la dirección
+(`http://localhost:3000/?nivel=barrio&depurar`); en un sitio, crea el juego con `depurar: true`.
+
+En ese modo se ven **las guías del mapa** sobre el piso, cada una con su nombre: el piso (verde), las huellas
+que bloquean el paso (rojo), lo que no bloquea (naranja), las zonas (azul), la salida (morado) y los puntos.
+Sirven para comprobar que el mapa dice lo que quisiste decir.
+
+Con la tecla `C` entras a la cámara libre (el juego se pausa mientras tanto):
+
+| Control | Acción |
+| --- | --- |
+| `C` | Entra o sale de la cámara libre |
+| Arrastrar | Gira alrededor de lo que se mira; hacia arriba o abajo, baja o sube la cámara |
+| Rueda | Acerca o aleja |
+| Clic en un personaje, en un objeto con `id` o cerca de un punto | Lo fija como `mira` del plano |
+| `1`–`9` | Salta a los planos que el nivel ya tiene, para compararlos o ajustarlos |
+| `P` | Copia el plano actual |
+
+Arriba del juego se ve siempre el plano que llevas, ya escrito como va en el contenido:
+
+```
+"plano_nuevo": { "mira": "tortu", "distancia": 5.5, "altura": 2.4, "giro": -14 }
+```
+
+Pégalo dentro de `mundo.planos`, cámbiale el nombre y úsalo en un paso `camara`.
+Un plano solo puede mirar a algo con nombre: si quieres mirar a un lugar vacío, agrégale un `punto` al mapa.
 
 ## 6. Qué cambió respecto a la versión 2.0
 

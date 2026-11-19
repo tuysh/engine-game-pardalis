@@ -3,6 +3,7 @@
 
 import type { AjustesDeCamara } from '../../dominio/contenido.ts';
 import type { Punto } from '../../dominio/geometria.ts';
+import type { GuiaDeDepuracion } from '../../dominio/guias-de-depuracion.ts';
 import type { Mira } from '../../dominio/mundo.ts';
 import type {
   Escenario,
@@ -40,6 +41,8 @@ export class EscenarioDeMemoria implements Escenario {
   /** Desde dónde miraba la cámara la última vez que se le apuntó. */
   camaraEnfocada: AjustesDeCamara | undefined;
   cuadrosDibujados = 0;
+  /** Las guías de depuración que se están mostrando. */
+  guias: readonly GuiaDeDepuracion[] = [];
   /** Los efectos que se han pedido, en orden. */
   readonly efectosReproducidos: { nombre: string; punto: Punto }[] = [];
   estaDestruido = false;
@@ -116,6 +119,10 @@ export class EscenarioDeMemoria implements Escenario {
 
   dibujar(segundos: number): void {
     this.cuadrosDibujados++;
+  }
+
+  async mostrarGuias(guias: readonly GuiaDeDepuracion[]): Promise<void> {
+    this.guias = guias;
   }
 
   alTocar(funcion: (toque: Toque) => void): () => void {
