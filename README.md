@@ -51,7 +51,96 @@ const juego = await crearEscenario(document.querySelector('#juego'), {
 juego.on('guardar', (partida) => localStorage.setItem('pardalis:partida', JSON.stringify(partida)));
 ```
 
-La API completa (opciones, eventos, minijuegos, cinemáticas) está en [`docs/DISENO-3.0.md`](docs/DISENO-3.0.md).
+Con eso el juego muestra el botón de jugar, reproduce la intro de la casa, pasa al barrio y avisa cada vez
+que conviene guardar. Solo `nivel` es obligatoria. Todo lo que el paquete ofrece son esa función, el objeto
+`juego` que entrega y `ErrorDeEscenario`; lo demás son tipos, y cada uno trae su explicación y un ejemplo
+al pasar el cursor en el editor.
+
+### El objeto `juego`
+
+```js
+juego.on('objetivo', (id) => marcarEnLaLista(id));          // devuelve una función que deja de escuchar
+juego.on('palabra', ({ en, es }) => anotarPalabra(en, es));
+juego.on('cinematica', ({ fase }) => ocultarMenu(fase === 'inicio'));
+juego.on('salida', (destino) => irA(destino));              // un destino que no es un nivel: decide el host
+juego.on('error', (error) => console.error(error.problemas));
+
+juego.pausar();                 // y juego.reanudar()
+juego.proyeccion = true;        // modo salón de clases: todo más grande
+await juego.cargar('barrio');   // cambia de nivel en el mismo lienzo
+await juego.reproducir('intro');
+juego.destruir();               // al salir de la página o desmontar el componente
+```
+
+El motor no navega entre páginas ni guarda por su cuenta: avisa con eventos y el host decide.
+
+### Un minijuego
+
+Es una función que recibe un elemento a pantalla completa, dibuja lo que quiera y promete un resultado.
+El nivel la llama con el paso `{ "juego": "Tortilleria" }`.
+
+```js
+/** @type {import('@pardalis/escenario-engine').Minijuego} */
+export function Tortilleria({ elemento, assets, senal }) {
+  return new Promise((terminar) => {
+    const tortilla = document.createElement('img');
+    tortilla.src = assets.url('item_tortillas');
+    tortilla.onclick = () => terminar({ exito: true, otorgar: { tortillas: true } });
+    elemento.append(tortilla);
+    senal.addEventListener('abort', () => terminar({ exito: false }));
+  });
+}
+```
+
+`exito: false` nunca es un castigo: solo lleva al diálogo amable `siNo` del nivel.
+Un ejemplo completo: [`ejemplo/tortilleria.ts`](ejemplo/tortilleria.ts).
+
+### Una cinemática en código
+
+Las cinemáticas se escriben en el JSON del nivel ([`docs/NIVELES.md`](docs/NIVELES.md)). Cuando hace falta
+lógica, se escriben en código con los mismos pasos, y se registran en `crearEscenario({ cinematicas: { intro } })`:
+
+```js
+/** @type {import('@pardalis/escenario-engine').CinematicaEnCodigo} */
+export async function intro(escena) {
+  await escena.fundido('abrir', { duracion: 1 });
+  await escena.juntos(escena.aparece('mama', 'puerta'), escena.sonido('puerta_abre'));
+  await escena.camina('mama', 'junto_al_sillon');
+  await escena.dice('mama', '¿Me traes tortillas, mijo?', { audio: 'vo_mama_tortillas' });
+  if (!escena.estado.cumple('tengo tortillas')) {
+    escena.sale('barrio');
+  }
+}
+```
+
+Para pausar se usa `escena.espera(segundos)` y no `setTimeout`: así la cinemática se puede saltar.
+
+### Mientras carga y si algo falla
+
+```js
+import { crearEscenario, ErrorDeEscenario } from '@pardalis/escenario-engine';
+
+const cancelacion = new AbortController();   // cancelacion.abort() si el componente se desmonta mientras carga
+try {
+  const juego = await crearEscenario(elemento, {
+    nivel: '/niveles/casa/nivel.json',
+    alCargar: ({ cargados, total }) => dibujarBarra(cargados / total),
+    senal: cancelacion.signal,
+  });
+} catch (error) {
+  if (error instanceof ErrorDeEscenario) mostrar(error.problemas.join('\n'));
+}
+```
+
+`error.problemas` trae **todos** los problemas juntos, cada uno con la ruta donde está: los del nivel
+(el mapa, el contenido, una imagen que falta) y también los de la llamada, por ejemplo
+`opciones.nivel: "csa" no está en "niveles" (casa, barrio) ni es la dirección de un nivel.json`.
+Una opción que no existe (un nombre mal escrito) solo da una advertencia en la consola.
+
+Con `depurar: true` se ven las guías del mapa y la tecla `C` abre la cámara libre.
+
+La referencia completa (todas las opciones, eventos, minijuegos y cinemáticas) está en
+[`docs/DISENO-3.0.md`](docs/DISENO-3.0.md).
 
 ## Validar un nivel (ya funciona)
 

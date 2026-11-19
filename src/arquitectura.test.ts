@@ -30,6 +30,9 @@ const EXPRESION_DE_IMPORTACION = /(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g;
 // Encuentra usos de los objetos globales del navegador, como `window.innerWidth` o `document.body`.
 const EXPRESION_DE_GLOBAL_DEL_NAVEGADOR = /\b(window|document)\./;
 
+// Reconoce una línea que es solo comentario: empieza con `//`, con `/*` o con el `*` de un comentario largo.
+const EXPRESION_DE_LINEA_DE_COMENTARIO = /^\s*(\/\/|\/\*|\*)/;
+
 /**
  * Dice a qué capa pertenece un archivo según su ruta dentro de `src/`.
  * Ejemplos: `dominio/estado.ts` → `dominio`; `adaptadores/three/piso.ts` → `adaptadores/three`; `crear.ts` → `raiz`.
@@ -64,6 +67,15 @@ function paquetesQuePuedeImportar(capa: string, esPrueba: boolean): string[] {
   return permitidos;
 }
 
+/**
+ * Quita las líneas que son solo comentario. Un ejemplo de uso escrito en la documentación
+ * (`document.querySelector('#juego')`) no es código del motor, así que no cuenta como usar el navegador.
+ */
+function quitarComentarios(contenido: string): string {
+  const lineasDeCodigo = contenido.split('\n').filter((linea) => !EXPRESION_DE_LINEA_DE_COMENTARIO.test(linea));
+  return lineasDeCodigo.join('\n');
+}
+
 /** Revisa un archivo y devuelve un mensaje por cada regla que rompe. Lista vacía = todo bien. */
 function revisarArchivo(rutaEnSrc: string, contenido: string): string[] {
   const problemas: string[] = [];
@@ -76,7 +88,7 @@ function revisarArchivo(rutaEnSrc: string, contenido: string): string[] {
   }
 
   const puedeUsarElNavegador = ADAPTADORES_DEL_NAVEGADOR.includes(capa);
-  if (!puedeUsarElNavegador && EXPRESION_DE_GLOBAL_DEL_NAVEGADOR.test(contenido)) {
+  if (!puedeUsarElNavegador && EXPRESION_DE_GLOBAL_DEL_NAVEGADOR.test(quitarComentarios(contenido))) {
     problemas.push(`${rutaEnSrc}: usa window o document; eso solo se permite en ${ADAPTADORES_DEL_NAVEGADOR.join(', ')}`);
   }
 
@@ -187,6 +199,19 @@ test('window y document solo se usan en los adaptadores del navegador', () => {
     'aplicacion/cargar-nivel.ts: usa window o document; ' +
       'eso solo se permite en adaptadores/dom, adaptadores/audio, adaptadores/red',
   ]);
+});
+
+test('un ejemplo de uso dentro de un comentario no cuenta como usar el navegador', () => {
+  const contenido = [
+    '/**',
+    ' * @example',
+    " * const juego = await crearEscenario(document.querySelector('#juego'), opciones);",
+    ' */',
+    '// también: window.innerWidth',
+    'export const SEGUNDOS = 2;',
+  ].join('\n');
+
+  expect(revisarArchivo('puertos/minijuego.ts', contenido)).toEqual([]);
 });
 
 test('no se permiten archivos index.ts fuera de la entrada del paquete', () => {

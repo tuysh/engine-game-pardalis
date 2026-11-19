@@ -44,7 +44,13 @@ export type NombreDeEvento = keyof EventosDeJuego;
 
 /** El juego ya creado. Es lo único que el host necesita para controlarlo. */
 export interface Juego {
-  /** Escucha un evento. Devuelve una función que cancela la suscripción. */
+  /**
+   * Escucha un evento. Devuelve una función que cancela la suscripción.
+   *
+   * @example
+   * const dejarDeEscuchar = juego.on('objetivo', (id) => console.log('objetivo cumplido:', id));
+   * dejarDeEscuchar();
+   */
   on<Evento extends NombreDeEvento>(evento: Evento, funcion: (dato: EventosDeJuego[Evento]) => void): () => void;
   /** Devuelve la partida actual como objeto plano. */
   guardar(): Partida;
@@ -63,6 +69,7 @@ export interface Juego {
   interrumpir(): void;
   /** Congela juego, audio y video. */
   pausar(): void;
+  /** Sigue desde donde `pausar()` lo dejó. */
   reanudar(): void;
   /** Modo salón de clases. Se puede cambiar sin reiniciar. */
   proyeccion: boolean;

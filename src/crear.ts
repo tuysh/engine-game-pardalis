@@ -36,6 +36,15 @@ import type { PanelDeDepuracion } from './puertos/panel-de-depuracion.ts';
  * Crea el juego dentro de `elemento`, ocupando todo su tamaño.
  * La promesa termina cuando el nivel ya se puede jugar y rechaza con `ErrorDeEscenario`
  * si no pudo arrancar; `error.problemas` trae un mensaje por problema.
+ *
+ * @example
+ * const juego = await crearEscenario(document.querySelector('#juego'), {
+ *   niveles: { casa: '/niveles/casa/nivel.json', barrio: '/niveles/barrio/nivel.json' },
+ *   nivel: 'casa',
+ *   minijuegos: { Tortilleria },
+ *   partida: JSON.parse(localStorage.getItem('pardalis:partida')),
+ * });
+ * juego.on('guardar', (partida) => localStorage.setItem('pardalis:partida', JSON.stringify(partida)));
  */
 export async function crearEscenario(elemento: HTMLElement, opciones: OpcionesDeEscenario): Promise<Juego> {
   revisarLoRecibido(elemento, opciones);

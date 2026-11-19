@@ -4,6 +4,13 @@
 /**
  * Error del motor. `problemas` trae un mensaje por cada problema encontrado,
  * cada uno con la ruta del JSON o el objeto del mapa donde está.
+ *
+ * @example
+ * try {
+ *   await crearEscenario(elemento, opciones);
+ * } catch (error) {
+ *   if (error instanceof ErrorDeEscenario) console.error(error.problemas.join('\n'));
+ * }
  */
 // `extends Error` es la excepción a «composición, no herencia»:
 // JavaScript solo conserva la pila de llamadas en los objetos que heredan de `Error`.

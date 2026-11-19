@@ -48,6 +48,18 @@ export interface ResultadoDeMinijuego {
 }
 
 /**
- * Un minijuego. Si la función lanza un error, el motor lo trata como `{ exito: false }`.
+ * Un minijuego. Se registra en `crearEscenario({ minijuegos })` con el nombre que usan los pasos `juego`.
+ * Si la función lanza un error, el motor lo trata como `{ exito: false }`.
+ *
+ * @example
+ * const Tortilleria: Minijuego = ({ elemento, assets, senal }) =>
+ *   new Promise((terminar) => {
+ *     const tortilla = document.createElement('img');
+ *     tortilla.src = assets.url('item_tortillas');
+ *     tortilla.onclick = () => terminar({ exito: true, otorgar: { tortillas: true } });
+ *     elemento.append(tortilla);
+ *     // Si el host destruye el juego a medio minijuego, se termina sin premio.
+ *     senal.addEventListener('abort', () => terminar({ exito: false }));
+ *   });
  */
 export type Minijuego = (contexto: ContextoDeMinijuego) => Promise<ResultadoDeMinijuego>;
