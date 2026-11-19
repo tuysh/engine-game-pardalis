@@ -13,6 +13,13 @@ const OPACIDAD_DE_PANTALLA_NEGRA = 1;
 /** Hacia dónde va un fundido: `abrir` aclara la pantalla y `cerrar` la oscurece. */
 export type SentidoDeFundido = 'abrir' | 'cerrar';
 
+/** De qué opacidad a cuál va la pantalla, y en cuánto tiempo. 0 = clara, 1 = negra. */
+interface CambioDeOpacidad {
+  readonly desde: number;
+  readonly hasta: number;
+  readonly duracionEnSegundos: number;
+}
+
 export class FundidoDePantalla {
   private readonly interfaz: Interfaz;
   private readonly reloj: Reloj;
@@ -59,7 +66,12 @@ export class FundidoDePantalla {
       // La pantalla ya está como debe quedar (se pidió cerrar y ya estaba negra): no hay nada que esperar.
       return Promise.resolve();
     }
-    this.poner(opacidadInicial);
+    return this.llevarLaOpacidad({ desde: opacidadInicial, hasta: opacidadFinal, duracionEnSegundos }, senal);
+  }
+
+  /** Lleva la opacidad de un valor a otro, cuadro a cuadro. Termina al llegar o cuando `senal` se dispara. */
+  private llevarLaOpacidad(cambio: CambioDeOpacidad, senal: AbortSignal): Promise<void> {
+    this.poner(cambio.desde);
 
     return new Promise((terminar) => {
       let segundosTranscurridos = 0;
@@ -75,8 +87,8 @@ export class FundidoDePantalla {
 
       const dejarDeAvanzar = this.reloj.enCadaCuadro((segundos) => {
         segundosTranscurridos += segundos;
-        const avance = Math.min(1, segundosTranscurridos / duracionEnSegundos);
-        this.poner(opacidadInicial + (opacidadFinal - opacidadInicial) * avance);
+        const avance = Math.min(1, segundosTranscurridos / cambio.duracionEnSegundos);
+        this.poner(cambio.desde + (cambio.hasta - cambio.desde) * avance);
         if (avance >= 1) {
           finalizar();
         }

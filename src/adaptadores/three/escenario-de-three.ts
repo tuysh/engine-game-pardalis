@@ -6,13 +6,12 @@
 // Se verifica a mano en la demo (`bun ejemplo/servidor.ts`); no tiene pruebas automáticas porque necesita WebGL.
 
 import { Color, Group, Scene, Vector3, WebGLRenderer } from 'three';
-import type { Mesh, Object3D, Texture } from 'three';
+import type { Object3D } from 'three';
 import type { AjustesDeCamara } from '../../dominio/contenido.ts';
 import type { Punto } from '../../dominio/geometria.ts';
 import type { GuiaDeDepuracion } from '../../dominio/guias-de-depuracion.ts';
 import type { Mira } from '../../dominio/mundo.ts';
 import type {
-  DecoradoDeEscena,
   Escenario,
   Escenografia,
   ImagenDeEscena,
@@ -22,16 +21,11 @@ import type {
 } from '../../puertos/escenario.ts';
 import { AlmacenDeTexturas } from './almacen-de-texturas.ts';
 import { AnimacionesDeHojas } from './animaciones-de-hojas.ts';
+import { armarEscenografia } from './armar-escenografia.ts';
 import { CamaraEnPerspectiva } from './camara-en-perspectiva.ts';
 import { EfectoDeParticulas } from './efecto-de-particulas.ts';
 import { PersonajesDePapel } from './personajes-de-papel.ts';
-import {
-  crearHojaAcostada,
-  crearPiezaDeDecorado,
-  crearTelon,
-  liberarPieza,
-  ORDEN_DEL_PISO,
-} from './piezas-de-papel.ts';
+import { liberarPieza } from './piezas-de-papel.ts';
 import type { FabricaDeTexturas } from './texturas.ts';
 import { ToquesDelLienzo } from './toques-del-lienzo.ts';
 
@@ -98,31 +92,16 @@ export class EscenarioDeThree implements Escenario {
     this.almacen.empezarOtroLugar();
 
     // Primero se descarga todo y hasta el final se cambia lo que se ve: así el lugar anterior no queda a medias.
-    const piezas: Object3D[] = [];
-    if (escenografia.suelo !== undefined) {
-      const { imagen, esquina } = escenografia.suelo;
-      const texturas = await this.almacen.cargar(imagen);
-      const rectangulo = { x: esquina.x, y: esquina.y, ancho: imagen.anchoEnMetros, alto: imagen.altoEnMetros };
-      piezas.push(crearHojaAcostada(primerCuadroDe(texturas), rectangulo, ORDEN_DEL_PISO));
-    }
-    for (const telon of escenografia.telones) {
-      const texturas = await this.almacen.cargar(telon.imagen);
-      piezas.push(crearTelon(primerCuadroDe(texturas), telon.desde, telon.hasta, telon.altoEnMetros));
-    }
-    const decorado: DecoradoListo[] = [];
-    for (const objeto of escenografia.decorado) {
-      const texturas = await this.almacen.cargar(objeto.imagen);
-      decorado.push({ objeto, texturas, pieza: crearPiezaDeDecorado(objeto, primerCuadroDe(texturas)) });
-    }
+    const lista = await armarEscenografia(escenografia, this.almacen);
     if (this.estaDestruido || esteMontaje !== this.numeroDeMontaje) return;
 
     this.quitarEscenografia();
     this.personajes.quitarTodos();
     this.escena.background = new Color(escenografia.colorDeFondo);
-    for (const pieza of piezas) {
+    for (const pieza of lista.fondo) {
       this.escenografia.add(pieza);
     }
-    for (const { objeto, texturas, pieza } of decorado) {
+    for (const { objeto, texturas, pieza } of lista.decorado) {
       this.escenografia.add(pieza);
       if (objeto.id !== undefined) {
         this.tocables.set(pieza, { tipo: 'decorado', id: objeto.id });
@@ -293,16 +272,4 @@ export class EscenarioDeThree implements Escenario {
     // y el siguiente cuadro tarda en llegar.
     this.dibujante.render(this.escena, this.camara.camara);
   }
-}
-
-/** Un objeto del decorado ya con sus texturas y su pieza, listo para ponerse en el escenario. */
-interface DecoradoListo {
-  readonly objeto: DecoradoDeEscena;
-  /** Una textura por cuadro: más de una si el dibujo del objeto es una animación. */
-  readonly texturas: readonly Texture[];
-  readonly pieza: Mesh;
-}
-
-function primerCuadroDe(texturas: readonly Texture[]): Texture {
-  return texturas[0]!; // una imagen tiene al menos un cuadro
 }

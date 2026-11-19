@@ -37,13 +37,14 @@ export function crearGrupoDeGuias(guias: readonly GuiaDeDepuracion[], crearLienz
       case 'contorno':
         grupo.add(crearContorno(guia.vertices, guia.color));
         if (guia.etiqueta !== undefined) {
-          grupo.add(crearEtiqueta(guia.etiqueta, guia.color, centroDe(guia.vertices), crearLienzo));
+          const letrero = { texto: guia.etiqueta, color: guia.color, lugar: centroDe(guia.vertices) };
+          grupo.add(crearEtiqueta(letrero, crearLienzo));
         }
         break;
       case 'marca':
         grupo.add(crearRaya(guia.punto, { x: MEDIO_LARGO_DE_UNA_MARCA_EN_METROS, y: 0 }, guia.color));
         grupo.add(crearRaya(guia.punto, { x: 0, y: MEDIO_LARGO_DE_UNA_MARCA_EN_METROS }, guia.color));
-        grupo.add(crearEtiqueta(guia.etiqueta, guia.color, guia.punto, crearLienzo));
+        grupo.add(crearEtiqueta({ texto: guia.etiqueta, color: guia.color, lugar: guia.punto }, crearLienzo));
         break;
     }
   }
@@ -93,8 +94,16 @@ function crearMaterialDeLinea(color: string): LineBasicMaterial {
   return new LineBasicMaterial({ color, depthTest: false });
 }
 
+/** Lo que dice una etiqueta, de qué color es y sobre qué punto del piso va. */
+interface Letrero {
+  readonly texto: string;
+  readonly color: string;
+  readonly lugar: Punto;
+}
+
 /** Un letrero que siempre mira a la cámara, con el texto en blanco sobre el color de su guía. */
-function crearEtiqueta(texto: string, color: string, lugar: Punto, crearLienzo: CreadorDeLienzos): Sprite {
+function crearEtiqueta(letrero: Letrero, crearLienzo: CreadorDeLienzos): Sprite {
+  const { texto, color, lugar } = letrero;
   const altoEnPixeles = ALTO_DEL_TEXTO_EN_PIXELES + MARGEN_DEL_TEXTO_EN_PIXELES * 2;
   // El ancho del lienzo depende del largo del texto, así que primero se mide con un lienzo de prueba.
   const pincelDePrueba = crearLienzo(1, 1).getContext('2d');

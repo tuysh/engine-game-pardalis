@@ -82,8 +82,16 @@ export function crearHojaAcostada(textura: Texture, rectangulo: Rectangulo, orde
   return hoja;
 }
 
+/** Por dónde pasa un telón en el plano y cuánto mide de alto. */
+export interface LineaDeTelon {
+  readonly desde: Punto;
+  readonly hasta: Punto;
+  readonly altoEnMetros: number;
+}
+
 /** Una hoja parada que va de un punto a otro del plano, como una fachada. Tapa lo que queda detrás. */
-export function crearTelon(textura: Texture, desde: Punto, hasta: Punto, altoEnMetros: number): Mesh {
+export function crearTelon(textura: Texture, linea: LineaDeTelon): Mesh {
+  const { desde, hasta, altoEnMetros } = linea;
   const largoEnX = hasta.x - desde.x;
   const largoEnZ = hasta.y - desde.y;
   const anchoEnMetros = Math.hypot(largoEnX, largoEnZ);
