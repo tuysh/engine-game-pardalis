@@ -390,6 +390,14 @@ Va en `dominio/`. El mensaje incluye la ubicación y qué hacer. Agrega una prue
 ### Agregar un evento u opción pública
 Tipos en la entrada pública, documentación en `docs/DISENO-3.0.md` y `README.md`, todo en español.
 
+- **Una opción** se agrega en `opciones-de-escenario.ts` y se revisa en `revisar-opciones.ts`: ahí se registra
+  (si no, `bun check` falla) y se comprueba su valor con un mensaje que diga qué se esperaba y qué llegó.
+- **Un evento** se agrega en `juego.ts` (`EventosDeJuego`) y en `emisor-de-eventos.ts`; quien lo emite es
+  `avisos-para-el-host.ts`.
+- Lo que el host pueda escribir mal debe explicarse solo: el mensaje nombra la opción o la llamada
+  (`opciones.nivel: ...`, `escena.camina("mama", "cocina"): ...`) y lleva una prueba con el texto exacto.
+- Cada tipo público lleva su comentario y, si se usa llamándolo, un `@example` corto que funcione tal cual.
+
 ## 8. Para agentes de IA
 
 - **Escribe para quien no tiene IA.** No generes código que solo otro modelo pueda mantener.

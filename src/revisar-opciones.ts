@@ -6,6 +6,7 @@
 
 import { describirValor } from './dominio/describir-valor.ts';
 import { esObjetoPlano } from './dominio/es-objeto-plano.ts';
+import type { OpcionesDeEscenario } from './opciones-de-escenario.ts';
 
 /** Lo que encontró la revisión. */
 export interface RevisionDeOpciones {
@@ -15,23 +16,29 @@ export interface RevisionDeOpciones {
   readonly advertencias: readonly string[];
 }
 
-/** Las opciones que `crearEscenario()` conoce (docs/DISENO-3.0.md §4). */
-const OPCIONES_QUE_EXISTEN: readonly string[] = [
-  'niveles',
-  'nivel',
-  'minijuegos',
-  'cinematicas',
-  'partida',
-  'raizDeAssets',
-  'origenesPermitidos',
-  'idioma',
-  'iniciarCon',
-  'proyeccion',
-  'alCargar',
-  'senal',
-  'depurar',
-  'semilla',
-];
+/**
+ * Las opciones que `crearEscenario()` conoce (docs/DISENO-3.0.md §4).
+ *
+ * Es un objeto con una entrada por opción (y no una lista) para que TypeScript avise si a
+ * `OpcionesDeEscenario` se le agrega una opción y aquí se olvida: sin eso, la opción nueva
+ * daría la advertencia de que «no existe».
+ */
+const OPCIONES_QUE_EXISTEN: Readonly<Record<keyof OpcionesDeEscenario, true>> = {
+  niveles: true,
+  nivel: true,
+  minijuegos: true,
+  cinematicas: true,
+  partida: true,
+  raizDeAssets: true,
+  origenesPermitidos: true,
+  idioma: true,
+  iniciarCon: true,
+  proyeccion: true,
+  alCargar: true,
+  senal: true,
+  depurar: true,
+  semilla: true,
+};
 
 export function revisarOpciones(opciones: unknown): RevisionDeOpciones {
   if (!esObjetoPlano(opciones)) {
@@ -156,10 +163,9 @@ function revisarAjustes(opciones: Record<string, unknown>, errores: string[]): v
 function buscarOpcionesQueNoExisten(opciones: Record<string, unknown>): string[] {
   const advertencias: string[] = [];
   for (const opcion of Object.keys(opciones)) {
-    if (!OPCIONES_QUE_EXISTEN.includes(opcion)) {
-      advertencias.push(
-        `opciones.${opcion}: esa opción no existe y se ignora; las opciones son: ${OPCIONES_QUE_EXISTEN.join(', ')}`,
-      );
+    if (!Object.hasOwn(OPCIONES_QUE_EXISTEN, opcion)) {
+      const lasQueExisten = Object.keys(OPCIONES_QUE_EXISTEN).join(', ');
+      advertencias.push(`opciones.${opcion}: esa opción no existe y se ignora; las opciones son: ${lasQueExisten}`);
     }
   }
   return advertencias;
