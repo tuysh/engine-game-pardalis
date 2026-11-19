@@ -7,6 +7,7 @@ import { crearLienzo, leerDensidadDePantalla } from './adaptadores/dom/crear-lie
 import { InterfazDelNavegador } from './adaptadores/dom/interfaz-del-navegador.ts';
 import { leerSiSePrefiereMenosMovimiento } from './adaptadores/dom/preferencia-de-movimiento.ts';
 import { RelojDelNavegador } from './adaptadores/dom/reloj-del-navegador.ts';
+import { revisarDondeMontar } from './adaptadores/dom/revisar-elemento.ts';
 import { VideoDelNavegador } from './adaptadores/dom/video-del-navegador.ts';
 import { LectorDeNivelesDeJson } from './adaptadores/json/lector-de-niveles-de-json.ts';
 import { CargadorDeRed } from './adaptadores/red/cargador-de-red.ts';
@@ -16,8 +17,8 @@ import { JuegoEnCurso } from './aplicacion/juego-en-curso.ts';
 import { leerNivelPorJugar } from './aplicacion/leer-nivel-por-jugar.ts';
 import type { FuenteDeNiveles, NivelPorJugar } from './aplicacion/leer-nivel-por-jugar.ts';
 import type { HerramientasDeDepuracion } from './aplicacion/nivel-en-juego.ts';
-import type { AvisosDelJuego } from './aplicacion/piezas-del-juego-en-curso.ts';
 import { validarNivel } from './aplicacion/validar-nivel.ts';
+import { crearAvisosParaElHost } from './avisos-para-el-host.ts';
 import { crearAzarConSemilla } from './dominio/azar-con-semilla.ts';
 import { describirError, ErrorDeEscenario } from './dominio/error-de-escenario.ts';
 import { leerPartida } from './dominio/partida.ts';
@@ -28,6 +29,7 @@ import { JuegoCreado } from './juego-creado.ts';
 import type { AdaptadoresDelJuego } from './juego-creado.ts';
 import type { OpcionesDeEscenario } from './opciones-de-escenario.ts';
 import { PausaDelJuego } from './pausa-del-juego.ts';
+import { revisarOpciones } from './revisar-opciones.ts';
 import type { PanelDeDepuracion } from './puertos/panel-de-depuracion.ts';
 
 /**
@@ -36,6 +38,7 @@ import type { PanelDeDepuracion } from './puertos/panel-de-depuracion.ts';
  * si no pudo arrancar; `error.problemas` trae un mensaje por problema.
  */
 export async function crearEscenario(elemento: HTMLElement, opciones: OpcionesDeEscenario): Promise<Juego> {
+  revisarLoRecibido(elemento, opciones);
   revisarQueNoSeCancelo(opciones);
   const cargador = new CargadorDeRed(opciones.origenesPermitidos ?? []);
   const fuente = crearFuenteDeNiveles(opciones, cargador);
@@ -61,6 +64,26 @@ export async function crearEscenario(elemento: HTMLElement, opciones: OpcionesDe
     throw error;
   }
   return juego;
+}
+
+/**
+ * Lo que entrega el host viene de afuera (muchas veces de JavaScript sin tipos): se revisa antes de usarlo.
+ * Las advertencias van a la consola; con errores, lanza un `ErrorDeEscenario` que los trae todos.
+ */
+function revisarLoRecibido(elemento: unknown, opciones: unknown): void {
+  const revision = revisarOpciones(opciones);
+  for (const advertencia of revision.advertencias) {
+    console.warn(`[escenario-engine] ${advertencia}`);
+  }
+
+  const errores = [...revision.errores];
+  const problemaDelElemento = revisarDondeMontar(elemento);
+  if (problemaDelElemento !== undefined) {
+    errores.push(problemaDelElemento);
+  }
+  if (errores.length > 0) {
+    throw new ErrorDeEscenario(errores);
+  }
 }
 
 /** Crea el panel de depuración dentro del elemento del juego. */
@@ -137,7 +160,7 @@ function crearJuegoEnCurso(opciones: OpcionesDeEscenario, base: BaseDelJuego): J
     alCargar: opciones.alCargar,
     depuracion,
     puertos: { escenario, interfaz, audio, video, controles, reloj, azar },
-    avisos: crearAvisos(base.emisor),
+    avisos: crearAvisosParaElHost(base.emisor),
     partidaInicial: base.partidaInicial,
   });
 }
@@ -210,20 +233,6 @@ function leerPartidaDelHost(partidaDelHost: unknown): Partida | undefined {
     console.warn(`[escenario-engine] ${lectura.advertencia}`);
   }
   return lectura.partida;
-}
-
-/** Convierte lo que el juego avisa en los eventos que escucha el host con `juego.on(...)`. */
-function crearAvisos(emisor: EmisorDeEventos): AvisosDelJuego {
-  return {
-    alGuardar: (partida) => emisor.emitir('guardar', partida),
-    alCumplirObjetivo: (objetivo) => emisor.emitir('objetivo', objetivo),
-    alVerPalabra: (palabra) => emisor.emitir('palabra', palabra),
-    alCambiarDeNivel: (id, anterior) => emisor.emitir('nivel', { id, anterior }),
-    alEmpezarCinematica: (id) => emisor.emitir('cinematica', { id, fase: 'inicio' }),
-    alTerminarCinematica: (id) => emisor.emitir('cinematica', { id, fase: 'fin' }),
-    alSalir: (destino) => emisor.emitir('salida', destino),
-    alFallar: (error) => emisor.emitir('error', error),
-  };
 }
 
 function crearEscenarioDeThree(elemento: HTMLElement): EscenarioDeThree {
