@@ -275,6 +275,22 @@ test('si el nivel que se pide cargar tiene errores, rechaza con ellos y se sigue
   expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 4, y: 3 });
 });
 
+test('si el nivel nuevo no logra empezar, rechaza y se vuelve a jugar el anterior con su estado', async () => {
+  const partida: Partida = { v: 1, nivel: 'barrio', niveles: { barrio: { estado: { globo: 'rosa' } } } };
+  const { juego, escenario, reloj } = await empezarEn('barrio', partida);
+  escenario.fallarElSiguienteMontaje = true;
+
+  const carga = juego.cargar('casa');
+
+  await expect(carga).rejects.toEqual(new ErrorDeEscenario(['no se pudo cargar la imagen del suelo']));
+  expect(juego.idDelNivel).toBe('barrio');
+  expect(juego.leerPartida().niveles).toEqual({ barrio: { estado: { globo: 'rosa' } } });
+  // El barrio se juega otra vez: Tommy está en su inicio y camina.
+  escenario.simularToque({ tipo: 'piso', punto: { x: 4, y: 3 } });
+  await reloj.avanzar(1);
+  expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 4, y: 3 });
+});
+
 test('un nivel que no está registrado se puede cargar por su dirección, y su id es el de su contenido', async () => {
   const { juego } = await empezarEn('/niveles/barrio/nivel.json');
 

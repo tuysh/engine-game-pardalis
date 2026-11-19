@@ -50,8 +50,8 @@ export interface Juego {
   guardar(): Partida;
   /**
    * Cambia de nivel reutilizando el mismo lienzo. `nivel` es un id de `niveles` o la dirección de un `nivel.json`.
-   * Termina cuando el nivel ya se puede jugar. Rechaza con `ErrorDeEscenario` si el nivel no se pudo leer
-   * o tiene errores; entonces se sigue jugando el nivel que estaba.
+   * Termina cuando el nivel ya se puede jugar. Rechaza con `ErrorDeEscenario` si el nivel no se pudo leer,
+   * tiene errores o no cargó alguna de sus imágenes; entonces se sigue jugando el nivel que estaba.
    */
   cargar(nivel: string): Promise<void>;
   /**

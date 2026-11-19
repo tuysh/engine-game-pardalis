@@ -2,6 +2,7 @@
 // y deja que la prueba simule toques del jugador.
 
 import type { AjustesDeCamara } from '../../dominio/contenido.ts';
+import { ErrorDeEscenario } from '../../dominio/error-de-escenario.ts';
 import type { Punto } from '../../dominio/geometria.ts';
 import type { GuiaDeDepuracion } from '../../dominio/guias-de-depuracion.ts';
 import type { Mira } from '../../dominio/mundo.ts';
@@ -45,11 +46,17 @@ export class EscenarioDeMemoria implements Escenario {
   guias: readonly GuiaDeDepuracion[] = [];
   /** Los efectos que se han pedido, en orden. */
   readonly efectosReproducidos: { nombre: string; punto: Punto }[] = [];
+  /** Para las pruebas: con `true`, el siguiente `montar` falla como si una imagen no hubiera cargado. */
+  fallarElSiguienteMontaje = false;
   estaDestruido = false;
 
   private funcionesDeToque: ((toque: Toque) => void)[] = [];
 
   async montar(escenografia: Escenografia): Promise<void> {
+    if (this.fallarElSiguienteMontaje) {
+      this.fallarElSiguienteMontaje = false;
+      throw new ErrorDeEscenario(['no se pudo cargar la imagen del suelo']);
+    }
     this.escenografia = escenografia;
     // Una escenografía nueva es un lugar nuevo: los personajes del lugar anterior ya no están.
     this.personajes.clear();

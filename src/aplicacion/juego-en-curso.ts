@@ -3,6 +3,8 @@
 //
 // Reglas:
 // - Solo se juega un nivel a la vez. Al cargar otro, el anterior termina y su estado queda en la partida.
+// - Si el nivel nuevo no puede empezar (por ejemplo, no cargó una de sus imágenes), se vuelve a jugar
+//   el anterior con su estado guardado: el juego nunca se queda sin nivel.
 // - Cuando un nivel termina hacia un destino que es otro nivel registrado, ese nivel se carga solo:
 //   la pantalla se cierra a negro, se cambia de lugar y el nivel nuevo la abre al empezar.
 //   Cualquier otro destino se le avisa al host, que decide qué hacer.
@@ -61,9 +63,10 @@ export interface PiezasDelJuegoEnCurso {
   readonly partidaInicial: Partida | undefined;
 }
 
-/** El nivel que se está jugando, con el id por el que se le conoce. */
+/** El nivel que se está jugando. */
 interface NivelActual {
-  readonly id: string;
+  /** El nivel tal como se leyó: con él se puede volver a jugar si el nivel siguiente no logra empezar. */
+  readonly porJugar: NivelPorJugar;
   readonly enJuego: NivelEnJuego;
 }
 
@@ -98,12 +101,13 @@ export class JuegoEnCurso {
       return actualizarPartida(this.partidaDeOtrosNiveles, this.idDelUltimoNivel, {});
     }
     const variables = this.nivelActual.enJuego.leerVariables();
-    return actualizarPartida(this.partidaDeOtrosNiveles, this.nivelActual.id, variables);
+    return actualizarPartida(this.partidaDeOtrosNiveles, this.nivelActual.porJugar.id, variables);
   }
 
   /**
    * Pone a jugar un nivel ya leído y validado; el que se estuviera jugando termina.
-   * La promesa termina cuando el nivel ya se puede jugar.
+   * La promesa termina cuando el nivel ya se puede jugar. Si el nivel no logra empezar, rechaza con el error
+   * y vuelve a poner a jugar el nivel anterior.
    */
   async jugar(porJugar: NivelPorJugar): Promise<void> {
     const anterior = this.nivelActual;
@@ -114,40 +118,30 @@ export class JuegoEnCurso {
       this.nivelActual = undefined;
     }
 
-    const pedido = {
-      nivel: porJugar.nivel,
-      ubicacion: {
-        direccionDelNivel: porJugar.direccion,
-        raizDeAssets: this.piezas.raizDeAssets,
-        cargador: this.piezas.cargador,
-      },
-      idiomaBase: this.piezas.idiomaBase,
-      minijuegos: this.piezas.minijuegos,
-      cinematicasEnCodigo: this.piezas.cinematicasEnCodigo,
-      variablesGuardadas: variablesGuardadasDe(this.partidaDeOtrosNiveles, porJugar.id),
-      conMenosMovimiento: this.piezas.conMenosMovimiento,
-      depuracion: this.piezas.depuracion,
-      fundido: this.fundido,
-    };
-    const enJuego = await jugarNivel(pedido, this.piezas.puertos, this.crearAvisosDelNivel());
-    if (this.estaTerminado) {
-      // El juego se destruyó mientras el nivel cargaba: ya no se juega.
-      enJuego.terminar();
-      return;
+    let enJuego: NivelEnJuego | undefined;
+    try {
+      enJuego = await this.ponerAJugar(porJugar);
+    } catch (error) {
+      if (anterior !== undefined) {
+        await this.volverAJugar(anterior.porJugar);
+      }
+      throw error;
     }
+    // `undefined` = el juego se destruyó mientras el nivel cargaba: ya no se juega.
+    if (enJuego === undefined) return;
 
-    this.nivelActual = { id: porJugar.id, enJuego };
+    this.nivelActual = { porJugar, enJuego };
     this.idDelUltimoNivel = porJugar.id;
     if (anterior !== undefined) {
-      this.piezas.avisos.alCambiarDeNivel(porJugar.id, anterior.id);
+      this.piezas.avisos.alCambiarDeNivel(porJugar.id, anterior.porJugar.id);
       this.piezas.avisos.alGuardar(this.leerPartida());
     }
   }
 
   /**
    * Cambia de nivel: lo lee, lo valida y lo pone a jugar. `nombre` es un id de `niveles` o la dirección
-   * de un `nivel.json`. Rechaza con `ErrorDeEscenario` si el nivel no se pudo leer o tiene errores;
-   * en ese caso se sigue jugando el nivel que estaba.
+   * de un `nivel.json`. Rechaza con `ErrorDeEscenario` si el nivel no se pudo leer, tiene errores
+   * o no logra empezar; en ese caso se sigue jugando el nivel que estaba.
    */
   async cargar(nombre: string): Promise<void> {
     if (this.estaTerminado) {
@@ -192,6 +186,50 @@ export class JuegoEnCurso {
       this.nivelActual = undefined;
     }
     this.estaTerminado = true;
+  }
+
+  /**
+   * Monta un nivel y lo deja jugándose, con las variables que la partida tenga guardadas para él.
+   * Devuelve `undefined` si el juego se destruyó mientras el nivel cargaba.
+   */
+  private async ponerAJugar(porJugar: NivelPorJugar): Promise<NivelEnJuego | undefined> {
+    const pedido = {
+      nivel: porJugar.nivel,
+      ubicacion: {
+        direccionDelNivel: porJugar.direccion,
+        raizDeAssets: this.piezas.raizDeAssets,
+        cargador: this.piezas.cargador,
+      },
+      idiomaBase: this.piezas.idiomaBase,
+      minijuegos: this.piezas.minijuegos,
+      cinematicasEnCodigo: this.piezas.cinematicasEnCodigo,
+      variablesGuardadas: variablesGuardadasDe(this.partidaDeOtrosNiveles, porJugar.id),
+      conMenosMovimiento: this.piezas.conMenosMovimiento,
+      depuracion: this.piezas.depuracion,
+      fundido: this.fundido,
+    };
+    const enJuego = await jugarNivel(pedido, this.piezas.puertos, this.crearAvisosDelNivel());
+    if (this.estaTerminado) {
+      enJuego.terminar();
+      return undefined;
+    }
+    return enJuego;
+  }
+
+  /**
+   * El nivel siguiente no logró empezar: se pone a jugar otra vez el que se había dejado, con su estado
+   * guardado (el jugador aparece en su inicio). Así el juego no se queda sin nivel.
+   */
+  private async volverAJugar(anterior: NivelPorJugar): Promise<void> {
+    try {
+      const enJuego = await this.ponerAJugar(anterior);
+      if (enJuego !== undefined) {
+        this.nivelActual = { porJugar: anterior, enJuego };
+      }
+    } catch (error) {
+      // Ya no hay a dónde volver. Quien pidió el cambio de nivel recibe el primer error y decide qué hacer.
+      console.error(`[escenario-engine] tampoco se pudo volver al nivel "${anterior.id}":`, error);
+    }
   }
 
   private crearAvisosDelNivel(): AvisosDelNivel {

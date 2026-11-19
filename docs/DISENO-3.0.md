@@ -114,7 +114,7 @@ si no pudo arrancar. `error.problemas` es la lista de mensajes del validador (un
 | --- | --- |
 | `on(evento, funcion)` | Escucha un evento. **Devuelve una función que cancela la suscripción.** |
 | `guardar()` | Devuelve la partida actual como objeto plano. |
-| `cargar(nivel)` | Cambia de nivel reutilizando el mismo lienzo. `nivel` es un id de `niveles` o la dirección de un `nivel.json`. Promesa que se resuelve cuando ya se puede jugar y rechaza con `ErrorDeEscenario` si el nivel tiene errores (entonces sigue el nivel que estaba). |
+| `cargar(nivel)` | Cambia de nivel reutilizando el mismo lienzo. `nivel` es un id de `niveles` o la dirección de un `nivel.json`. Promesa que se resuelve cuando ya se puede jugar y rechaza con `ErrorDeEscenario` si el nivel tiene errores o no cargó alguna de sus imágenes (entonces sigue el nivel que estaba). |
 | `reproducir(idDeCinematica)` | Lanza una cinemática del nivel actual, aunque ya se haya visto. Promesa que se resuelve al terminar. |
 | `interrumpir()` | Salta la cinemática o cierra el diálogo en curso. |
 | `pausar()` / `reanudar()` | Congela y reanuda juego, audio y video. |
