@@ -91,9 +91,26 @@ const BARRIO: Nivel = {
   assets: { spr_tommy: { carpeta: '.', asset: IMAGEN_DE_TOMMY } },
 };
 
+/** Una casa igual a la de arriba, pero cuya cinemática sale hacia "roto": un nivel registrado que no se puede leer. */
+const CASA_CON_SALIDA_ROTA: Nivel = {
+  ...CASA,
+  contenido: {
+    ...CASA.contenido,
+    cinematicas: {
+      intro: {
+        inicio: { tipo: 'alEntrar' },
+        condicion: leerCondicionDeTexto('no vista.intro'),
+        saltable: true,
+        guion: { tipo: 'pasos', pasos: [{ tipo: 'sale', destino: 'roto' }] },
+      },
+    },
+  },
+};
+
 /** Los niveles que «existen» en estas pruebas, por la dirección de su `nivel.json`. */
 const NIVELES_POR_DIRECCION: Record<string, Nivel> = {
   '/niveles/casa/nivel.json': CASA,
+  '/niveles/casa-con-salida-rota/nivel.json': CASA_CON_SALIDA_ROTA,
   '/niveles/barrio/nivel.json': BARRIO,
 };
 
@@ -110,6 +127,7 @@ const FUENTE: FuenteDeNiveles = {
 /** Crea el juego con adaptadores falsos, lo pone a jugar en un nivel y anota en `avisos` todo lo que avisa. */
 async function empezarEn(nivel: string, partidaInicial?: Partida) {
   const escenario = new EscenarioDeMemoria();
+  const interfaz = new InterfazDeMemoria();
   const reloj = new RelojDeMemoria();
   const avisos: string[] = [];
   const partidasPorGuardar: Partida[] = [];
@@ -124,7 +142,7 @@ async function empezarEn(nivel: string, partidaInicial?: Partida) {
     conMenosMovimiento: false,
     puertos: {
       escenario,
-      interfaz: new InterfazDeMemoria(),
+      interfaz,
       audio: new AudioDeMemoria(),
       video: new VideoDeMemoria(),
       controles: new ControlesDeMemoria(),
@@ -144,7 +162,7 @@ async function empezarEn(nivel: string, partidaInicial?: Partida) {
     partidaInicial,
   });
   await juego.jugar(await leerNivelPorJugar(nivel, FUENTE));
-  return { juego, escenario, reloj, avisos, partidasPorGuardar, fallas };
+  return { juego, escenario, interfaz, reloj, avisos, partidasPorGuardar, fallas };
 }
 
 test('al empezar se juega el nivel pedido, y la partida lo nombra', async () => {
@@ -159,19 +177,51 @@ test('cuando un nivel sale hacia otro nivel registrado, ese nivel se carga solo 
   const { juego, escenario, reloj, avisos } = await empezarEn('casa');
 
   // En el primer cuadro empieza la cinemática de entrada, que termina saliendo hacia el barrio.
+  // Antes de cambiar de nivel, la pantalla tarda 0.4 segundos en cerrarse a negro.
   await reloj.avanzar(0.1);
-  await reloj.avanzar(0);
+  await reloj.avanzar(0.5);
 
   expect(juego.idDelNivel).toBe('barrio');
   expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 2, y: 3 });
   expect(avisos).toEqual(['inicio intro', 'objetivo despertar', 'fin intro', 'nivel barrio (antes casa)']);
 });
 
+test('al pasar a otro nivel la pantalla se cierra a negro, y el nivel nuevo la abre al empezar', async () => {
+  const { juego, interfaz, reloj } = await empezarEn('casa');
+
+  await reloj.avanzar(0.1);
+  await reloj.avanzar(0.2);
+  // A medio cierre todavía se juega la casa.
+  expect(interfaz.opacidadDelFundido).toBeCloseTo(0.5);
+  expect(juego.idDelNivel).toBe('casa');
+
+  await reloj.avanzar(0.2);
+  await reloj.avanzar(0);
+  expect(juego.idDelNivel).toBe('barrio');
+  expect(interfaz.opacidadDelFundido).toBe(1);
+
+  // El barrio no tiene cinemática de entrada, así que abre la pantalla solo, en medio segundo.
+  await reloj.avanzar(0.5);
+  expect(interfaz.opacidadDelFundido).toBe(0);
+});
+
+test('si el nivel siguiente no se puede cargar, la pantalla se aclara, el juego avisa y sigue el nivel que estaba', async () => {
+  const { juego, interfaz, reloj, fallas } = await empezarEn('/niveles/casa-con-salida-rota/nivel.json');
+
+  await reloj.avanzar(0.1);
+  await reloj.avanzar(0.5);
+  await reloj.avanzar(0);
+
+  expect(fallas).toEqual([new ErrorDeEscenario(['no existe el archivo /niveles/roto/nivel.json'])]);
+  expect(interfaz.opacidadDelFundido).toBe(0);
+  expect(juego.idDelNivel).toBe('casa');
+});
+
 test('la partida conserva el estado del nivel que se dejó', async () => {
   const { juego, reloj, partidasPorGuardar } = await empezarEn('casa');
 
   await reloj.avanzar(0.1);
-  await reloj.avanzar(0);
+  await reloj.avanzar(0.5);
 
   const partidaEsperada: Partida = {
     v: 1,

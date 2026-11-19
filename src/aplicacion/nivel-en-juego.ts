@@ -16,6 +16,7 @@ import type { PanelDeDepuracion } from '../puertos/panel-de-depuracion.ts';
 import type { Reloj } from '../puertos/reloj.ts';
 import type { Video } from '../puertos/video.ts';
 import type { UbicacionDeAssets } from './direccion-de-asset.ts';
+import type { FundidoDePantalla } from './fundido-de-pantalla.ts';
 
 /** Lo que hace falta para el modo depuración (docs/DISENO-3.0.md §9.3). */
 export interface HerramientasDeDepuracion {
@@ -41,6 +42,11 @@ export interface PedidoDeJuego {
   readonly conMenosMovimiento?: boolean;
   /** Con esto, el nivel dibuja sus guías y ofrece la cámara libre. `undefined` = se juega sin depuración. */
   readonly depuracion?: HerramientasDeDepuracion;
+  /**
+   * El fundido de la pantalla. Quien juega varios niveles entrega el mismo a todos, para que cada nivel sepa
+   * si el anterior cerró a negro antes de salir. Por defecto, uno nuevo con la pantalla clara.
+   */
+  readonly fundido?: FundidoDePantalla;
 }
 
 export interface PuertosParaJugar {

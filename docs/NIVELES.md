@@ -354,6 +354,9 @@ El jugador intenta salir al entrar al área de la salida (caminando o tocándola
 se ejecuta `siBloqueada`. Si se cumple, el nivel termina hacia `destino`: si es otro nivel que el sitio registró,
 el motor lo carga solo; si no, el destino le llega al sitio con el evento `salida`.
 
+Al pasar de un nivel a otro la pantalla se cierra sola a negro y el nivel nuevo la abre al empezar
+(con su cinemática de entrada, si tiene una): no hace falta escribir ese fundido.
+
 Cada nivel guarda su propio estado. Al volver a un nivel ya visitado se restauran sus variables
 (objetivos cumplidos, charlas, cinemáticas vistas) y el jugador aparece en su inicio.
 

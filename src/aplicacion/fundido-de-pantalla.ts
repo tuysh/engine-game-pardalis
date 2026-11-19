@@ -22,6 +22,11 @@ export class FundidoDePantalla {
     this.reloj = reloj;
   }
 
+  /** `true` si la pantalla está oscurecida, aunque sea un poco. */
+  get estaOscura(): boolean {
+    return this.opacidad > OPACIDAD_DE_PANTALLA_CLARA;
+  }
+
   /** Deja la pantalla de una vez como queda al terminar un fundido: clara (`abrir`) o negra (`cerrar`). */
   dejar(sentido: SentidoDeFundido): void {
     this.poner(opacidadFinalDe(sentido));
@@ -44,6 +49,10 @@ export class FundidoDePantalla {
     let opacidadInicial = this.opacidad;
     if (sentido === 'abrir') {
       opacidadInicial = OPACIDAD_DE_PANTALLA_NEGRA;
+    }
+    if (opacidadInicial === opacidadFinal) {
+      // La pantalla ya está como debe quedar (se pidió cerrar y ya estaba negra): no hay nada que esperar.
+      return Promise.resolve();
     }
     this.poner(opacidadInicial);
 

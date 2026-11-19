@@ -3,7 +3,8 @@
 //
 // Reglas:
 // - Solo se juega un nivel a la vez. Al cargar otro, el anterior termina y su estado queda en la partida.
-// - Cuando un nivel termina hacia un destino que es otro nivel registrado, ese nivel se carga solo.
+// - Cuando un nivel termina hacia un destino que es otro nivel registrado, ese nivel se carga solo:
+//   la pantalla se cierra a negro, se cambia de lugar y el nivel nuevo la abre al empezar.
 //   Cualquier otro destino se le avisa al host, que decide qué hacer.
 // - Conviene guardar al cumplir un objetivo, al terminar una cinemática, al salir y al cambiar de nivel.
 // - Al volver a un nivel ya visitado, se restauran sus variables.
@@ -16,10 +17,14 @@ import type { PalabraDeVocabulario } from '../dominio/paso.ts';
 import type { Cargador } from '../puertos/cargador.ts';
 import type { CinematicaEnCodigo } from '../puertos/cinematica-en-codigo.ts';
 import type { Minijuego } from '../puertos/minijuego.ts';
+import { FundidoDePantalla } from './fundido-de-pantalla.ts';
 import { jugarNivel } from './jugar-nivel.ts';
 import { leerNivelPorJugar } from './leer-nivel-por-jugar.ts';
 import type { FuenteDeNiveles, NivelPorJugar } from './leer-nivel-por-jugar.ts';
 import type { AvisosDelNivel, HerramientasDeDepuracion, NivelEnJuego, PuertosParaJugar } from './nivel-en-juego.ts';
+
+/** Lo que tarda la pantalla en cerrarse a negro cuando un nivel sale hacia otro. */
+const DURACION_DEL_CIERRE_ENTRE_NIVELES_EN_SEGUNDOS = 0.4;
 
 /** Cómo el juego le avisa de lo que pasa a quien lo creó. */
 export interface AvisosDelJuego {
@@ -64,17 +69,21 @@ interface NivelActual {
 
 export class JuegoEnCurso {
   private readonly piezas: PiezasDelJuegoEnCurso;
+  /** El fundido de la pantalla es uno solo para todos los niveles: así cada nivel sabe cómo la dejó el anterior. */
+  private readonly fundido: FundidoDePantalla;
   /** La partida tal como estaba la última vez que se cambió de nivel: guarda el estado de los otros niveles. */
   private partidaDeOtrosNiveles: Partida | undefined;
   /** `undefined` mientras se carga el primer nivel o se pasa de un nivel a otro. */
   private nivelActual: NivelActual | undefined;
   /** Id del último nivel que se jugó: es el que se informa mientras se carga el siguiente. */
   private idDelUltimoNivel = '';
-  private seEstaCargandoUnNivel = false;
+  /** `true` desde que se pide otro nivel hasta que ya se puede jugar (o hasta que falla). */
+  private seEstaCambiandoDeNivel = false;
   private estaTerminado = false;
 
   constructor(piezas: PiezasDelJuegoEnCurso) {
     this.piezas = piezas;
+    this.fundido = new FundidoDePantalla(piezas.puertos.interfaz, piezas.puertos.reloj);
     this.partidaDeOtrosNiveles = piezas.partidaInicial;
   }
 
@@ -118,6 +127,7 @@ export class JuegoEnCurso {
       variablesGuardadas: variablesGuardadasDe(this.partidaDeOtrosNiveles, porJugar.id),
       conMenosMovimiento: this.piezas.conMenosMovimiento,
       depuracion: this.piezas.depuracion,
+      fundido: this.fundido,
     };
     const enJuego = await jugarNivel(pedido, this.piezas.puertos, this.crearAvisosDelNivel());
     if (this.estaTerminado) {
@@ -143,17 +153,15 @@ export class JuegoEnCurso {
     if (this.estaTerminado) {
       throw new ErrorDeEscenario([`no se cargó el nivel "${nombre}": el juego ya se destruyó`]);
     }
-    if (this.seEstaCargandoUnNivel) {
+    if (this.seEstaCambiandoDeNivel) {
       throw new ErrorDeEscenario([`no se cargó el nivel "${nombre}": ya se está cargando otro nivel`]);
     }
 
-    this.seEstaCargandoUnNivel = true;
+    this.seEstaCambiandoDeNivel = true;
     try {
-      const porJugar = await leerNivelPorJugar(nombre, this.piezas.fuente);
-      if (this.estaTerminado) return;
-      await this.jugar(porJugar);
+      await this.leerYJugar(nombre);
     } finally {
-      this.seEstaCargandoUnNivel = false;
+      this.seEstaCambiandoDeNivel = false;
     }
   }
 
@@ -217,17 +225,34 @@ export class JuegoEnCurso {
       return;
     }
     // Si el jugador vuelve a pisar la salida mientras el nivel siguiente carga, no se carga dos veces.
-    if (this.seEstaCargandoUnNivel) return;
-    void this.cargarOAvisarDeLaFalla(destino);
+    if (this.seEstaCambiandoDeNivel) return;
+    void this.pasarAlNivel(destino);
   }
 
-  private async cargarOAvisarDeLaFalla(nombre: string): Promise<void> {
+  /** Cierra la pantalla a negro y pasa al otro nivel. Si el nivel no se puede cargar, avisa y sigue el que estaba. */
+  private async pasarAlNivel(nombre: string): Promise<void> {
+    this.seEstaCambiandoDeNivel = true;
     try {
-      await this.cargar(nombre);
+      // Nadie corta este fundido, así que su señal nunca se dispara.
+      // Si una cinemática ya había cerrado la pantalla, esto termina de inmediato.
+      const sinCortar = new AbortController().signal;
+      await this.fundido.fundir('cerrar', DURACION_DEL_CIERRE_ENTRE_NIVELES_EN_SEGUNDOS, sinCortar);
+      if (this.estaTerminado) return;
+      await this.leerYJugar(nombre);
     } catch (error) {
+      // Con la pantalla en negro no se vería el nivel que sigue en juego.
+      this.fundido.dejar('abrir');
       console.error(`[escenario-engine] no se pudo cargar el nivel "${nombre}":`, error);
       this.piezas.avisos.alFallar(convertirEnErrorDeEscenario(error));
+    } finally {
+      this.seEstaCambiandoDeNivel = false;
     }
+  }
+
+  private async leerYJugar(nombre: string): Promise<void> {
+    const porJugar = await leerNivelPorJugar(nombre, this.piezas.fuente);
+    if (this.estaTerminado) return;
+    await this.jugar(porJugar);
   }
 }
 

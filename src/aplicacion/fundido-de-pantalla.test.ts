@@ -48,12 +48,12 @@ test('sin duración, el fundido es de golpe', async () => {
   expect(interfaz.opacidadDelFundido).toBe(1);
 });
 
-test('cerrar una pantalla que ya estaba negra no da un destello de claridad', async () => {
-  const { fundido, interfaz, reloj } = crearFundido();
+test('cerrar una pantalla que ya estaba negra termina de inmediato, sin un destello de claridad', async () => {
+  const { fundido, interfaz } = crearFundido();
   fundido.dejar('cerrar');
+  expect(fundido.estaOscura).toBe(true);
 
-  void fundido.fundir('cerrar', 2, SIN_CORTAR);
-  await reloj.avanzar(1);
+  await fundido.fundir('cerrar', 2, SIN_CORTAR);
 
   expect(interfaz.opacidadDelFundido).toBe(1);
 });

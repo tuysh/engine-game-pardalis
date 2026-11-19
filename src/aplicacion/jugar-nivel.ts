@@ -38,6 +38,9 @@ import { SalidaDelNivel } from './salida-del-nivel.ts';
 
 const SIN_DIRECCION = { x: 0, y: 0 };
 
+/** Lo que tarda en aclararse la pantalla al empezar un nivel, si el anterior la dejó en negro. */
+const DURACION_AL_ABRIR_EL_NIVEL_EN_SEGUNDOS = 0.5;
+
 /** La promesa termina cuando el nivel ya se ve y se puede jugar. */
 export async function jugarNivel(
   pedido: PedidoDeJuego,
@@ -67,7 +70,7 @@ export async function jugarNivel(
     centroDelLugar,
     conMenosMovimiento: pedido.conMenosMovimiento ?? false,
   });
-  const fundido = new FundidoDePantalla(interfaz, reloj);
+  const fundido = pedido.fundido ?? new FundidoDePantalla(interfaz, reloj);
 
   const estadoInicial = crearEstadoDeNivel(contenido.estado, pedido.variablesGuardadas);
   const estado = new EstadoEnJuego(estadoInicial, (objetivo) => avisos.alCumplirObjetivo(objetivo));
@@ -162,10 +165,11 @@ export async function jugarNivel(
     alEmpezar: (id) => avisos.alEmpezarCinematica(id),
     alTerminar: (id) => avisos.alTerminarCinematica(id),
   });
-  if (!cinematicas.hayAlgoPorReproducir) {
-    // El nivel anterior pudo cerrar a negro antes de salir. Si aquí no hay una cinemática de entrada
-    // que abra la pantalla, se abre de una vez.
-    fundido.dejar('abrir');
+  if (fundido.estaOscura && !cinematicas.hayAlgoPorReproducir) {
+    // El nivel anterior cerró a negro antes de salir, y aquí no hay una cinemática de entrada que abra
+    // la pantalla: se abre sola. Nadie espera a que termine, así que su señal nunca se dispara.
+    const sinCortar = new AbortController().signal;
+    void fundido.fundir('abrir', DURACION_AL_ABRIR_EL_NIVEL_EN_SEGUNDOS, sinCortar);
   }
 
   const flecha = new FlechaDeSalida({ nivel, estado, escenario, interfaz });

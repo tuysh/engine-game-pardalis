@@ -294,6 +294,9 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   pantalla se aclara. No pasa si la escena pidió salir: la pantalla puede quedar en negro mientras carga el
   nivel siguiente. Un nivel que empieza sin cinemática de entrada abre la pantalla de una vez.
 - **`fundido`:** `abrir` siempre parte de negro; `cerrar` parte de lo oscura que ya esté la pantalla.
+- **Entre un nivel y otro** la pantalla se cierra sola a negro (si una cinemática no la cerró ya) y el nivel
+  nuevo la abre al empezar: con su cinemática de entrada o, si no tiene, con un fundido corto.
+  `juego.cargar()` no cierra la pantalla: ahí el host decide su propia transición.
 - **Una cinemática espera su turno:** nunca interrumpe un diálogo; varias en espera se reproducen en orden.
   La de un objetivo que ya venía cumplido en la partida, si no se había visto, empieza al entrar al nivel.
 - **Al saltar** se omiten las líneas, los efectos, las esperas, los sonidos, los videos y las animaciones que
