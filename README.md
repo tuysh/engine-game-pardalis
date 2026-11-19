@@ -52,9 +52,11 @@ juego.on('guardar', (partida) => localStorage.setItem('pardalis:partida', JSON.s
 ```
 
 Con eso el juego muestra el botón de jugar, reproduce la intro de la casa, pasa al barrio y avisa cada vez
-que conviene guardar. Solo `nivel` es obligatoria. Todo lo que el paquete ofrece son esa función, el objeto
-`juego` que entrega y `ErrorDeEscenario`; lo demás son tipos, y cada uno trae su explicación y un ejemplo
-al pasar el cursor en el editor.
+que conviene guardar. Solo `nivel` es obligatoria, y una opción en `null` cuenta igual que no ponerla
+(por eso funciona el `JSON.parse` de arriba cuando todavía no hay partida guardada).
+Todo lo que el paquete ofrece son esa función, el objeto `juego` que entrega y `ErrorDeEscenario`;
+lo demás son tipos. Cada uno trae su explicación al pasar el cursor en el editor, y los que se usan
+llamándolos (`crearEscenario`, `juego.on`, `Minijuego`, `CinematicaEnCodigo`) traen además un ejemplo.
 
 ### El objeto `juego`
 

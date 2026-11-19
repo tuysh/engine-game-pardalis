@@ -50,12 +50,34 @@ export function revisarOpciones(opciones: unknown): RevisionDeOpciones {
   }
 
   const errores: string[] = [];
-  const idsDeNiveles = revisarNiveles(opciones.niveles, errores);
-  revisarNivelInicial(opciones.nivel, idsDeNiveles, errores);
-  revisarFunciones(opciones.minijuegos, 'minijuegos', errores);
-  revisarFunciones(opciones.cinematicas, 'cinematicas', errores);
-  revisarAjustes(opciones, errores);
+  // Una opción en `null` cuenta igual que no ponerla (ver `quitarOpcionesVacias`).
+  const presentes = quitarVacias(opciones);
+  const idsDeNiveles = revisarNiveles(presentes.niveles, errores);
+  revisarNivelInicial(presentes.nivel, idsDeNiveles, errores);
+  revisarFunciones(presentes.minijuegos, 'minijuegos', errores);
+  revisarFunciones(presentes.cinematicas, 'cinematicas', errores);
+  revisarAjustes(presentes, errores);
   return { errores, advertencias: buscarOpcionesQueNoExisten(opciones) };
+}
+
+/**
+ * Las mismas opciones, sin las que llegaron en `null`. En JavaScript es común que una opción llegue así
+ * (es lo que da `localStorage.getItem` cuando no hay nada guardado), y cuenta igual que no ponerla.
+ */
+export function quitarOpcionesVacias(opciones: OpcionesDeEscenario): OpcionesDeEscenario {
+  // `nivel` es la única obligatoria y nunca llega vacía (ya se revisó), así que se conserva tal cual.
+  return { ...quitarVacias({ ...opciones }), nivel: opciones.nivel };
+}
+
+function quitarVacias(opciones: Readonly<Record<string, unknown>>): Record<string, unknown> {
+  const presentes: Record<string, unknown> = {};
+  for (const nombre of Object.keys(opciones)) {
+    const valor = opciones[nombre];
+    if (valor !== null && valor !== undefined) {
+      presentes[nombre] = valor;
+    }
+  }
+  return presentes;
 }
 
 /** `niveles` une el id de cada nivel con su dirección. Devuelve los ids que registra. */
@@ -83,23 +105,22 @@ function revisarNiveles(niveles: unknown, errores: string[]): string[] {
 
 /** `nivel` es uno de los ids de `niveles` o directamente la dirección de un nivel.json. */
 function revisarNivelInicial(nivel: unknown, idsDeNiveles: readonly string[], errores: string[]): void {
-  if (typeof nivel !== 'string' || nivel === '') {
-    errores.push(
-      'opciones.nivel: falta el nivel inicial; debe ser un id de "niveles" o la dirección de un nivel.json; ' +
-        `llegó ${describirValor(nivel)}`,
-    );
+  const loQueAcepta = 'debe ser un id de "niveles" o la dirección de un nivel.json';
+  if (nivel === undefined || nivel === '') {
+    errores.push(`opciones.nivel: falta el nivel inicial; ${loQueAcepta}`);
     return;
   }
-  // Una dirección lleva al menos una diagonal o un punto ("/niveles/casa/nivel.json"); un id, no ("casa").
-  const pareceUnaDireccion = nivel.includes('/') || nivel.includes('.');
-  if (idsDeNiveles.includes(nivel) || pareceUnaDireccion) return;
+  if (typeof nivel !== 'string') {
+    errores.push(`opciones.nivel: ${loQueAcepta}; llegó ${describirValor(nivel)}`);
+    return;
+  }
+  // Sin niveles registrados, `nivel` solo puede ser una dirección: si no existe, lo dirá la red al pedirla.
+  if (idsDeNiveles.length === 0 || idsDeNiveles.includes(nivel)) return;
 
-  if (idsDeNiveles.length === 0) {
-    errores.push(
-      `opciones.nivel: "${nivel}" no es la dirección de un nivel.json, y no hay "niveles" donde buscarlo por id`,
-    );
-    return;
-  }
+  // Con niveles registrados, una palabra suelta que no es ninguno de sus ids casi siempre es un id
+  // mal escrito: una dirección lleva al menos una diagonal o un punto ("/niveles/casa/nivel.json").
+  const pareceUnaDireccion = nivel.includes('/') || nivel.includes('.');
+  if (pareceUnaDireccion) return;
   const registrados = idsDeNiveles.join(', ');
   errores.push(`opciones.nivel: "${nivel}" no está en "niveles" (${registrados}) ni es la dirección de un nivel.json`);
 }
@@ -146,7 +167,7 @@ function revisarAjustes(opciones: Record<string, unknown>, errores: string[]): v
   if (alCargar !== undefined && typeof alCargar !== 'function') {
     anotar('alCargar', 'una función');
   }
-  if (senal !== undefined && !(senal instanceof AbortSignal)) {
+  if (senal !== undefined && !esUnaSenal(senal)) {
     anotar('senal', 'la señal de un AbortController (controlador.signal)');
   }
   if (semilla !== undefined && (typeof semilla !== 'number' || !Number.isFinite(semilla))) {
@@ -157,6 +178,16 @@ function revisarAjustes(opciones: Record<string, unknown>, errores: string[]): v
       anotar(opcion, 'true o false');
     }
   }
+}
+
+/**
+ * Reconoce la señal de un `AbortController` por lo que sabe hacer y no con `instanceof`:
+ * así sirve también la que se creó en otra ventana (por ejemplo, con el juego dentro de un iframe).
+ */
+function esUnaSenal(valor: unknown): boolean {
+  return (
+    esObjetoPlano(valor) && typeof valor.throwIfAborted === 'function' && typeof valor.addEventListener === 'function'
+  );
 }
 
 /** Una opción que el motor no conoce casi siempre es un error de dedo: se avisa, pero no impide jugar. */

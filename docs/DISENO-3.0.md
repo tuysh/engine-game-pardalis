@@ -91,7 +91,8 @@ si no pudo arrancar. `error.problemas` es la lista de mensajes del validador (un
 
 Lo que llega en la llamada se revisa antes de usarlo, y sus problemas también van en `error.problemas`, todos
 juntos: un elemento que no se encontró, un id de nivel mal escrito, un minijuego que no se importó.
-Una opción que no existe solo da una advertencia en la consola.
+Una opción que no existe solo da una advertencia en la consola, y una opción en `null` cuenta igual que
+no ponerla (salvo `nivel`, que es obligatoria).
 
 ### Opciones
 
