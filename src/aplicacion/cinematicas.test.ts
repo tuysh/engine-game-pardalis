@@ -106,6 +106,8 @@ async function empezar(nivel: Nivel, opciones: OpcionesDePrueba = {}) {
   const avisosDeCinematicas: string[] = [];
   const salidas: string[] = [];
   const fallas: unknown[] = [];
+  /** Las palabras de vocabulario que el nivel avisó que se mostraron. */
+  const palabras: unknown[] = [];
 
   const ubicacion = { direccionDelNivel: '/niveles/casa/nivel.json', cargador: new CargadorDeMemoria({}) };
   const nivelEnJuego = await jugarNivel(
@@ -120,7 +122,7 @@ async function empezar(nivel: Nivel, opciones: OpcionesDePrueba = {}) {
     { escenario, interfaz, audio, video, controles, reloj, azar: () => 0 },
     {
       alCumplirObjetivo: () => {},
-      alVerPalabra: () => {},
+      alVerPalabra: (palabra) => palabras.push(palabra),
       alSalir: (destino) => salidas.push(destino),
       alFallar: (error) => fallas.push(error),
       alEmpezarCinematica: (id) => {
@@ -132,7 +134,8 @@ async function empezar(nivel: Nivel, opciones: OpcionesDePrueba = {}) {
       alTerminarCinematica: (id) => avisosDeCinematicas.push(`fin ${id}`),
     },
   );
-  return { nivelEnJuego, escenario, interfaz, audio, video, controles, reloj, avisosDeCinematicas, salidas, fallas };
+  const adaptadores = { escenario, interfaz, audio, video, controles, reloj };
+  return { nivelEnJuego, ...adaptadores, avisosDeCinematicas, salidas, fallas, palabras };
 }
 
 test('una cinemática de entrada empieza en el primer cuadro: se ven las franjas y el nivel avisa', async () => {
@@ -470,4 +473,77 @@ test('los pasos de una cinemática en código se pueden separar de `escena` y si
   expect(fallas).toEqual([]);
   expect(escenario.personajes.get('mama')?.posicion).toEqual({ x: 5, y: 2 });
   expect(nivelEnJuego.leerVariables()).toEqual({ saludo: true, 'vista.intro': true });
+});
+
+test('una línea dicha desde código puede llevar traducción y enseñar una palabra, igual que en el nivel', async () => {
+  const intro: CinematicaEnCodigo = async (escena) => {
+    await escena.dice('tommy', 'Bread!', { trad: '¡Pan!', en: 'bread', es: 'pan' });
+  };
+  const cinematicas = { intro: crearCinematica('intro', { guion: { tipo: 'codigo', nombre: 'intro' } }) };
+  const { interfaz, reloj, palabras } = await empezar(salaCon(cinematicas), { cinematicasEnCodigo: { intro } });
+
+  await reloj.avanzar(0.1);
+
+  expect(interfaz.globosMostrados).toEqual([
+    { texto: 'Bread!', traduccion: '¡Pan!', palabra: { en: 'bread', es: 'pan' } },
+  ]);
+  expect(palabras).toEqual([{ en: 'bread', es: 'pan' }]);
+});
+
+test('una línea desde código con solo la mitad de la palabra falla diciendo que "en" y "es" van juntos', async () => {
+  const intro: CinematicaEnCodigo = async (escena) => {
+    await escena.dice('tommy', 'Bread!', { en: 'bread' });
+  };
+  const cinematicas = { intro: crearCinematica('intro', { guion: { tipo: 'codigo', nombre: 'intro' } }) };
+  const { reloj, fallas } = await empezar(salaCon(cinematicas), { cinematicasEnCodigo: { intro } });
+
+  await reloj.avanzar(0.1);
+  await reloj.avanzar(0);
+
+  expect(fallas).toEqual([
+    new Error(
+      '[escenario-engine] cinemática en código "intro": escena.dice("tommy", …): ' +
+        'una tarjeta de vocabulario necesita "en" y "es" juntos',
+    ),
+  ]);
+});
+
+test('un video con voces se nombra desde código con uno por idioma, y se ve el del idioma del sitio', async () => {
+  const intro: CinematicaEnCodigo = async (escena) => {
+    await escena.video({ es: 'intro_es', en: 'intro_en' });
+  };
+  const cinematicas = { intro: crearCinematica('intro', { guion: { tipo: 'codigo', nombre: 'intro' } }) };
+  const salaConVideos: Nivel = {
+    ...salaCon(cinematicas),
+    assets: {
+      ...SALA.assets,
+      intro_es: { carpeta: '.', asset: { tipo: 'video', archivo: 'video/intro_es.mp4' } },
+      intro_en: { carpeta: '.', asset: { tipo: 'video', archivo: 'video/intro_en.mp4' } },
+    },
+  };
+  const { video, reloj } = await empezar(salaConVideos, { cinematicasEnCodigo: { intro } });
+
+  await reloj.avanzar(0.1);
+
+  expect(video.videosPedidos).toEqual(['/niveles/casa/video/intro_es.mp4']);
+});
+
+test('un video mal nombrado desde código falla diciendo cómo se escribe', async () => {
+  const intro: CinematicaEnCodigo = async (escena) => {
+    // Así llega una llamada mal hecha desde JavaScript sin tipos: falta el video en inglés.
+    const soloEnEspanol: unknown = { es: 'intro_es' };
+    await Reflect.apply(escena.video, undefined, [soloEnEspanol]);
+  };
+  const cinematicas = { intro: crearCinematica('intro', { guion: { tipo: 'codigo', nombre: 'intro' } }) };
+  const { reloj, fallas } = await empezar(salaCon(cinematicas), { cinematicasEnCodigo: { intro } });
+
+  await reloj.avanzar(0.1);
+  await reloj.avanzar(0);
+
+  expect(fallas).toEqual([
+    new Error(
+      '[escenario-engine] cinemática en código "intro": escena.video(…): ' +
+        'se espera la clave del video, o una por idioma: { es: "…", en: "…" }',
+    ),
+  ]);
 });

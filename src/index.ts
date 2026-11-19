@@ -34,4 +34,5 @@ export type {
   OpcionesDeAnimacion,
   OpcionesDeDuracion,
   OpcionesDeLinea,
+  VideoPorIdioma,
 } from './puertos/cinematica-en-codigo.ts';

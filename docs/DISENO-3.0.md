@@ -89,6 +89,10 @@ si no pudo arrancar. `error.problemas` es la lista de mensajes del validador (un
 
 `elemento` es un `HTMLElement`. El motor ocupa todo su tamaño y se adapta si cambia.
 
+Lo que llega en la llamada se revisa antes de usarlo, y sus problemas también van en `error.problemas`, todos
+juntos: un elemento que no se encontró, un id de nivel mal escrito, un minijuego que no se importó.
+Una opción que no existe solo da una advertencia en la consola.
+
 ### Opciones
 
 | Opción | Tipo | Por defecto | Qué es |
@@ -234,7 +238,7 @@ Al terminar, el motor marca `vista.<id>` en el estado.
 | `{ "desaparece": "mama" }` | `escena.desaparece('mama')` | Lo saca. |
 | `{ "musica": "clave" }` / `{ "sonido": "clave" }` | `escena.musica()` / `escena.sonido()` | Audio. |
 | `{ "fundido": "abrir", "duracion": 1 }` | `escena.fundido('abrir', { duracion })` | `abrir` o `cerrar` a negro. |
-| `{ "video": "clave" }` | `escena.video('clave')` | Video a pantalla completa. Ver §7.4. |
+| `{ "video": "clave" }` | `escena.video('clave')` | Video a pantalla completa; con voces, `{ es, en }` en las dos formas. Ver §7.4. |
 | `{ "sale": "barrio" }` | `escena.sale('barrio')` | Termina el nivel hacia un destino. |
 
 Los pasos que ya existían siguen igual: `dice`, `camina`, `efecto`, `pon`, `secuencia`, `cuando`.
@@ -257,6 +261,8 @@ export async function intro(escena) {
 
 Se registra en `crearEscenario({ cinematicas: { intro } })` y en el JSON se declara `"codigo": "intro"`.
 `escena` ofrece además `escena.efecto()`, `escena.secuencia()`, `escena.estado` (lectura y `pon`) y `escena.senal`.
+Las opciones de `escena.dice` se llaman igual que los campos del paso `dice`: `audio`, `trad`, y `en` + `es`
+(siempre juntos) para una tarjeta de vocabulario.
 El paso `cuando` no tiene método: en código se escribe un `if` con `escena.estado.cumple('...')`.
 
 El validador no puede leer el código, así que cada método revisa al ejecutarse que exista lo que nombra
@@ -311,6 +317,11 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   puede tener diálogo en `npcs` aunque no esté en el mapa. **`desaparece`** no acepta al personaje del jugador.
 - **Con el botón de inicio** (`iniciarCon: 'boton'`) el tiempo no pasa hasta que lo tocan: la cinemática de
   entrada empieza con ese toque.
+- **En código, `escena.dice` y `escena.video` aceptan lo mismo que sus pasos del JSON:** `trad`, `en` y `es`
+  en las opciones de `dice`, y `{ es, en }` en `video`. El diseño solo mostraba `audio` y una clave.
+- **Las opciones de `crearEscenario()` se revisan al llamar.** Lo que impide arrancar es un error (va en
+  `error.problemas`); una opción desconocida es solo una advertencia, para no romper a un host que
+  todavía pasa una opción de otra versión.
 - **El id de un nivel** es su clave en `niveles`; si se cargó por su dirección, es el `meta.id` de su contenido.
 - **Desde que un nivel sale hacia otro,** la partida ya dice que el jugador está en el nivel de destino
   (`partida.nivel`), aunque ese nivel todavía esté cargando. Así, si el juego se cierra en ese momento,

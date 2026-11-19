@@ -8,6 +8,7 @@
 // que dice qué llamada fue; la cinemática termina ahí y el juego sigue.
 
 import type { LectorDeEstado, ValorDeEstado } from '../dominio/estado.ts';
+import type { Idioma } from '../dominio/idioma.ts';
 
 /** Opción común de los pasos que pueden durar. */
 export interface OpcionesDeDuracion {
@@ -21,11 +22,23 @@ export interface OpcionesDeAnimacion {
   readonly repite?: boolean;
 }
 
-/** Opciones de `escena.dice`. */
+/** Opciones de `escena.dice`. Se llaman igual que los campos del paso `dice` de un nivel. */
 export interface OpcionesDeLinea {
   /** Clave de la voz grabada en el manifiesto. Sin ella se usa voz sintetizada. */
   readonly audio?: string;
+  /** Traducción al idioma base; se muestra más pequeña, debajo del texto. */
+  readonly trad?: string;
+  /**
+   * La palabra que enseña la línea, en inglés. Va siempre junto con `es`: con las dos, el globo lleva
+   * una tarjeta de vocabulario y el host recibe el evento `palabra`.
+   */
+  readonly en?: string;
+  /** La misma palabra en español. Va siempre junto con `en`. */
+  readonly es?: string;
 }
+
+/** Un video que lleva voces: la clave del video de cada idioma. */
+export type VideoPorIdioma = Readonly<Record<Idioma, string>>;
 
 /** El estado del nivel, visto desde una cinemática: se puede leer y cambiar. */
 export interface EstadoParaCinematica extends LectorDeEstado {
@@ -57,9 +70,17 @@ export interface EscenaDeCinematica {
   sonido(clave: string): Promise<void>;
   /** Abre desde negro (`'abrir'`) o cierra a negro (`'cerrar'`). */
   fundido(sentido: 'abrir' | 'cerrar', opciones?: OpcionesDeDuracion): Promise<void>;
-  /** Video a pantalla completa. Si no se puede reproducir, la promesa termina igual. */
-  video(clave: string): Promise<void>;
-  /** Un personaje dice una línea, con globo y voz. */
+  /**
+   * Video a pantalla completa. Si lleva voces, se nombra uno por idioma: `{ es: 'intro_es', en: 'intro_en' }`.
+   * Si no se puede reproducir, la promesa termina igual.
+   */
+  video(clave: string | VideoPorIdioma): Promise<void>;
+  /**
+   * Un personaje dice una línea, con globo y voz.
+   *
+   * @example
+   * await escena.dice('tommy', 'Bread!', { trad: '¡Pan!', en: 'bread', es: 'pan', audio: 'vo_bread' });
+   */
   dice(personaje: string, texto: string, opciones?: OpcionesDeLinea): Promise<void>;
   /** Un personaje camina hasta un punto del mapa. */
   camina(personaje: string, punto: string): Promise<void>;
@@ -78,5 +99,17 @@ export interface EscenaDeCinematica {
   readonly senal: AbortSignal;
 }
 
-/** Una cinemática escrita en código. Se registra en `crearEscenario({ cinematicas })`. */
+/**
+ * Una cinemática escrita en código. Se registra en `crearEscenario({ cinematicas })` con el nombre
+ * que lleva el campo `codigo` de la cinemática en el nivel.
+ *
+ * @example
+ * const intro: CinematicaEnCodigo = async (escena) => {
+ *   await escena.fundido('abrir', { duracion: 1 });
+ *   await escena.juntos(escena.aparece('mama', 'puerta'), escena.sonido('puerta_abre'));
+ *   await escena.camina('mama', 'junto_al_sillon');
+ *   await escena.dice('mama', '¿Me traes tortillas, mijo?', { audio: 'vo_mama_tortillas' });
+ *   escena.sale('barrio');
+ * };
+ */
 export type CinematicaEnCodigo = (escena: EscenaDeCinematica) => Promise<void>;

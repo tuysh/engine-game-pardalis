@@ -9,16 +9,18 @@
 
 import type { AssetsDeNivel } from '../dominio/assets-de-nivel.ts';
 import { cumpleCondicion, leerCondicionDeTexto } from '../dominio/condicion.ts';
+import { esObjetoPlano } from '../dominio/es-objeto-plano.ts';
 import { valorDe } from '../dominio/estado.ts';
 import type { Punto } from '../dominio/geometria.ts';
 import { CAMARA_AL_JUGADOR, EFECTOS_DISPONIBLES } from '../dominio/paso.ts';
-import type { Paso } from '../dominio/paso.ts';
+import type { PalabraDeVocabulario, Paso } from '../dominio/paso.ts';
 import type {
   EscenaDeCinematica,
   EstadoParaCinematica,
   OpcionesDeAnimacion,
   OpcionesDeDuracion,
   OpcionesDeLinea,
+  VideoPorIdioma,
 } from '../puertos/cinematica-en-codigo.ts';
 import type { EjecucionDePasos } from './ejecucion-de-pasos.ts';
 import { ejecutarPasos } from './ejecutar-pasos.ts';
@@ -142,13 +144,33 @@ export class EscenaEnCodigo implements EscenaDeCinematica {
     await this.ejecutar({ tipo: 'fundido', sentido, duracionEnSegundos });
   };
 
-  readonly video = async (clave: string): Promise<void> => {
-    await this.ejecutar({ tipo: 'video', clavePorIdioma: { es: clave, en: clave } });
+  readonly video = async (clave: string | VideoPorIdioma): Promise<void> => {
+    if (typeof clave === 'string') {
+      // Un video sin voces es el mismo en los dos idiomas.
+      await this.ejecutar({ tipo: 'video', clavePorIdioma: { es: clave, en: clave } });
+      return;
+    }
+    const traeLosDosIdiomas = esObjetoPlano(clave) && typeof clave.es === 'string' && typeof clave.en === 'string';
+    if (!traeLosDosIdiomas) {
+      this.fallar('video(…)', 'se espera la clave del video, o una por idioma: { es: "…", en: "…" }');
+    }
+    await this.ejecutar({ tipo: 'video', clavePorIdioma: { es: clave.es, en: clave.en } });
   };
 
-  readonly dice = async (personaje: string, texto: string, opciones?: OpcionesDeLinea): Promise<void> => {
-    this.exigirPersonaje(personaje, `dice("${personaje}", …)`);
-    await this.ejecutar({ tipo: 'linea', hablante: personaje, texto, audio: opciones?.audio });
+  readonly dice = async (personaje: string, texto: string, opciones: OpcionesDeLinea = {}): Promise<void> => {
+    const llamada = `dice("${personaje}", …)`;
+    this.exigirPersonaje(personaje, llamada);
+
+    const { audio, trad, en, es } = opciones;
+    const soloTraeUnaMitad = (en === undefined) !== (es === undefined);
+    if (soloTraeUnaMitad) {
+      this.fallar(llamada, 'una tarjeta de vocabulario necesita "en" y "es" juntos');
+    }
+    let palabra: PalabraDeVocabulario | undefined;
+    if (en !== undefined && es !== undefined) {
+      palabra = { en, es };
+    }
+    await this.ejecutar({ tipo: 'linea', hablante: personaje, texto, traduccion: trad, palabra, audio });
   };
 
   readonly camina = async (personaje: string, punto: string): Promise<void> => {
