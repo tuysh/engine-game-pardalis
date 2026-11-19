@@ -547,3 +547,52 @@ test('un video mal nombrado desde código falla diciendo cómo se escribe', asyn
     ),
   ]);
 });
+
+test('la escena que recibe el código del host solo trae sus pasos, `estado` y `senal`: nada interno', async () => {
+  let loQueTrae: string[] = [];
+  let metodosHeredados: string[] = [];
+  const intro: CinematicaEnCodigo = async (escena) => {
+    loQueTrae = Object.keys(escena).sort();
+    metodosHeredados = Object.getOwnPropertyNames(Object.getPrototypeOf(escena));
+  };
+  const cinematicas = { intro: crearCinematica('intro', { guion: { tipo: 'codigo', nombre: 'intro' } }) };
+  const { reloj } = await empezar(salaCon(cinematicas), { cinematicasEnCodigo: { intro } });
+
+  await reloj.avanzar(0.1);
+
+  expect(loQueTrae).toEqual([
+    'anima',
+    'aparece',
+    'camara',
+    'camina',
+    'desaparece',
+    'dice',
+    'efecto',
+    'espera',
+    'estado',
+    'fundido',
+    'juntos',
+    'mira',
+    'musica',
+    'sale',
+    'secuencia',
+    'senal',
+    'sonido',
+    'video',
+  ]);
+  expect(metodosHeredados).toEqual(['constructor']);
+});
+
+test('una línea desde código acepta que las opciones lleguen en null, como pasa en JavaScript', async () => {
+  const intro: CinematicaEnCodigo = async (escena) => {
+    const sinOpciones: unknown = null;
+    await Reflect.apply(escena.dice, undefined, ['tommy', 'Hi!', sinOpciones]);
+  };
+  const cinematicas = { intro: crearCinematica('intro', { guion: { tipo: 'codigo', nombre: 'intro' } }) };
+  const { interfaz, reloj, fallas } = await empezar(salaCon(cinematicas), { cinematicasEnCodigo: { intro } });
+
+  await reloj.avanzar(0.1);
+
+  expect(fallas).toEqual([]);
+  expect(interfaz.globosMostrados).toEqual([{ texto: 'Hi!' }]);
+});

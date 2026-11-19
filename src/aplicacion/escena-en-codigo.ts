@@ -41,13 +41,16 @@ export interface PedidoDeEscenaEnCodigo {
   readonly finDelNivel: AbortSignal;
 }
 
+// Este objeto se le entrega al código del host, así que lo interno va con `#` y no con `private`:
+// `private` solo lo oculta a TypeScript, y desde JavaScript se podría leer `escena.pedido` o llamar
+// `escena.ejecutar(...)`. Con `#`, la escena solo muestra sus pasos, `estado` y `senal`.
 export class EscenaEnCodigo implements EscenaDeCinematica {
   readonly estado: EstadoParaCinematica;
   readonly senal: AbortSignal;
-  private readonly pedido: PedidoDeEscenaEnCodigo;
+  readonly #pedido: PedidoDeEscenaEnCodigo;
 
   constructor(pedido: PedidoDeEscenaEnCodigo) {
-    this.pedido = pedido;
+    this.#pedido = pedido;
     this.senal = pedido.finDelNivel;
     const estado = pedido.ejecucion.estado;
     this.estado = {
@@ -67,170 +70,171 @@ export class EscenaEnCodigo implements EscenaDeCinematica {
   };
 
   readonly espera = async (segundos: number): Promise<void> => {
-    this.exigirSegundos(segundos, `espera(${segundos})`);
-    await this.ejecutar({ tipo: 'espera', esperaEnSegundos: segundos });
+    this.#exigirSegundos(segundos, `espera(${segundos})`);
+    await this.#ejecutar({ tipo: 'espera', esperaEnSegundos: segundos });
   };
 
   readonly camara = async (destino: string, opciones?: OpcionesDeDuracion): Promise<void> => {
     const llamada = `camara("${destino}")`;
-    const contenido = this.pedido.ejecucion.contenido;
+    const contenido = this.#pedido.ejecucion.contenido;
     const duracionEnSegundos = opciones?.duracion ?? 0;
-    this.exigirSegundos(duracionEnSegundos, llamada);
+    this.#exigirSegundos(duracionEnSegundos, llamada);
 
     if (destino === CAMARA_AL_JUGADOR && contenido.jugador === undefined) {
-      this.fallar(llamada, 'el nivel no tiene jugador');
+      this.#fallar(llamada, 'el nivel no tiene jugador');
     }
     const esUnPlano = Object.hasOwn(contenido.mundo.planos, destino);
     const esUnPersonaje = Object.hasOwn(contenido.meta.personajes, destino);
     if (destino !== CAMARA_AL_JUGADOR && !esUnPlano && !esUnPersonaje) {
-      this.fallar(llamada, `"${destino}" no es un plano de mundo.planos, ni un personaje, ni "jugador"`);
+      this.#fallar(llamada, `"${destino}" no es un plano de mundo.planos, ni un personaje, ni "jugador"`);
     }
-    await this.ejecutar({ tipo: 'camara', destino, duracionEnSegundos });
+    await this.#ejecutar({ tipo: 'camara', destino, duracionEnSegundos });
   };
 
   readonly mira = async (personaje: string, hacia: string): Promise<void> => {
     const llamada = `mira("${personaje}", "${hacia}")`;
-    this.exigirPersonaje(personaje, llamada);
-    const miraAUnPersonaje = Object.hasOwn(this.pedido.ejecucion.contenido.meta.personajes, hacia);
-    const miraAUnPunto = Object.hasOwn(this.pedido.lugares.puntos, hacia);
+    this.#exigirPersonaje(personaje, llamada);
+    const miraAUnPersonaje = Object.hasOwn(this.#pedido.ejecucion.contenido.meta.personajes, hacia);
+    const miraAUnPunto = Object.hasOwn(this.#pedido.lugares.puntos, hacia);
     if (!miraAUnPersonaje && !miraAUnPunto) {
-      this.fallar(llamada, `"${hacia}" no es un personaje ni un punto del mapa`);
+      this.#fallar(llamada, `"${hacia}" no es un personaje ni un punto del mapa`);
     }
-    await this.ejecutar({ tipo: 'mira', personaje, hacia });
+    await this.#ejecutar({ tipo: 'mira', personaje, hacia });
   };
 
   readonly anima = async (personaje: string, clave: string, opciones?: OpcionesDeAnimacion): Promise<void> => {
     const llamada = `anima("${personaje}", "${clave}")`;
-    this.exigirPersonaje(personaje, llamada);
-    const tipoDeAsset = this.buscarTipoDeAsset(clave);
+    this.#exigirPersonaje(personaje, llamada);
+    const tipoDeAsset = this.#buscarTipoDeAsset(clave);
     if (tipoDeAsset !== 'animacion' && tipoDeAsset !== 'imagen') {
-      this.fallar(llamada, `no existe la animación ni la imagen "${clave}" en los assets del nivel`);
+      this.#fallar(llamada, `no existe la animación ni la imagen "${clave}" en los assets del nivel`);
     }
-    await this.ejecutar({ tipo: 'anima', personaje, clave, repite: opciones?.repite ?? false });
+    await this.#ejecutar({ tipo: 'anima', personaje, clave, repite: opciones?.repite ?? false });
   };
 
   readonly aparece = async (personaje: string, punto: string): Promise<void> => {
     const llamada = `aparece("${personaje}", "${punto}")`;
-    this.exigirPersonaje(personaje, llamada);
-    this.exigirPunto(punto, llamada);
-    await this.ejecutar({ tipo: 'aparece', personaje, punto });
+    this.#exigirPersonaje(personaje, llamada);
+    this.#exigirPunto(punto, llamada);
+    await this.#ejecutar({ tipo: 'aparece', personaje, punto });
   };
 
   readonly desaparece = async (personaje: string): Promise<void> => {
     const llamada = `desaparece("${personaje}")`;
-    this.exigirPersonaje(personaje, llamada);
-    const jugador = this.pedido.ejecucion.contenido.jugador;
+    this.#exigirPersonaje(personaje, llamada);
+    const jugador = this.#pedido.ejecucion.contenido.jugador;
     if (jugador !== undefined && jugador.personaje === personaje) {
-      this.fallar(llamada, 'no se puede sacar del escenario al personaje del jugador');
+      this.#fallar(llamada, 'no se puede sacar del escenario al personaje del jugador');
     }
-    await this.ejecutar({ tipo: 'desaparece', personaje });
+    await this.#ejecutar({ tipo: 'desaparece', personaje });
   };
 
   readonly musica = async (clave: string): Promise<void> => {
-    await this.ejecutar({ tipo: 'musica', clave });
+    await this.#ejecutar({ tipo: 'musica', clave });
   };
 
   readonly sonido = async (clave: string): Promise<void> => {
-    await this.ejecutar({ tipo: 'sonido', clave });
+    await this.#ejecutar({ tipo: 'sonido', clave });
   };
 
   readonly fundido = async (sentido: 'abrir' | 'cerrar', opciones?: OpcionesDeDuracion): Promise<void> => {
     const llamada = `fundido("${sentido}")`;
     if (sentido !== 'abrir' && sentido !== 'cerrar') {
-      this.fallar(llamada, 'el sentido debe ser "abrir" o "cerrar"');
+      this.#fallar(llamada, 'el sentido debe ser "abrir" o "cerrar"');
     }
     const duracionEnSegundos = opciones?.duracion ?? 0;
-    this.exigirSegundos(duracionEnSegundos, llamada);
-    await this.ejecutar({ tipo: 'fundido', sentido, duracionEnSegundos });
+    this.#exigirSegundos(duracionEnSegundos, llamada);
+    await this.#ejecutar({ tipo: 'fundido', sentido, duracionEnSegundos });
   };
 
   readonly video = async (clave: string | VideoPorIdioma): Promise<void> => {
     if (typeof clave === 'string') {
       // Un video sin voces es el mismo en los dos idiomas.
-      await this.ejecutar({ tipo: 'video', clavePorIdioma: { es: clave, en: clave } });
+      await this.#ejecutar({ tipo: 'video', clavePorIdioma: { es: clave, en: clave } });
       return;
     }
     const traeLosDosIdiomas = esObjetoPlano(clave) && typeof clave.es === 'string' && typeof clave.en === 'string';
     if (!traeLosDosIdiomas) {
-      this.fallar('video(…)', 'se espera la clave del video, o una por idioma: { es: "…", en: "…" }');
+      this.#fallar('video(…)', 'se espera la clave del video, o una por idioma: { es: "…", en: "…" }');
     }
-    await this.ejecutar({ tipo: 'video', clavePorIdioma: { es: clave.es, en: clave.en } });
+    await this.#ejecutar({ tipo: 'video', clavePorIdioma: { es: clave.es, en: clave.en } });
   };
 
-  readonly dice = async (personaje: string, texto: string, opciones: OpcionesDeLinea = {}): Promise<void> => {
+  readonly dice = async (personaje: string, texto: string, opciones?: OpcionesDeLinea): Promise<void> => {
     const llamada = `dice("${personaje}", …)`;
-    this.exigirPersonaje(personaje, llamada);
+    this.#exigirPersonaje(personaje, llamada);
 
-    const { audio, trad, en, es } = opciones;
+    // Desde JavaScript las opciones pueden llegar en `null`: cuenta igual que no ponerlas.
+    const { audio, trad, en, es } = opciones ?? {};
     const soloTraeUnaMitad = (en === undefined) !== (es === undefined);
     if (soloTraeUnaMitad) {
-      this.fallar(llamada, 'una tarjeta de vocabulario necesita "en" y "es" juntos');
+      this.#fallar(llamada, 'una tarjeta de vocabulario necesita "en" y "es" juntos');
     }
     let palabra: PalabraDeVocabulario | undefined;
     if (en !== undefined && es !== undefined) {
       palabra = { en, es };
     }
-    await this.ejecutar({ tipo: 'linea', hablante: personaje, texto, traduccion: trad, palabra, audio });
+    await this.#ejecutar({ tipo: 'linea', hablante: personaje, texto, traduccion: trad, palabra, audio });
   };
 
   readonly camina = async (personaje: string, punto: string): Promise<void> => {
     const llamada = `camina("${personaje}", "${punto}")`;
-    this.exigirPersonaje(personaje, llamada);
-    this.exigirPunto(punto, llamada);
-    await this.ejecutar({ tipo: 'camina', personaje, punto });
+    this.#exigirPersonaje(personaje, llamada);
+    this.#exigirPunto(punto, llamada);
+    await this.#ejecutar({ tipo: 'camina', personaje, punto });
   };
 
   readonly efecto = async (nombre: string): Promise<void> => {
     if (!EFECTOS_DISPONIBLES.includes(nombre)) {
       const disponibles = EFECTOS_DISPONIBLES.join(', ');
-      this.fallar(`efecto("${nombre}")`, `ese efecto no existe; los efectos son: ${disponibles}`);
+      this.#fallar(`efecto("${nombre}")`, `ese efecto no existe; los efectos son: ${disponibles}`);
     }
-    await this.ejecutar({ tipo: 'efecto', nombre });
+    await this.#ejecutar({ tipo: 'efecto', nombre });
   };
 
   readonly secuencia = async (nombre: string): Promise<void> => {
-    if (!Object.hasOwn(this.pedido.ejecucion.contenido.secuencias, nombre)) {
-      this.fallar(`secuencia("${nombre}")`, 'esa secuencia no existe en "secuencias"');
+    if (!Object.hasOwn(this.#pedido.ejecucion.contenido.secuencias, nombre)) {
+      this.#fallar(`secuencia("${nombre}")`, 'esa secuencia no existe en "secuencias"');
     }
-    await this.ejecutar({ tipo: 'secuencia', nombre });
+    await this.#ejecutar({ tipo: 'secuencia', nombre });
   };
 
   readonly sale = (destino: string): void => {
-    this.pedido.ejecucion.acciones.pedirSalida(destino);
+    this.#pedido.ejecucion.acciones.pedirSalida(destino);
   };
 
-  private ejecutar(paso: Paso): Promise<void> {
-    return ejecutarPasos([paso], this.pedido.ejecucion);
+  #ejecutar(paso: Paso): Promise<void> {
+    return ejecutarPasos([paso], this.#pedido.ejecucion);
   }
 
   /** Lanza el error de una llamada mal hecha. `llamada` es, por ejemplo, `camina("mama", "sillon")`. */
-  private fallar(llamada: string, problema: string): never {
-    const cinematica = this.pedido.nombre;
+  #fallar(llamada: string, problema: string): never {
+    const cinematica = this.#pedido.nombre;
     throw new Error(`[escenario-engine] cinemática en código "${cinematica}": escena.${llamada}: ${problema}`);
   }
 
-  private exigirPersonaje(personaje: string, llamada: string): void {
-    if (!Object.hasOwn(this.pedido.ejecucion.contenido.meta.personajes, personaje)) {
-      this.fallar(llamada, `el personaje "${personaje}" no existe en meta.personajes`);
+  #exigirPersonaje(personaje: string, llamada: string): void {
+    if (!Object.hasOwn(this.#pedido.ejecucion.contenido.meta.personajes, personaje)) {
+      this.#fallar(llamada, `el personaje "${personaje}" no existe en meta.personajes`);
     }
   }
 
-  private exigirPunto(punto: string, llamada: string): void {
-    if (!Object.hasOwn(this.pedido.lugares.puntos, punto)) {
-      this.fallar(llamada, `no hay un punto llamado "${punto}" en el mapa`);
+  #exigirPunto(punto: string, llamada: string): void {
+    if (!Object.hasOwn(this.#pedido.lugares.puntos, punto)) {
+      this.#fallar(llamada, `no hay un punto llamado "${punto}" en el mapa`);
     }
   }
 
-  private exigirSegundos(segundos: number, llamada: string): void {
+  #exigirSegundos(segundos: number, llamada: string): void {
     // Con un número que no sirve (NaN, negativo), la espera no terminaría nunca.
     if (typeof segundos !== 'number' || !Number.isFinite(segundos) || segundos < 0) {
-      this.fallar(llamada, 'los segundos deben ser un número de 0 en adelante');
+      this.#fallar(llamada, 'los segundos deben ser un número de 0 en adelante');
     }
   }
 
   /** El tipo del asset con esa clave (`'imagen'`, `'animacion'`…), o `undefined` si el nivel no lo tiene. */
-  private buscarTipoDeAsset(clave: string): string | undefined {
-    const assets = this.pedido.lugares.assets;
+  #buscarTipoDeAsset(clave: string): string | undefined {
+    const assets = this.#pedido.lugares.assets;
     if (!Object.hasOwn(assets, clave)) return undefined;
     return assets[clave]!.asset.tipo; // `hasOwn` acaba de comprobar que existe
   }
