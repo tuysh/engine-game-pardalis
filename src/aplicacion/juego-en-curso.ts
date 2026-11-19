@@ -13,7 +13,7 @@
 //   si el juego se cierra mientras ese nivel carga, continúa allá y no en uno que ya no tiene nada que hacer.
 // - Al volver a un nivel ya visitado, se restauran sus variables.
 
-import { ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
+import { convertirEnErrorDeEscenario, ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
 import type { Idioma } from '../dominio/idioma.ts';
 import { actualizarPartida, conElJugadorEn, variablesGuardadasDe } from '../dominio/partida.ts';
 import type { Partida } from '../dominio/partida.ts';
@@ -324,10 +324,4 @@ export class JuegoEnCurso {
     if (this.estaTerminado) return;
     await this.jugar(porJugar);
   }
-}
-
-function convertirEnErrorDeEscenario(error: unknown): ErrorDeEscenario {
-  if (error instanceof ErrorDeEscenario) return error;
-  if (error instanceof Error) return new ErrorDeEscenario([error.message]);
-  return new ErrorDeEscenario([String(error)]);
 }

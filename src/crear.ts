@@ -15,17 +15,20 @@ import { LectorDeMapasDeTiled } from './adaptadores/tiled/lector-de-mapas-de-til
 import { JuegoEnCurso } from './aplicacion/juego-en-curso.ts';
 import type { AvisosDelJuego } from './aplicacion/juego-en-curso.ts';
 import { leerNivelPorJugar } from './aplicacion/leer-nivel-por-jugar.ts';
-import type { FuenteDeNiveles } from './aplicacion/leer-nivel-por-jugar.ts';
+import type { FuenteDeNiveles, NivelPorJugar } from './aplicacion/leer-nivel-por-jugar.ts';
 import type { HerramientasDeDepuracion } from './aplicacion/nivel-en-juego.ts';
 import { validarNivel } from './aplicacion/validar-nivel.ts';
 import { crearAzarConSemilla } from './dominio/azar-con-semilla.ts';
-import { ErrorDeEscenario } from './dominio/error-de-escenario.ts';
+import { describirError, ErrorDeEscenario } from './dominio/error-de-escenario.ts';
 import { leerPartida } from './dominio/partida.ts';
 import type { Partida } from './dominio/partida.ts';
 import { EmisorDeEventos } from './emisor-de-eventos.ts';
 import type { Juego } from './juego.ts';
 import { JuegoCreado } from './juego-creado.ts';
+import type { AdaptadoresDelJuego } from './juego-creado.ts';
 import type { OpcionesDeEscenario } from './opciones-de-escenario.ts';
+import { PausaDelJuego } from './pausa-del-juego.ts';
+import type { PanelDeDepuracion } from './puertos/panel-de-depuracion.ts';
 
 /**
  * Crea el juego dentro de `elemento`, ocupando todo su tamaño.
@@ -34,54 +37,99 @@ import type { OpcionesDeEscenario } from './opciones-de-escenario.ts';
  */
 export async function crearEscenario(elemento: HTMLElement, opciones: OpcionesDeEscenario): Promise<Juego> {
   revisarQueNoSeCancelo(opciones);
-
   const cargador = new CargadorDeRed(opciones.origenesPermitidos ?? []);
   const fuente = crearFuenteDeNiveles(opciones, cargador);
   const partidaInicial = leerPartidaDelHost(opciones.partida);
 
-  // El primer nivel se lee y se valida antes de montar nada en la página: si está roto, no queda nada a medias.
+  // Lo que depende de la red va antes de montar nada en la página: si el primer nivel está roto
+  // o no se puede traer el panel de depuración, no queda nada a medias.
   const primerNivel = await leerNivelPorJugar(elegirPrimerNivel(opciones, partidaInicial), fuente);
+  const crearPanelDeDepuracion = await importarPanelDeDepuracion(opciones);
   revisarQueNoSeCancelo(opciones);
 
-  // El panel de depuración se importa solo si se pidió: así el modo depuración no pesa en producción.
-  // Se importa antes de montar nada, para que una falla al traerlo no deje adaptadores a medias.
-  let moduloDeDepuracion: typeof import('./adaptadores/dom/panel-de-depuracion-del-navegador.ts') | undefined;
-  if (opciones.depurar === true) {
-    moduloDeDepuracion = await import('./adaptadores/dom/panel-de-depuracion-del-navegador.ts');
-    revisarQueNoSeCancelo(opciones);
-  }
+  const adaptadores = crearAdaptadores(elemento, crearPanelDeDepuracion);
+  const emisor = new EmisorDeEventos();
+  const pausa = new PausaDelJuego(adaptadores.reloj, [adaptadores.audio, adaptadores.video]);
+  const juegoEnCurso = crearJuegoEnCurso(opciones, { adaptadores, emisor, pausa, cargador, fuente, partidaInicial });
+  const juego = new JuegoCreado({ juegoEnCurso, emisor, pausa, adaptadores });
 
+  try {
+    await empezarElPrimerNivel(primerNivel, opciones, { juego, juegoEnCurso, pausa, adaptadores });
+  } catch (error) {
+    // Si algo falla o se cancela a medio armar, no se deja nada montado en la página.
+    juego.destruir();
+    throw error;
+  }
+  return juego;
+}
+
+/** Crea el panel de depuración dentro del elemento del juego. */
+type CreadorDelPanelDeDepuracion = (elemento: HTMLElement) => PanelDeDepuracion;
+
+/**
+ * Con `depurar: true`, trae el panel de depuración y devuelve cómo crearlo; sin él, `undefined`.
+ * Se importa hasta que se pide, para que el modo depuración no pese en producción.
+ */
+async function importarPanelDeDepuracion(
+  opciones: OpcionesDeEscenario,
+): Promise<CreadorDelPanelDeDepuracion | undefined> {
+  if (opciones.depurar !== true) return undefined;
+  const modulo = await import('./adaptadores/dom/panel-de-depuracion-del-navegador.ts');
+  return (elemento) => new modulo.PanelDeDepuracionDelNavegador(elemento);
+}
+
+function crearAdaptadores(
+  elemento: HTMLElement,
+  crearPanelDeDepuracion: CreadorDelPanelDeDepuracion | undefined,
+): AdaptadoresDelJuego {
   // El escenario va primero: es el único que puede fallar al crearse (si el navegador no tiene WebGL),
   // y así no queda ningún otro adaptador escuchando el teclado sin que nadie lo destruya.
   const escenario = crearEscenarioDeThree(elemento);
-  const emisor = new EmisorDeEventos();
-  const reloj = new RelojDelNavegador();
-  const audio = new AudioDelNavegador();
-  const controles = new ControlesDelTeclado();
-  const video = new VideoDelNavegador(elemento);
-  const interfaz = new InterfazDelNavegador(elemento);
+  let panelDeDepuracion: PanelDeDepuracion | undefined;
+  if (crearPanelDeDepuracion !== undefined) {
+    panelDeDepuracion = crearPanelDeDepuracion(elemento);
+  }
+  return {
+    escenario,
+    reloj: new RelojDelNavegador(),
+    audio: new AudioDelNavegador(),
+    controles: new ControlesDelTeclado(),
+    video: new VideoDelNavegador(elemento),
+    interfaz: new InterfazDelNavegador(elemento),
+    panelDeDepuracion,
+  };
+}
+
+/** Lo que `crearEscenario()` ya tiene armado cuando crea el juego en curso. */
+interface BaseDelJuego {
+  readonly adaptadores: AdaptadoresDelJuego;
+  readonly emisor: EmisorDeEventos;
+  readonly pausa: PausaDelJuego;
+  readonly cargador: CargadorDeRed;
+  readonly fuente: FuenteDeNiveles;
+  readonly partidaInicial: Partida | undefined;
+}
+
+function crearJuegoEnCurso(opciones: OpcionesDeEscenario, base: BaseDelJuego): JuegoEnCurso {
+  const { escenario, interfaz, audio, video, controles, reloj, panelDeDepuracion } = base.adaptadores;
   // Con `semilla`, el azar del juego es siempre el mismo: sirve para pruebas.
   const azar = opciones.semilla === undefined ? Math.random : crearAzarConSemilla(opciones.semilla);
 
-  // El juego todavía no existe cuando se arman las herramientas de depuración: lo alcanzan por esta variable.
-  let juego: JuegoCreado | undefined;
   let depuracion: HerramientasDeDepuracion | undefined;
-  if (moduloDeDepuracion !== undefined) {
+  if (panelDeDepuracion !== undefined) {
+    // La cámara libre pausa el juego mientras se encuadra un plano.
+    const pausa = base.pausa;
     depuracion = {
-      panel: new moduloDeDepuracion.PanelDeDepuracionDelNavegador(elemento),
-      pausarElJuego: () => {
-        if (juego !== undefined) juego.pausar();
-      },
-      reanudarElJuego: () => {
-        if (juego !== undefined) juego.reanudar();
-      },
+      panel: panelDeDepuracion,
+      pausarElJuego: () => pausa.pausar(),
+      reanudarElJuego: () => pausa.reanudar(),
     };
   }
 
-  const juegoEnCurso = new JuegoEnCurso({
-    fuente,
+  return new JuegoEnCurso({
+    fuente: base.fuente,
     raizDeAssets: opciones.raizDeAssets,
-    cargador,
+    cargador: base.cargador,
     idiomaBase: opciones.idioma ?? 'es',
     minijuegos: opciones.minijuegos ?? {},
     cinematicasEnCodigo: opciones.cinematicas ?? {},
@@ -89,44 +137,41 @@ export async function crearEscenario(elemento: HTMLElement, opciones: OpcionesDe
     alCargar: opciones.alCargar,
     depuracion,
     puertos: { escenario, interfaz, audio, video, controles, reloj, azar },
-    avisos: crearAvisos(emisor),
-    partidaInicial,
+    avisos: crearAvisos(base.emisor),
+    partidaInicial: base.partidaInicial,
   });
-  const juegoCreado = new JuegoCreado({
-    juegoEnCurso,
-    emisor,
-    escenario,
-    interfaz,
-    audio,
-    video,
-    controles,
-    reloj,
-    panelDeDepuracion: depuracion === undefined ? undefined : depuracion.panel,
-  });
-  juego = juegoCreado;
+}
 
-  try {
-    const empiezaConElBoton = opciones.iniciarCon !== 'host';
-    if (empiezaConElBoton) {
-      // Hasta que toquen el botón no pasa el tiempo: así la cinemática de entrada empieza con ese toque,
-      // que es también el que deja al navegador reproducir sonido (§7.5).
-      juegoCreado.esperarElInicio();
-    }
-    await juegoEnCurso.jugar(primerNivel);
-    revisarQueNoSeCancelo(opciones);
+/** Lo que hace falta para poner a jugar el primer nivel. */
+interface PiezasParaEmpezar {
+  readonly juego: JuegoCreado;
+  readonly juegoEnCurso: JuegoEnCurso;
+  readonly pausa: PausaDelJuego;
+  readonly adaptadores: AdaptadoresDelJuego;
+}
 
-    juegoCreado.proyeccion = opciones.proyeccion ?? false;
-    // Con el tiempo detenido no llegan cuadros: este es el que se ve detrás del botón de inicio.
-    escenario.dibujar(0);
-    if (empiezaConElBoton) {
-      interfaz.mostrarBotonDeInicio(() => juegoCreado.empezar());
-    }
-  } catch (error) {
-    // Si algo falla o se cancela a medio armar, no se deja nada montado en la página.
-    juegoCreado.destruir();
-    throw error;
+/** Pone a jugar el primer nivel y, si así se pidió, muestra el botón de inicio. */
+async function empezarElPrimerNivel(
+  primerNivel: NivelPorJugar,
+  opciones: OpcionesDeEscenario,
+  piezas: PiezasParaEmpezar,
+): Promise<void> {
+  const { pausa, adaptadores } = piezas;
+  const empiezaConElBoton = opciones.iniciarCon !== 'host';
+  if (empiezaConElBoton) {
+    // Hasta que toquen el botón no pasa el tiempo: así la cinemática de entrada empieza con ese toque,
+    // que es también el que deja al navegador reproducir sonido (§7.5).
+    pausa.esperarElInicio();
   }
-  return juegoCreado;
+  await piezas.juegoEnCurso.jugar(primerNivel);
+  revisarQueNoSeCancelo(opciones);
+
+  piezas.juego.proyeccion = opciones.proyeccion ?? false;
+  // Con el tiempo detenido no llegan cuadros: este es el que se ve detrás del botón de inicio.
+  adaptadores.escenario.dibujar(0);
+  if (empiezaConElBoton) {
+    adaptadores.interfaz.mostrarBotonDeInicio(() => pausa.empezar());
+  }
 }
 
 /** Los niveles se leen de la red y se validan con los minijuegos y las cinemáticas que registró el host. */
@@ -194,9 +239,4 @@ function revisarQueNoSeCancelo(opciones: OpcionesDeEscenario): void {
   if (opciones.senal !== undefined) {
     opciones.senal.throwIfAborted();
   }
-}
-
-function describirError(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
 }

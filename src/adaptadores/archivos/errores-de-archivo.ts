@@ -1,4 +1,4 @@
-// Reconoce y describe los errores que da el sistema al leer archivos, para convertirlos en mensajes en español.
+// Reconoce los errores que da el sistema al leer archivos, para convertirlos en mensajes en español.
 
 import { esObjetoPlano } from '../../dominio/es-objeto-plano.ts';
 
@@ -8,10 +8,4 @@ const CODIGO_DE_INEXISTENTE = 'ENOENT';
 /** Dice si el error es el que da el sistema cuando el archivo o la carpeta no existe. */
 export function esErrorDeInexistente(error: unknown): boolean {
   return esObjetoPlano(error) && error.code === CODIGO_DE_INEXISTENTE;
-}
-
-/** El mensaje de un error cualquiera, para ponerlo dentro de otro mensaje. */
-export function describirError(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
 }

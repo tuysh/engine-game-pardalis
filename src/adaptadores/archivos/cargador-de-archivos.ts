@@ -2,9 +2,9 @@
 
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { ErrorDeEscenario } from '../../dominio/error-de-escenario.ts';
+import { describirError, ErrorDeEscenario } from '../../dominio/error-de-escenario.ts';
 import type { Cargador } from '../../puertos/cargador.ts';
-import { describirError, esErrorDeInexistente } from './errores-de-archivo.ts';
+import { esErrorDeInexistente } from './errores-de-archivo.ts';
 
 export class CargadorDeArchivos implements Cargador {
   async cargarJson(direccion: string): Promise<unknown> {

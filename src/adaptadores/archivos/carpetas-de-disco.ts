@@ -2,9 +2,9 @@
 
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
-import { ErrorDeEscenario } from '../../dominio/error-de-escenario.ts';
+import { describirError, ErrorDeEscenario } from '../../dominio/error-de-escenario.ts';
 import type { Carpetas } from '../../puertos/carpetas.ts';
-import { describirError, esErrorDeInexistente } from './errores-de-archivo.ts';
+import { esErrorDeInexistente } from './errores-de-archivo.ts';
 
 export class CarpetasDeDisco implements Carpetas {
   /** No incluye los archivos ocultos ni lo que hay dentro de carpetas ocultas (los que empiezan con punto). */

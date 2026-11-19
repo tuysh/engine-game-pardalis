@@ -11,13 +11,12 @@ import type { JuegoEnCurso } from './aplicacion/juego-en-curso.ts';
 import type { Partida } from './dominio/partida.ts';
 import type { EmisorDeEventos } from './emisor-de-eventos.ts';
 import type { EventosDeJuego, Juego, NombreDeEvento } from './juego.ts';
+import type { PausaDelJuego } from './pausa-del-juego.ts';
 import type { Escenario } from './puertos/escenario.ts';
 import type { PanelDeDepuracion } from './puertos/panel-de-depuracion.ts';
 
-/** Lo que `crearEscenario()` armó y el juego necesita para funcionar y para limpiarse. */
-export interface PiezasDelJuego {
-  readonly juegoEnCurso: JuegoEnCurso;
-  readonly emisor: EmisorDeEventos;
+/** Los adaptadores del navegador que el juego usa y que, al final, hay que destruir. */
+export interface AdaptadoresDelJuego {
   readonly escenario: Escenario;
   readonly interfaz: InterfazDelNavegador;
   readonly audio: AudioDelNavegador;
@@ -25,15 +24,20 @@ export interface PiezasDelJuego {
   readonly controles: ControlesDelTeclado;
   readonly reloj: RelojDelNavegador;
   /** Solo existe si el juego se creó con `depurar: true`. */
-  readonly panelDeDepuracion?: PanelDeDepuracion;
+  readonly panelDeDepuracion: PanelDeDepuracion | undefined;
+}
+
+/** Lo que `crearEscenario()` armó y el juego necesita para funcionar y para limpiarse. */
+export interface PiezasDelJuego {
+  readonly juegoEnCurso: JuegoEnCurso;
+  readonly emisor: EmisorDeEventos;
+  readonly pausa: PausaDelJuego;
+  readonly adaptadores: AdaptadoresDelJuego;
 }
 
 export class JuegoCreado implements Juego {
   private readonly piezas: PiezasDelJuego;
   private proyeccionActiva = false;
-  /** `true` desde que se muestra el botón de inicio hasta que lo tocan: mientras tanto, el tiempo no pasa. */
-  private estaEsperandoElInicio = false;
-  private loPausoElHost = false;
   private estaDestruido = false;
 
   constructor(piezas: PiezasDelJuego) {
@@ -50,7 +54,7 @@ export class JuegoCreado implements Juego {
 
   set proyeccion(estaActiva: boolean) {
     this.proyeccionActiva = estaActiva;
-    this.piezas.interfaz.ajustarProyeccion(estaActiva);
+    this.piezas.adaptadores.interfaz.ajustarProyeccion(estaActiva);
   }
 
   on<Evento extends NombreDeEvento>(evento: Evento, funcion: (dato: EventosDeJuego[Evento]) => void): () => void {
@@ -74,50 +78,28 @@ export class JuegoCreado implements Juego {
   }
 
   pausar(): void {
-    this.loPausoElHost = true;
-    this.piezas.reloj.pausar();
-    this.piezas.audio.pausar();
-    this.piezas.video.pausar();
+    this.piezas.pausa.pausar();
   }
 
   reanudar(): void {
-    this.loPausoElHost = false;
-    this.piezas.audio.reanudar();
-    this.piezas.video.reanudar();
-    // Si todavía no tocan el botón de inicio, el tiempo sigue detenido hasta ese toque.
-    if (!this.estaEsperandoElInicio) {
-      this.piezas.reloj.reanudar();
-    }
-  }
-
-  /** Detiene el tiempo hasta que se llame a `empezar()`: lo usa `crearEscenario()` con el botón de inicio. */
-  esperarElInicio(): void {
-    this.estaEsperandoElInicio = true;
-    this.piezas.reloj.pausar();
-  }
-
-  /** El jugador tocó el botón de inicio: el tiempo empieza a pasar (salvo que el host tenga el juego en pausa). */
-  empezar(): void {
-    this.estaEsperandoElInicio = false;
-    if (!this.loPausoElHost) {
-      this.piezas.reloj.reanudar();
-    }
+    this.piezas.pausa.reanudar();
   }
 
   destruir(): void {
     if (this.estaDestruido) return;
     this.estaDestruido = true;
 
+    const adaptadores = this.piezas.adaptadores;
     this.piezas.juegoEnCurso.terminar();
-    this.piezas.reloj.detener();
-    this.piezas.controles.destruir();
-    this.piezas.audio.destruir();
-    this.piezas.video.destruir();
-    if (this.piezas.panelDeDepuracion !== undefined) {
-      this.piezas.panelDeDepuracion.destruir();
+    adaptadores.reloj.detener();
+    adaptadores.controles.destruir();
+    adaptadores.audio.destruir();
+    adaptadores.video.destruir();
+    if (adaptadores.panelDeDepuracion !== undefined) {
+      adaptadores.panelDeDepuracion.destruir();
     }
-    this.piezas.interfaz.destruir();
-    this.piezas.escenario.destruir();
+    adaptadores.interfaz.destruir();
+    adaptadores.escenario.destruir();
     this.piezas.emisor.vaciar();
   }
 }

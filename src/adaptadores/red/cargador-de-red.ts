@@ -5,7 +5,7 @@
 // se permiten sí las tiene, en src/dominio/direccion-permitida.test.ts.
 
 import { esDireccionPermitida } from '../../dominio/direccion-permitida.ts';
-import { ErrorDeEscenario } from '../../dominio/error-de-escenario.ts';
+import { describirError, ErrorDeEscenario } from '../../dominio/error-de-escenario.ts';
 import type { Cargador } from '../../puertos/cargador.ts';
 
 export class CargadorDeRed implements Cargador {
@@ -53,9 +53,4 @@ export class CargadorDeRed implements Cargador {
     }
     return new URL(direccion, location.href).href;
   }
-}
-
-function describirError(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
 }

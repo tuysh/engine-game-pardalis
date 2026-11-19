@@ -27,3 +27,18 @@ function redactarMensaje(problemas: readonly string[]): string {
   const lineas = problemas.map((problema) => `  - ${problema}`);
   return `[escenario-engine] ${problemas.length} problemas:\n${lineas.join('\n')}`;
 }
+
+/** El mensaje de un error cualquiera, para ponerlo dentro de otro mensaje. */
+export function describirError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+/**
+ * Convierte un error cualquiera en un `ErrorDeEscenario`, que es el único que el motor le entrega al host.
+ * Si ya lo es, lo devuelve tal cual, con todos sus problemas.
+ */
+export function convertirEnErrorDeEscenario(error: unknown): ErrorDeEscenario {
+  if (error instanceof ErrorDeEscenario) return error;
+  return new ErrorDeEscenario([describirError(error)]);
+}
