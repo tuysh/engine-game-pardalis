@@ -43,36 +43,39 @@ export function revisarOpciones(opciones: unknown): RevisionDeOpciones {
   }
 
   const errores: string[] = [];
-  revisarNiveles(opciones, errores);
+  const idsDeNiveles = revisarNiveles(opciones.niveles, errores);
+  revisarNivelInicial(opciones.nivel, idsDeNiveles, errores);
   revisarFunciones(opciones.minijuegos, 'minijuegos', errores);
   revisarFunciones(opciones.cinematicas, 'cinematicas', errores);
   revisarAjustes(opciones, errores);
   return { errores, advertencias: buscarOpcionesQueNoExisten(opciones) };
 }
 
-/** `niveles` une ids con direcciones, y `nivel` es uno de esos ids o directamente una dirección. */
-function revisarNiveles(opciones: Record<string, unknown>, errores: string[]): void {
-  const ids: string[] = [];
-  const niveles = opciones.niveles;
-  if (niveles !== undefined && !esObjetoPlano(niveles)) {
+/** `niveles` une el id de cada nivel con su dirección. Devuelve los ids que registra. */
+function revisarNiveles(niveles: unknown, errores: string[]): string[] {
+  if (niveles === undefined) return [];
+  if (!esObjetoPlano(niveles)) {
     errores.push(
       'opciones.niveles: debe ser un objeto que une el id de cada nivel con la dirección de su nivel.json; ' +
         `llegó ${describirValor(niveles)}`,
     );
-  }
-  if (esObjetoPlano(niveles)) {
-    for (const id of Object.keys(niveles)) {
-      ids.push(id);
-      const direccion = niveles[id];
-      if (typeof direccion !== 'string' || direccion === '') {
-        errores.push(
-          `opciones.niveles.${id}: debe ser la dirección de un nivel.json; llegó ${describirValor(direccion)}`,
-        );
-      }
-    }
+    return [];
   }
 
-  const nivel = opciones.nivel;
+  const ids = Object.keys(niveles);
+  for (const id of ids) {
+    const direccion = niveles[id];
+    if (typeof direccion !== 'string' || direccion === '') {
+      errores.push(
+        `opciones.niveles.${id}: debe ser la dirección de un nivel.json; llegó ${describirValor(direccion)}`,
+      );
+    }
+  }
+  return ids;
+}
+
+/** `nivel` es uno de los ids de `niveles` o directamente la dirección de un nivel.json. */
+function revisarNivelInicial(nivel: unknown, idsDeNiveles: readonly string[], errores: string[]): void {
   if (typeof nivel !== 'string' || nivel === '') {
     errores.push(
       'opciones.nivel: falta el nivel inicial; debe ser un id de "niveles" o la dirección de un nivel.json; ' +
@@ -82,17 +85,16 @@ function revisarNiveles(opciones: Record<string, unknown>, errores: string[]): v
   }
   // Una dirección lleva al menos una diagonal o un punto ("/niveles/casa/nivel.json"); un id, no ("casa").
   const pareceUnaDireccion = nivel.includes('/') || nivel.includes('.');
-  if (ids.includes(nivel) || pareceUnaDireccion) return;
+  if (idsDeNiveles.includes(nivel) || pareceUnaDireccion) return;
 
-  if (ids.length === 0) {
+  if (idsDeNiveles.length === 0) {
     errores.push(
       `opciones.nivel: "${nivel}" no es la dirección de un nivel.json, y no hay "niveles" donde buscarlo por id`,
     );
     return;
   }
-  errores.push(
-    `opciones.nivel: "${nivel}" no está en "niveles" (${ids.join(', ')}) ni es la dirección de un nivel.json`,
-  );
+  const registrados = idsDeNiveles.join(', ');
+  errores.push(`opciones.nivel: "${nivel}" no está en "niveles" (${registrados}) ni es la dirección de un nivel.json`);
 }
 
 /** `minijuegos` y `cinematicas` unen un nombre con una función: lo más común es que falte importar una. */
