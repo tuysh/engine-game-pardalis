@@ -9,64 +9,21 @@
 //   la pantalla se cierra a negro, se cambia de lugar y el nivel nuevo la abre al empezar.
 //   Cualquier otro destino se le avisa al host, que decide qué hacer.
 // - Conviene guardar al cumplir un objetivo, al terminar una cinemática, al salir y al cambiar de nivel.
-// - Desde que un nivel sale hacia otro, la partida ya dice que el jugador está en el nivel de destino:
-//   si el juego se cierra mientras ese nivel carga, continúa allá y no en uno que ya no tiene nada que hacer.
+//   La partida la lleva partida-en-curso.ts.
 // - Al volver a un nivel ya visitado, se restauran sus variables.
 
 import { convertirEnErrorDeEscenario, ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
-import type { Idioma } from '../dominio/idioma.ts';
-import { actualizarPartida, conElJugadorEn, variablesGuardadasDe } from '../dominio/partida.ts';
 import type { Partida } from '../dominio/partida.ts';
-import type { PalabraDeVocabulario } from '../dominio/paso.ts';
-import type { ProgresoDeCarga } from '../dominio/progreso-de-carga.ts';
-import type { Cargador } from '../puertos/cargador.ts';
-import type { CinematicaEnCodigo } from '../puertos/cinematica-en-codigo.ts';
-import type { Minijuego } from '../puertos/minijuego.ts';
 import { FundidoDePantalla } from './fundido-de-pantalla.ts';
 import { jugarNivel } from './jugar-nivel.ts';
 import { leerNivelPorJugar } from './leer-nivel-por-jugar.ts';
-import type { FuenteDeNiveles, NivelPorJugar } from './leer-nivel-por-jugar.ts';
-import type { AvisosDelNivel, HerramientasDeDepuracion, NivelEnJuego, PuertosParaJugar } from './nivel-en-juego.ts';
+import type { NivelPorJugar } from './leer-nivel-por-jugar.ts';
+import type { AvisosDelNivel, NivelEnJuego } from './nivel-en-juego.ts';
+import { PartidaEnCurso } from './partida-en-curso.ts';
+import type { PiezasDelJuegoEnCurso } from './piezas-del-juego-en-curso.ts';
 
 /** Lo que tarda la pantalla en cerrarse a negro cuando un nivel sale hacia otro. */
 const DURACION_DEL_CIERRE_ENTRE_NIVELES_EN_SEGUNDOS = 0.4;
-
-/** Cómo el juego le avisa de lo que pasa a quien lo creó. */
-export interface AvisosDelJuego {
-  /** Conviene guardar: aquí va la partida de este momento. */
-  alGuardar(partida: Partida): void;
-  alCumplirObjetivo(objetivo: string): void;
-  alVerPalabra(palabra: PalabraDeVocabulario): void;
-  /** Ya se puede jugar otro nivel. `anterior` es el id del que se dejó. */
-  alCambiarDeNivel(id: string, anterior: string): void;
-  alEmpezarCinematica(id: string): void;
-  alTerminarCinematica(id: string): void;
-  /** El nivel terminó hacia un destino que no es un nivel registrado: el host decide. */
-  alSalir(destino: string): void;
-  /** Algo falló después de arrancar: un diálogo, una cinemática o la carga del nivel siguiente. */
-  alFallar(error: ErrorDeEscenario): void;
-}
-
-export interface PiezasDelJuegoEnCurso {
-  readonly fuente: FuenteDeNiveles;
-  /** Carpeta o CDN donde están los assets. `undefined` = junto a cada `nivel.json`. */
-  readonly raizDeAssets?: string;
-  readonly cargador: Cargador;
-  /** El idioma del sitio. */
-  readonly idiomaBase: Idioma;
-  readonly minijuegos: Readonly<Record<string, Minijuego>>;
-  readonly cinematicasEnCodigo: Readonly<Record<string, CinematicaEnCodigo>>;
-  /** `true` si el sistema pide menos movimiento. */
-  readonly conMenosMovimiento: boolean;
-  /** Si existe, se le avisa del avance mientras cargan las imágenes de cada nivel. */
-  readonly alCargar?: (progreso: ProgresoDeCarga) => void;
-  /** Lo que hace falta para el modo depuración. `undefined` = se juega sin depuración. */
-  readonly depuracion?: HerramientasDeDepuracion;
-  readonly puertos: PuertosParaJugar;
-  readonly avisos: AvisosDelJuego;
-  /** La partida con la que empieza el juego, ya revisada. `undefined` = partida nueva. */
-  readonly partidaInicial: Partida | undefined;
-}
 
 /** El nivel que se está jugando. */
 interface NivelActual {
@@ -79,22 +36,19 @@ export class JuegoEnCurso {
   private readonly piezas: PiezasDelJuegoEnCurso;
   /** El fundido de la pantalla es uno solo para todos los niveles: así cada nivel sabe cómo la dejó el anterior. */
   private readonly fundido: FundidoDePantalla;
-  /** La partida tal como estaba la última vez que se cambió de nivel: guarda el estado de los otros niveles. */
-  private partidaDeOtrosNiveles: Partida | undefined;
+  private readonly partida: PartidaEnCurso;
   /** `undefined` mientras se carga el primer nivel o se pasa de un nivel a otro. */
   private nivelActual: NivelActual | undefined;
   /** Id del último nivel que se jugó: es el que se informa mientras carga el siguiente. `undefined` = ninguno aún. */
   private idDelUltimoNivel: string | undefined;
   /** `true` desde que se pide otro nivel hasta que ya se puede jugar (o hasta que falla). */
   private seEstaCambiandoDeNivel = false;
-  /** El nivel hacia el que salió el nivel actual, mientras ese nivel carga. `undefined` = no se está saliendo. */
-  private destinoDeLaSalida: string | undefined;
   private estaTerminado = false;
 
   constructor(piezas: PiezasDelJuegoEnCurso) {
     this.piezas = piezas;
     this.fundido = new FundidoDePantalla(piezas.puertos.interfaz, piezas.puertos.reloj);
-    this.partidaDeOtrosNiveles = piezas.partidaInicial;
+    this.partida = new PartidaEnCurso(piezas.partidaInicial);
   }
 
   /** Id del nivel que se está jugando. Antes de que empiece el primero, es un texto vacío. */
@@ -107,11 +61,10 @@ export class JuegoEnCurso {
    * Mientras se pasa a otro nivel, ya dice que el jugador está en el nivel de destino.
    */
   leerPartida(): Partida {
-    const partida = this.leerPartidaDelUltimoNivel();
-    if (this.destinoDeLaSalida !== undefined) {
-      return conElJugadorEn(partida, this.destinoDeLaSalida);
+    if (this.nivelActual === undefined) {
+      return this.partida.leerSinNivelEnJuego(this.idDelNivel);
     }
-    return partida;
+    return this.partida.leerJugando(this.nivelActual.porJugar.id, this.nivelActual.enJuego.leerVariables());
   }
 
   /**
@@ -122,10 +75,7 @@ export class JuegoEnCurso {
   async jugar(porJugar: NivelPorJugar): Promise<void> {
     const anterior = this.nivelActual;
     if (anterior !== undefined) {
-      // El estado del nivel que se deja queda en la partida, para restaurarlo si el jugador vuelve.
-      this.partidaDeOtrosNiveles = this.leerPartida();
-      anterior.enJuego.terminar();
-      this.nivelActual = undefined;
+      this.dejarElNivel(anterior);
     }
 
     let enJuego: NivelEnJuego | undefined;
@@ -143,8 +93,7 @@ export class JuegoEnCurso {
     const idDelNivelAnterior = this.idDelUltimoNivel;
     this.nivelActual = { porJugar, enJuego };
     this.idDelUltimoNivel = porJugar.id;
-    // Ya se llegó: la partida vuelve a nombrar al nivel que se juega.
-    this.destinoDeLaSalida = undefined;
+    this.partida.olvidarLaSalida();
     // El primer nivel no avisa: quien creó el juego todavía no escucha.
     if (idDelNivelAnterior !== undefined) {
       this.piezas.avisos.alCambiarDeNivel(porJugar.id, idDelNivelAnterior);
@@ -194,12 +143,17 @@ export class JuegoEnCurso {
   terminar(): void {
     if (this.estaTerminado) return;
     if (this.nivelActual !== undefined) {
-      // Se conserva la última partida, por si el host la pide después de destruir el juego.
-      this.partidaDeOtrosNiveles = this.leerPartida();
-      this.nivelActual.enJuego.terminar();
-      this.nivelActual = undefined;
+      // Su estado queda anotado: así el host puede pedir la partida después de destruir el juego.
+      this.dejarElNivel(this.nivelActual);
     }
     this.estaTerminado = true;
+  }
+
+  /** Termina el nivel que se juega y anota su estado en la partida, para restaurarlo si el jugador vuelve. */
+  private dejarElNivel(nivel: NivelActual): void {
+    this.partida.anotarNivel(nivel.porJugar.id, nivel.enJuego.leerVariables());
+    nivel.enJuego.terminar();
+    this.nivelActual = undefined;
   }
 
   /**
@@ -217,7 +171,7 @@ export class JuegoEnCurso {
       idiomaBase: this.piezas.idiomaBase,
       minijuegos: this.piezas.minijuegos,
       cinematicasEnCodigo: this.piezas.cinematicasEnCodigo,
-      variablesGuardadas: variablesGuardadasDe(this.partidaDeOtrosNiveles, porJugar.id),
+      variablesGuardadas: this.partida.variablesDe(porJugar.id),
       conMenosMovimiento: this.piezas.conMenosMovimiento,
       alCargar: this.piezas.alCargar,
       depuracion: this.piezas.depuracion,
@@ -279,8 +233,8 @@ export class JuegoEnCurso {
     // Si el jugador vuelve a pisar la salida mientras el nivel siguiente carga, no se carga dos veces.
     if (this.seEstaCambiandoDeNivel) return;
 
-    // Desde aquí la partida dice que el jugador está en el nivel de destino (ver las reglas de arriba).
-    this.destinoDeLaSalida = destino;
+    // Desde aquí la partida dice que el jugador está en el nivel de destino (ver partida-en-curso.ts).
+    this.partida.salirHacia(destino);
     this.piezas.avisos.alGuardar(this.leerPartida());
     void this.pasarAlNivel(destino);
   }
@@ -298,25 +252,13 @@ export class JuegoEnCurso {
     } catch (error) {
       // No se llegó: el jugador sigue en el nivel que estaba, y con la pantalla en negro no lo vería.
       // La última partida avisada todavía nombra el destino: al volver a abrir el juego, se intenta otra vez.
-      this.destinoDeLaSalida = undefined;
+      this.partida.olvidarLaSalida();
       this.fundido.dejar('abrir');
       console.error(`[escenario-engine] no se pudo cargar el nivel "${nombre}":`, error);
       this.piezas.avisos.alFallar(convertirEnErrorDeEscenario(error));
     } finally {
       this.seEstaCambiandoDeNivel = false;
     }
-  }
-
-  /** La partida con el jugador en el último nivel que se jugó (o que se está jugando). */
-  private leerPartidaDelUltimoNivel(): Partida {
-    if (this.nivelActual === undefined) {
-      // No hay nivel en juego (se está cambiando de nivel, o el juego ya terminó): la partida es la que
-      // se anotó al dejar el último nivel, que ya trae su estado.
-      if (this.partidaDeOtrosNiveles !== undefined) return this.partidaDeOtrosNiveles;
-      return actualizarPartida(undefined, this.idDelNivel, {});
-    }
-    const variables = this.nivelActual.enJuego.leerVariables();
-    return actualizarPartida(this.partidaDeOtrosNiveles, this.nivelActual.porJugar.id, variables);
   }
 
   private async leerYJugar(nombre: string): Promise<void> {
