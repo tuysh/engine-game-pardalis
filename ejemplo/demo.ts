@@ -27,6 +27,8 @@ try {
     nivel: leerNivelDeLaDireccion() ?? NIVEL_INICIAL,
     minijuegos: { Tortilleria },
     depurar: new URLSearchParams(location.search).has('depurar'),
+    // Un host de verdad dibujaría aquí su barra de carga.
+    alCargar: (progreso) => console.log(`cargando imágenes: ${progreso.cargados} de ${progreso.total}`),
   });
   // El motor avisa con eventos y el host decide qué hacer: aquí solo se muestran en la consola.
   juego.on('objetivo', (objetivo) => console.log('objetivo cumplido:', objetivo));

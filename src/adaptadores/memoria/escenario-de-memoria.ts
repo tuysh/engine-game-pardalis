@@ -51,6 +51,7 @@ export class EscenarioDeMemoria implements Escenario {
   estaDestruido = false;
 
   private funcionesDeToque: ((toque: Toque) => void)[] = [];
+  private funcionesDeCarga: (() => void)[] = [];
 
   async montar(escenografia: Escenografia): Promise<void> {
     if (this.fallarElSiguienteMontaje) {
@@ -61,6 +62,16 @@ export class EscenarioDeMemoria implements Escenario {
     // Una escenografía nueva es un lugar nuevo: los personajes del lugar anterior ya no están.
     this.personajes.clear();
     this.dibujos.clear();
+
+    if (escenografia.suelo !== undefined) {
+      this.avisarDeLaCargaDe(escenografia.suelo.imagen);
+    }
+    for (const telon of escenografia.telones) {
+      this.avisarDeLaCargaDe(telon.imagen);
+    }
+    for (const objeto of escenografia.decorado) {
+      this.avisarDeLaCargaDe(objeto.imagen);
+    }
   }
 
   async agregarPersonaje(personaje: PersonajeDeEscena): Promise<void> {
@@ -69,6 +80,7 @@ export class EscenarioDeMemoria implements Escenario {
       mira: personaje.mira,
       sePuedeTocar: personaje.sePuedeTocar,
     });
+    this.avisarDeLaCargaDe(personaje.imagen);
   }
 
   quitarPersonaje(id: string): void {
@@ -102,6 +114,16 @@ export class EscenarioDeMemoria implements Escenario {
 
   async precargar(imagenes: readonly ImagenDeEscena[]): Promise<void> {
     this.imagenesPrecargadas.push(...imagenes);
+    for (const imagen of imagenes) {
+      this.avisarDeLaCargaDe(imagen);
+    }
+  }
+
+  alCargarImagen(funcion: () => void): () => void {
+    this.funcionesDeCarga.push(funcion);
+    return () => {
+      this.funcionesDeCarga = this.funcionesDeCarga.filter((registrada) => registrada !== funcion);
+    };
   }
 
   /** En el escenario falso, la «pantalla» es el propio plano: un metro es un punto. */
@@ -142,6 +164,15 @@ export class EscenarioDeMemoria implements Escenario {
   destruir(): void {
     this.estaDestruido = true;
     this.funcionesDeToque = [];
+  }
+
+  /** En el escenario falso todo «carga» al instante: se avisa una vez por cada archivo de la imagen. */
+  private avisarDeLaCargaDe(imagen: ImagenDeEscena): void {
+    for (let i = 0; i < imagen.direcciones.length; i++) {
+      for (const funcion of [...this.funcionesDeCarga]) {
+        funcion();
+      }
+    }
   }
 
   /** Para las pruebas: hace como si el jugador hubiera tocado algo. */

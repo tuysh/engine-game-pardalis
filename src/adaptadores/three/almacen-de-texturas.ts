@@ -17,6 +17,8 @@ export class AlmacenDeTexturas {
   private readonly texturas = new Map<string, Promise<Texture>>();
   /** Las direcciones que se han pedido desde que empezó el lugar actual. */
   private readonly usadasEnEsteLugar = new Set<string>();
+  /** A quién avisar cada vez que un archivo pedido termina de cargar. */
+  private funcionesDeCarga: (() => void)[] = [];
 
   constructor(fabrica: FabricaDeTexturas) {
     this.fabrica = fabrica;
@@ -35,8 +37,22 @@ export class AlmacenDeTexturas {
         textura.catch(() => this.texturas.delete(direccion));
       }
       pendientes.push(textura);
+      // Se avisa de cada archivo pedido cuando ya está listo, también si estaba guardado de antes.
+      // Si no cargó, no se avisa: su error ya lo recibe quien lo pidió.
+      textura.then(
+        () => this.avisarDeUnArchivoCargado(),
+        () => {},
+      );
     }
     return Promise.all(pendientes);
+  }
+
+  /** Avisa cada vez que termina de cargar un archivo pedido con `cargar`. Devuelve una función que deja de avisar. */
+  alCargarUnArchivo(funcion: () => void): () => void {
+    this.funcionesDeCarga.push(funcion);
+    return () => {
+      this.funcionesDeCarga = this.funcionesDeCarga.filter((registrada) => registrada !== funcion);
+    };
   }
 
   /** Se llama al montar otro lugar: desde aquí se vuelve a anotar qué texturas se usan. */
@@ -59,6 +75,13 @@ export class AlmacenDeTexturas {
       this.liberar(direccion);
     }
     this.usadasEnEsteLugar.clear();
+  }
+
+  private avisarDeUnArchivoCargado(): void {
+    // Se recorre una copia porque quien escucha puede darse de baja mientras se le avisa.
+    for (const funcion of [...this.funcionesDeCarga]) {
+      funcion();
+    }
   }
 
   private liberar(direccion: string): void {

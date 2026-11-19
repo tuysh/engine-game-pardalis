@@ -5,6 +5,7 @@ import type { VariablesDeEstado } from '../dominio/estado.ts';
 import type { Idioma } from '../dominio/idioma.ts';
 import type { Nivel } from '../dominio/nivel.ts';
 import type { PalabraDeVocabulario } from '../dominio/paso.ts';
+import type { ProgresoDeCarga } from '../dominio/progreso-de-carga.ts';
 import type { Audio } from '../puertos/audio.ts';
 import type { Azar } from '../puertos/azar.ts';
 import type { CinematicaEnCodigo } from '../puertos/cinematica-en-codigo.ts';
@@ -40,6 +41,8 @@ export interface PedidoDeJuego {
   readonly variablesGuardadas?: VariablesDeEstado;
   /** `true` si el sistema pide menos movimiento: los viajes de cámara se vuelven cortes. Por defecto `false`. */
   readonly conMenosMovimiento?: boolean;
+  /** Si existe, se le avisa del avance mientras cargan las imágenes del nivel. */
+  readonly alCargar?: (progreso: ProgresoDeCarga) => void;
   /** Con esto, el nivel dibuja sus guías y ofrece la cámara libre. `undefined` = se juega sin depuración. */
   readonly depuracion?: HerramientasDeDepuracion;
   /**

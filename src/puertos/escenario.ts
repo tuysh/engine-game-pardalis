@@ -113,6 +113,13 @@ export interface Escenario {
    */
   lugarEnPantallaDe(id: string): LugarEnPantalla | undefined;
 
+  /**
+   * Avisa cada vez que termina de cargar un archivo de imagen pedido con `montar`, `agregarPersonaje`
+   * o `precargar` (también si ya estaba cargado de antes). Sirve para mostrar el avance de la carga.
+   * Devuelve una función que deja de avisar.
+   */
+  alCargarImagen(funcion: () => void): () => void;
+
   /** Dónde se ve en la pantalla un punto del lugar que está a cierta altura sobre el piso. */
   lugarEnPantallaDelPunto(punto: Punto, alturaEnMetros: number): LugarEnPantalla;
 

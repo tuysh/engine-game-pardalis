@@ -5,7 +5,8 @@
 export { crearEscenario } from './crear.ts';
 export { ErrorDeEscenario } from './dominio/error-de-escenario.ts';
 
-export type { OpcionesDeEscenario, ProgresoDeCarga } from './opciones-de-escenario.ts';
+export type { OpcionesDeEscenario } from './opciones-de-escenario.ts';
+export type { ProgresoDeCarga } from './dominio/progreso-de-carga.ts';
 export type {
   AvisoDeCinematica,
   CambioDeNivel,

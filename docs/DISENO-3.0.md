@@ -103,7 +103,7 @@ si no pudo arrancar. `error.problemas` es la lista de mensajes del validador (un
 | `idioma` | `'es' \| 'en'` | `'es'` | Idioma base de la interfaz. |
 | `iniciarCon` | `'boton' \| 'host'` | `'boton'` | Quién da el primer toque que desbloquea el audio. Ver §7.5. |
 | `proyeccion` | `boolean` | `false` | Modo salón de clases: todo más grande. |
-| `alCargar` | `({ cargados, total }) => void` | — | Progreso de carga, para que el host dibuje su propia barra. |
+| `alCargar` | `({ cargados, total }) => void` | — | Progreso de carga de las imágenes de cada nivel, para que el host dibuje su propia barra. Avisa una vez al empezar (0 de `total`) y otra por cada archivo. |
 | `senal` | `AbortSignal` | — | Cancela la creación (por ejemplo, si el componente se desmonta mientras carga). |
 | `depurar` | `boolean` | `false` | Dibuja piso, huellas y zonas, y activa la cámara libre (§9.3). |
 | `semilla` | `number` | — | Hace reproducible el azar (pruebas). |
@@ -310,8 +310,7 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   entrada empieza con ese toque.
 - **El id de un nivel** es su clave en `niveles`; si se cargó por su dirección, es el `meta.id` de su contenido.
 - **Cada nivel tiene su propio estado.** Un nivel no puede preguntar por las variables de otro.
-- **Todavía no se hace:** que el nivel termine de cargar por detrás mientras se ve un video (§7.4), ni avisar
-  el progreso de carga con `alCargar` (§4).
+- **Todavía no se hace:** que el nivel termine de cargar por detrás mientras se ve un video (§7.4).
 
 ## 8. Assets
 
@@ -550,7 +549,7 @@ Cada fase termina con tipos y pruebas en verde, el validador aceptando el nivel 
 ## 14. Pendiente
 
 - Nombres finales de los eventos (§4): se ajustan al usarlos en el primer host real.
-- La opción `alCargar` (§4) y cargar el nivel por detrás de un video (§7.4).
+- Cargar el nivel por detrás de un video (§7.4).
 - El campo `momento` de la partida (§10): hoy, al volver a un nivel, el jugador aparece en su inicio.
 
 Resuelto: el motor se escribe en **TypeScript estricto** y se publica como JavaScript compilado con tipos

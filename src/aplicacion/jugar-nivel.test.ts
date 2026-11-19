@@ -518,3 +518,38 @@ test('en modo depuración se ven las guías del mapa, y con la cámara libre act
   await reloj.avanzar(1);
   expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 4, y: 3 });
 });
+
+test('mientras cargan las imágenes del nivel, avisa del avance: una vez al empezar y otra por cada archivo', async () => {
+  const avances: string[] = [];
+  const ubicacion = { direccionDelNivel: '/niveles/barrio/nivel.json', cargador: new CargadorDeMemoria({}) };
+
+  await jugarNivel(
+    {
+      nivel: NIVEL,
+      ubicacion,
+      idiomaBase: 'es',
+      minijuegos: {},
+      alCargar: (progreso) => avances.push(`${progreso.cargados} de ${progreso.total}`),
+    },
+    {
+      escenario: new EscenarioDeMemoria(),
+      interfaz: new InterfazDeMemoria(),
+      audio: new AudioDeMemoria(),
+      video: new VideoDeMemoria(),
+      controles: new ControlesDeMemoria(),
+      reloj: new RelojDeMemoria(),
+      azar: () => 0,
+    },
+    {
+      alCumplirObjetivo: () => {},
+      alVerPalabra: () => {},
+      alSalir: () => {},
+      alFallar: () => {},
+      alEmpezarCinematica: () => {},
+      alTerminarCinematica: () => {},
+    },
+  );
+
+  // El suelo, el telón, el comal, Doña Tortu y Tommy: cinco archivos.
+  expect(avances).toEqual(['0 de 5', '1 de 5', '2 de 5', '3 de 5', '4 de 5', '5 de 5']);
+});

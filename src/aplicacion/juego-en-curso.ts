@@ -16,6 +16,7 @@ import type { Idioma } from '../dominio/idioma.ts';
 import { actualizarPartida, variablesGuardadasDe } from '../dominio/partida.ts';
 import type { Partida } from '../dominio/partida.ts';
 import type { PalabraDeVocabulario } from '../dominio/paso.ts';
+import type { ProgresoDeCarga } from '../dominio/progreso-de-carga.ts';
 import type { Cargador } from '../puertos/cargador.ts';
 import type { CinematicaEnCodigo } from '../puertos/cinematica-en-codigo.ts';
 import type { Minijuego } from '../puertos/minijuego.ts';
@@ -55,6 +56,8 @@ export interface PiezasDelJuegoEnCurso {
   readonly cinematicasEnCodigo: Readonly<Record<string, CinematicaEnCodigo>>;
   /** `true` si el sistema pide menos movimiento. */
   readonly conMenosMovimiento: boolean;
+  /** Si existe, se le avisa del avance mientras cargan las imágenes de cada nivel. */
+  readonly alCargar?: (progreso: ProgresoDeCarga) => void;
   /** Lo que hace falta para el modo depuración. `undefined` = se juega sin depuración. */
   readonly depuracion?: HerramientasDeDepuracion;
   readonly puertos: PuertosParaJugar;
@@ -205,6 +208,7 @@ export class JuegoEnCurso {
       cinematicasEnCodigo: this.piezas.cinematicasEnCodigo,
       variablesGuardadas: variablesGuardadasDe(this.partidaDeOtrosNiveles, porJugar.id),
       conMenosMovimiento: this.piezas.conMenosMovimiento,
+      alCargar: this.piezas.alCargar,
       depuracion: this.piezas.depuracion,
       fundido: this.fundido,
     };

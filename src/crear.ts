@@ -1,7 +1,5 @@
 // `crearEscenario()`: la única puerta de entrada del motor en el navegador (docs/DISENO-3.0.md §4).
 // Es la raíz de composición: el único lugar que crea los adaptadores del navegador y se los entrega a la aplicación.
-//
-// Estado: todavía no usa `alCargar`.
 
 import { AudioDelNavegador } from './adaptadores/audio/audio-del-navegador.ts';
 import { ControlesDelTeclado } from './adaptadores/dom/controles-del-teclado.ts';
@@ -88,6 +86,7 @@ export async function crearEscenario(elemento: HTMLElement, opciones: OpcionesDe
     minijuegos: opciones.minijuegos ?? {},
     cinematicasEnCodigo: opciones.cinematicas ?? {},
     conMenosMovimiento: leerSiSePrefiereMenosMovimiento(),
+    alCargar: opciones.alCargar,
     depuracion,
     puertos: { escenario, interfaz, audio, video, controles, reloj, azar },
     avisos: crearAvisos(emisor),

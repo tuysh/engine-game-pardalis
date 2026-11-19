@@ -162,6 +162,10 @@ export class EscenarioDeThree implements Escenario {
     this.almacen.liberarLasQueSobran();
   }
 
+  alCargarImagen(funcion: () => void): () => void {
+    return this.almacen.alCargarUnArchivo(funcion);
+  }
+
   lugarEnPantallaDe(id: string): LugarEnPantalla | undefined {
     const personaje = this.personajes.buscarLugarYAltura(id);
     if (personaje === undefined) return undefined;

@@ -1,14 +1,9 @@
 // Las opciones que recibe `crearEscenario()` (docs/DISENO-3.0.md §4).
 
 import type { Idioma } from './dominio/idioma.ts';
+import type { ProgresoDeCarga } from './dominio/progreso-de-carga.ts';
 import type { CinematicaEnCodigo } from './puertos/cinematica-en-codigo.ts';
 import type { Minijuego } from './puertos/minijuego.ts';
-
-/** Avance de la carga inicial, para que el host dibuje su propia barra. */
-export interface ProgresoDeCarga {
-  readonly cargados: number;
-  readonly total: number;
-}
 
 /** Opciones de `crearEscenario()`. Solo `nivel` es obligatoria. */
 export interface OpcionesDeEscenario {
@@ -38,7 +33,10 @@ export interface OpcionesDeEscenario {
   readonly iniciarCon?: 'boton' | 'host';
   /** Modo salón de clases: todo más grande. Por defecto `false`. */
   readonly proyeccion?: boolean;
-  /** Avisa el avance de la carga inicial. */
+  /**
+   * Avisa el avance de la carga de las imágenes de cada nivel (el primero y los que se carguen después),
+   * para que el host dibuje su propia barra: una vez al empezar (0 de `total`) y otra por cada archivo.
+   */
   readonly alCargar?: (progreso: ProgresoDeCarga) => void;
   /** Cancela la creación, por ejemplo si el componente del host se desmonta mientras carga. */
   readonly senal?: AbortSignal;

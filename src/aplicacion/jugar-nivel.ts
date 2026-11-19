@@ -12,6 +12,7 @@ import type { Nivel } from '../dominio/nivel.ts';
 import { crearTerreno } from '../dominio/terreno.ts';
 import { completarTexto } from '../dominio/texto-con-variables.ts';
 import { atenderToque } from './atender-toque.ts';
+import { avisarDeLaCarga } from './avisar-de-la-carga.ts';
 import { CamaraDeEscena } from './camara-de-escena.ts';
 import type { CamaraLibre } from './camara-libre.ts';
 import { Cercania } from './cercania.ts';
@@ -51,13 +52,25 @@ export async function jugarNivel(
   const { escenario, interfaz, audio, controles, reloj } = puertos;
   const contenido = nivel.contenido;
 
-  await escenario.montar(prepararEscenografia(nivel, ubicacion));
-  const reparto = new Reparto(escenario);
+  const escenografia = prepararEscenografia(nivel, ubicacion);
   const personajes = prepararPersonajes(nivel, ubicacion);
-  // Todas las imágenes de personajes se piden a la vez, para que la carga dure lo que dura la más lenta.
-  await Promise.all(personajes.map((personaje) => reparto.agregar(personaje)));
-  // Lo que las escenas usarán más tarde se descarga desde ahora, para que aparezca sin demora cuando le toque.
-  await escenario.precargar(prepararImagenesDeEscenas(nivel, ubicacion));
+  const imagenesDeEscenas = prepararImagenesDeEscenas(nivel, ubicacion);
+  let dejarDeAvisarDeLaCarga = (): void => {};
+  if (pedido.alCargar !== undefined) {
+    const imagenes = { escenografia, personajes, imagenesDeEscenas };
+    dejarDeAvisarDeLaCarga = avisarDeLaCarga(imagenes, escenario, pedido.alCargar);
+  }
+
+  const reparto = new Reparto(escenario);
+  try {
+    await escenario.montar(escenografia);
+    // Todas las imágenes de personajes se piden a la vez, para que la carga dure lo que dura la más lenta.
+    await Promise.all(personajes.map((personaje) => reparto.agregar(personaje)));
+    // Lo que las escenas usarán más tarde se descarga desde ahora, para que aparezca sin demora cuando le toque.
+    await escenario.precargar(imagenesDeEscenas);
+  } finally {
+    dejarDeAvisarDeLaCarga();
+  }
 
   const exploracion = crearExploracion(nivel, reparto);
   const centroDelLugar = { x: nivel.mundo.anchoEnMetros / 2, y: nivel.mundo.profundidadEnMetros / 2 };
