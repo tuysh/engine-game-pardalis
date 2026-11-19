@@ -137,6 +137,9 @@ si no pudo arrancar. `error.problemas` es la lista de mensajes del validador (un
 Cuando `sale` o la salida del mapa nombran un nivel de `niveles`, el motor lo carga solo y emite `nivel`.
 Cualquier otro destino (`"Selector"`, `"Creditos"`) llega al host por `salida`.
 
+Si una función que escucha un evento lanza un error, el motor lo muestra en la consola y sigue:
+un descuido del host no deja una cinemática o un diálogo a medias.
+
 ## 5. Niveles
 
 ### 5.1 Estructura de carpetas
@@ -309,6 +312,11 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
 - **Con el botón de inicio** (`iniciarCon: 'boton'`) el tiempo no pasa hasta que lo tocan: la cinemática de
   entrada empieza con ese toque.
 - **El id de un nivel** es su clave en `niveles`; si se cargó por su dirección, es el `meta.id` de su contenido.
+- **Desde que un nivel sale hacia otro,** la partida ya dice que el jugador está en el nivel de destino
+  (`partida.nivel`), aunque ese nivel todavía esté cargando. Así, si el juego se cierra en ese momento,
+  continúa en el destino y no en un nivel intermedio (como la casa) que ya no tiene nada que hacer.
+- **Si el nivel siguiente no logra empezar** (por ejemplo, no cargó una imagen), se vuelve a jugar el anterior
+  con su estado guardado y el host recibe el evento `error`.
 - **Cada nivel tiene su propio estado.** Un nivel no puede preguntar por las variables de otro.
 - **Todavía no se hace:** que el nivel termine de cargar por detrás mientras se ve un video (§7.4).
 

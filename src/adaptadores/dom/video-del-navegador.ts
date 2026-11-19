@@ -44,7 +44,12 @@ export class VideoDelNavegador implements Video {
       senal.addEventListener('abort', alCancelar, { once: true });
       reproductor.src = direccionDelVideo;
       // `play()` rechaza si el archivo no sirve o si todavía no hubo un toque que desbloquee el sonido.
-      reproductor.play().catch(alFallar);
+      reproductor.play().catch((error: unknown) => {
+        // También rechaza si se pausa el video cuando apenas está arrancando (el juego entró en pausa):
+        // eso no es una falla, el video sigue ahí y continúa al reanudar.
+        if (esUnaPausaAlArrancar(error)) return;
+        alFallar();
+      });
     });
   }
 
@@ -87,4 +92,12 @@ export class VideoDelNavegador implements Video {
     this.elementoDelJuego.prepend(reproductor);
     return reproductor;
   }
+}
+
+/**
+ * El navegador avisa con un error llamado `AbortError` cuando `pause()` interrumpe a un `play()`
+ * que no terminaba de empezar.
+ */
+function esUnaPausaAlArrancar(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError';
 }

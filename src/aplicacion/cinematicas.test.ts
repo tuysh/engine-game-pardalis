@@ -90,6 +90,8 @@ function salaCon(cinematicas: Record<string, Cinematica>): Nivel {
 interface OpcionesDePrueba {
   readonly variablesGuardadas?: VariablesDeEstado;
   readonly cinematicasEnCodigo?: Record<string, CinematicaEnCodigo>;
+  /** Con `true`, avisar del inicio de una cinemática lanza un error, como un host que escucha mal el evento. */
+  readonly fallaAlAvisarDelInicio?: boolean;
 }
 
 /** Pone a jugar un nivel con adaptadores falsos y anota en listas todo lo que el nivel avisa. */
@@ -121,7 +123,12 @@ async function empezar(nivel: Nivel, opciones: OpcionesDePrueba = {}) {
       alVerPalabra: () => {},
       alSalir: (destino) => salidas.push(destino),
       alFallar: (error) => fallas.push(error),
-      alEmpezarCinematica: (id) => avisosDeCinematicas.push(`inicio ${id}`),
+      alEmpezarCinematica: (id) => {
+        avisosDeCinematicas.push(`inicio ${id}`);
+        if (opciones.fallaAlAvisarDelInicio === true) {
+          throw new Error('falló quien escuchaba el inicio');
+        }
+      },
       alTerminarCinematica: (id) => avisosDeCinematicas.push(`fin ${id}`),
     },
   );
@@ -407,4 +414,40 @@ test('si una cinemática en código nombra algo que no existe, falla diciendo qu
   controles.direccion = { x: 1, y: 0 };
   await reloj.avanzar(0.5);
   expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 3, y: 3 });
+});
+
+test('si avisar del inicio de una cinemática falla, no se quedan las franjas puestas y el jugador recupera el control', async () => {
+  const { escenario, interfaz, controles, reloj, fallas } = await empezar(salaCon({ intro: crearCinematica('intro', {}) }), {
+    fallaAlAvisarDelInicio: true,
+  });
+
+  await reloj.avanzar(0.1);
+  await reloj.avanzar(0);
+
+  expect(fallas).toEqual([new Error('falló quien escuchaba el inicio')]);
+  expect(interfaz.hayFranjasDeCine).toBe(false);
+  controles.direccion = { x: 1, y: 0 };
+  await reloj.avanzar(0.5);
+  expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 3, y: 3 });
+});
+
+test('entre dos cinemáticas seguidas la pantalla se queda como la dejó la primera: no hay un destello', async () => {
+  const cinematicas = {
+    primera: crearCinematica('primera', {
+      guion: { tipo: 'pasos', pasos: [{ tipo: 'fundido', sentido: 'cerrar', duracionEnSegundos: 0 }] },
+    }),
+    segunda: crearCinematica('segunda', { guion: { tipo: 'pasos', pasos: [{ tipo: 'espera', esperaEnSegundos: 1 }] } }),
+  };
+  const { interfaz, reloj, avisosDeCinematicas } = await empezar(salaCon(cinematicas));
+
+  // La primera cierra a negro y termina; la segunda todavía espera su turno.
+  await reloj.avanzar(0.1);
+  expect(avisosDeCinematicas).toEqual(['inicio primera', 'fin primera']);
+  expect(interfaz.opacidadDelFundido).toBe(1);
+
+  // Al terminar la segunda, que es la última, la pantalla se aclara.
+  await reloj.avanzar(0.1);
+  await reloj.avanzar(1);
+  expect(avisosDeCinematicas).toEqual(['inicio primera', 'fin primera', 'inicio segunda', 'fin segunda']);
+  expect(interfaz.opacidadDelFundido).toBe(0);
 });

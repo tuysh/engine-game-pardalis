@@ -73,3 +73,18 @@ test('si el fundido se corta, termina en ese momento y no deja nada pendiente en
   expect(termino).toBe(true);
   expect(interfaz.opacidadDelFundido).toBe(0.5);
 });
+
+test('un fundido nuevo detiene al que estaba en curso: no se pelean por la pantalla', async () => {
+  const { fundido, interfaz, reloj } = crearFundido();
+  let terminoElPrimero = false;
+
+  void fundido.fundir('cerrar', 2, SIN_CORTAR).then(() => {
+    terminoElPrimero = true;
+  });
+  await reloj.avanzar(1);
+  fundido.dejar('abrir');
+  await reloj.avanzar(0.5);
+
+  expect(terminoElPrimero).toBe(true);
+  expect(interfaz.opacidadDelFundido).toBe(0);
+});

@@ -33,3 +33,16 @@ test('vaciar olvida a todos los que escuchaban', () => {
 
   expect(destinos).toEqual([]);
 });
+
+test('si una función que escucha lanza un error, las demás reciben el evento y quien lo emite no se entera', () => {
+  const emisor = new EmisorDeEventos();
+  const destinos: string[] = [];
+  emisor.on('salida', () => {
+    throw new Error('un descuido del host');
+  });
+  emisor.on('salida', (destino) => destinos.push(destino));
+
+  emisor.emitir('salida', 'Selector');
+
+  expect(destinos).toEqual(['Selector']);
+});

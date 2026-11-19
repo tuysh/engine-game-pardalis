@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { actualizarPartida, leerPartida, variablesGuardadasDe } from './partida.ts';
+import { actualizarPartida, conElJugadorEn, leerPartida, variablesGuardadasDe } from './partida.ts';
 import type { Partida } from './partida.ts';
 
 test('una partida bien formada se lee completa', () => {
@@ -107,4 +107,13 @@ test('las variables guardadas de un nivel se buscan por su id', () => {
   expect(variablesGuardadasDe(partida, 'casa')).toBeUndefined();
   expect(variablesGuardadasDe(partida, 'constructor')).toBeUndefined();
   expect(variablesGuardadasDe(undefined, 'barrio')).toBeUndefined();
+});
+
+test('decir que el jugador está en otro nivel cambia solo el nivel: lo guardado de cada nivel se conserva', () => {
+  const partida = actualizarPartida(undefined, 'casa', { 'vista.intro': true });
+
+  const camino = conElJugadorEn(partida, 'barrio');
+
+  expect(camino).toEqual({ v: 1, nivel: 'barrio', niveles: { casa: { estado: { 'vista.intro': true } } } });
+  expect(partida.nivel).toBe('casa');
 });

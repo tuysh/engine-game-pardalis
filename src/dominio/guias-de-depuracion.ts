@@ -7,9 +7,23 @@ import type { Punto, Rectangulo } from './geometria.ts';
 import type { Mundo } from './mundo.ts';
 
 /** Una guía: el contorno de un área del piso, o la marca de un lugar. */
-export type GuiaDeDepuracion =
-  | { readonly tipo: 'contorno'; readonly vertices: readonly Punto[]; readonly color: string; readonly etiqueta?: string }
-  | { readonly tipo: 'marca'; readonly punto: Punto; readonly color: string; readonly etiqueta: string };
+export type GuiaDeDepuracion = ContornoDeDepuracion | MarcaDeDepuracion;
+
+/** El contorno de un área del piso. Su etiqueta, si tiene, va en el centro. */
+export interface ContornoDeDepuracion {
+  readonly tipo: 'contorno';
+  readonly vertices: readonly Punto[];
+  readonly color: string;
+  readonly etiqueta?: string;
+}
+
+/** Una cruz en un lugar con nombre. */
+export interface MarcaDeDepuracion {
+  readonly tipo: 'marca';
+  readonly punto: Punto;
+  readonly color: string;
+  readonly etiqueta: string;
+}
 
 const COLOR_DEL_PISO = '#2e9e4f';
 const COLOR_DE_LO_QUE_BLOQUEA = '#d93025';
@@ -32,7 +46,8 @@ export function crearGuiasDelMundo(mundo: Mundo): GuiaDeDepuracion[] {
   }
   for (const nombre of Object.keys(mundo.zonas)) {
     const zona = mundo.zonas[nombre]!; // `nombre` viene de `Object.keys`, así que existe
-    guias.push({ tipo: 'contorno', vertices: verticesDeForma(zona.forma), color: COLOR_DE_LAS_ZONAS, etiqueta: nombre });
+    const vertices = verticesDeForma(zona.forma);
+    guias.push({ tipo: 'contorno', vertices, color: COLOR_DE_LAS_ZONAS, etiqueta: nombre });
   }
   if (mundo.salida !== undefined) {
     const vertices = verticesDeForma(mundo.salida.forma);

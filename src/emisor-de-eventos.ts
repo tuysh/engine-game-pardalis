@@ -1,4 +1,7 @@
 // Guarda las funciones que el host registró con `juego.on(...)` y las llama cuando el motor emite un evento.
+//
+// Si una de esas funciones lanza un error, el error se muestra en la consola y el motor sigue:
+// un descuido del host al escuchar un evento no debe dejar una cinemática o un diálogo a medias.
 
 import type { EventosDeJuego, NombreDeEvento } from './juego.ts';
 
@@ -30,8 +33,13 @@ export class EmisorDeEventos {
   }
 
   emitir<Evento extends NombreDeEvento>(evento: Evento, dato: EventosDeJuego[Evento]): void {
-    for (const funcion of this.oyentes[evento]) {
-      funcion(dato);
+    // Se recorre una copia porque una función puede cancelar su registro mientras se la llama.
+    for (const funcion of [...this.oyentes[evento]]) {
+      try {
+        funcion(dato);
+      } catch (error) {
+        console.error(`[escenario-engine] una función que escucha el evento "${evento}" lanzó un error:`, error);
+      }
     }
   }
 

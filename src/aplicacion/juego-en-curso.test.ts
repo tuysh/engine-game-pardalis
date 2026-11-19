@@ -215,6 +215,25 @@ test('si el nivel siguiente no se puede cargar, la pantalla se aclara, el juego 
   expect(fallas).toEqual([new ErrorDeEscenario(['no existe el archivo /niveles/roto/nivel.json'])]);
   expect(interfaz.opacidadDelFundido).toBe(0);
   expect(juego.idDelNivel).toBe('casa');
+  // Como no se llegó, la partida de ahora vuelve a decir que el jugador está en la casa.
+  expect(juego.leerPartida().nivel).toBe('casa');
+});
+
+test('desde que un nivel sale hacia otro, la partida que conviene guardar ya nombra el nivel de destino', async () => {
+  const { juego, reloj, partidasPorGuardar } = await empezarEn('casa');
+
+  // La cinemática de la casa termina y pide salir al barrio; el barrio todavía no carga.
+  await reloj.avanzar(0.1);
+  await reloj.avanzar(0.2);
+
+  // Si el juego se cerrara ahora, debe continuar en el barrio: la casa, con su intro ya vista, no tiene nada más.
+  expect(juego.idDelNivel).toBe('casa');
+  expect(partidasPorGuardar.at(-1)).toEqual({
+    v: 1,
+    nivel: 'barrio',
+    niveles: { casa: { estado: { despertar: true, 'vista.intro': true } } },
+  });
+  expect(juego.leerPartida().nivel).toBe('barrio');
 });
 
 test('la partida conserva el estado del nivel que se dejó', async () => {
@@ -298,7 +317,8 @@ test('un nivel que no está registrado se puede cargar por su dirección, y su i
 });
 
 test('al terminar el juego, el nivel deja de dibujarse y ya no se puede cargar otro', async () => {
-  const { juego, escenario, reloj } = await empezarEn('barrio');
+  const partida: Partida = { v: 1, nivel: 'barrio', niveles: { barrio: { estado: { globo: 'rosa' } } } };
+  const { juego, escenario, reloj } = await empezarEn('barrio', partida);
 
   juego.terminar();
   await reloj.avanzar(0.5);
@@ -307,6 +327,6 @@ test('al terminar el juego, el nivel deja de dibujarse y ya no se puede cargar o
   await expect(juego.cargar('casa')).rejects.toEqual(
     new ErrorDeEscenario(['no se cargó el nivel "casa": el juego ya se destruyó']),
   );
-  // La última partida se conserva, por si el host la pide después de destruir el juego.
-  expect(juego.leerPartida().nivel).toBe('barrio');
+  // La última partida se conserva completa, por si el host la pide después de destruir el juego.
+  expect(juego.leerPartida()).toEqual(partida);
 });

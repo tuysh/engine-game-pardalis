@@ -2,6 +2,7 @@
 //
 // `abrir` siempre parte de negro: así una cinemática de entrada puede empezar con él aunque la pantalla
 // estuviera clara. `cerrar` parte de lo oscura que ya esté la pantalla, para no dar un destello si ya era negra.
+// Solo hay un fundido a la vez: uno nuevo detiene al que estuviera en curso.
 
 import type { Interfaz } from '../puertos/interfaz.ts';
 import type { Reloj } from '../puertos/reloj.ts';
@@ -16,6 +17,8 @@ export class FundidoDePantalla {
   private readonly interfaz: Interfaz;
   private readonly reloj: Reloj;
   private opacidad = OPACIDAD_DE_PANTALLA_CLARA;
+  /** Detiene el fundido que está en curso y termina su promesa. `undefined` = no hay ninguno. */
+  private detenerElFundidoEnCurso: (() => void) | undefined;
 
   constructor(interfaz: Interfaz, reloj: Reloj) {
     this.interfaz = interfaz;
@@ -29,6 +32,7 @@ export class FundidoDePantalla {
 
   /** Deja la pantalla de una vez como queda al terminar un fundido: clara (`abrir`) o negra (`cerrar`). */
   dejar(sentido: SentidoDeFundido): void {
+    this.detenerElQueEsteEnCurso();
     this.poner(opacidadFinalDe(sentido));
   }
 
@@ -44,6 +48,7 @@ export class FundidoDePantalla {
     if (senal.aborted) {
       return Promise.resolve();
     }
+    this.detenerElQueEsteEnCurso();
 
     const opacidadFinal = opacidadFinalDe(sentido);
     let opacidadInicial = this.opacidad;
@@ -61,8 +66,12 @@ export class FundidoDePantalla {
       const finalizar = (): void => {
         dejarDeAvanzar();
         senal.removeEventListener('abort', finalizar);
+        if (this.detenerElFundidoEnCurso === finalizar) {
+          this.detenerElFundidoEnCurso = undefined;
+        }
         terminar();
       };
+      this.detenerElFundidoEnCurso = finalizar;
 
       const dejarDeAvanzar = this.reloj.enCadaCuadro((segundos) => {
         segundosTranscurridos += segundos;
@@ -74,6 +83,12 @@ export class FundidoDePantalla {
       });
       senal.addEventListener('abort', finalizar, { once: true });
     });
+  }
+
+  private detenerElQueEsteEnCurso(): void {
+    if (this.detenerElFundidoEnCurso !== undefined) {
+      this.detenerElFundidoEnCurso();
+    }
   }
 
   private poner(opacidad: number): void {

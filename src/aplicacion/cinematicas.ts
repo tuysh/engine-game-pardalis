@@ -82,6 +82,17 @@ export class Cinematicas {
     return this.hayUnaEnCurso || this.enEspera.length > 0;
   }
 
+  /** `true` si alguna de las que esperan su turno va a empezar de verdad: la pidió el host o su condición se cumple. */
+  get hayOtraPorEmpezar(): boolean {
+    for (const enEspera of this.enEspera) {
+      const cinematica = this.piezas.contenido.cinematicas[enEspera.id]!; // solo se ponen en espera ids que existen
+      if (enEspera.laPidioElHost || cumpleCondicion(cinematica.condicion, this.piezas.estado.actual)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /**
    * Se llama en cada cuadro. `posicionDelJugador` es `undefined` en un nivel sin jugador.
    * Vigila las zonas y los objetivos que hacen empezar una cinemática y, si el turno está libre,
@@ -179,10 +190,11 @@ export class Cinematicas {
     if (cinematica.saltable) {
       alSaltar = () => this.saltar();
     }
-    this.piezas.interfaz.mostrarFranjasDeCine(alSaltar);
-    this.piezas.alEmpezar(id);
 
     try {
+      // Todo va dentro del `try`: si algo falla desde el primer momento, el `finally` deja todo en su lugar.
+      this.piezas.interfaz.mostrarFranjasDeCine(alSaltar);
+      this.piezas.alEmpezar(id);
       await this.ejecutarGuion(cinematica, senal);
       const elNivelSigue = !this.finDelNivel.signal.aborted;
       if (elNivelSigue) {

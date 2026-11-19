@@ -17,7 +17,8 @@ export function redactarPlano(plano: Plano): string {
   const altura = redondearMetros(plano.alturaEnMetros);
   const giro = Math.round(plano.giroEnGrados);
   const mira = JSON.stringify(plano.mira);
-  return `"${NOMBRE_DE_UN_PLANO_NUEVO}": { "mira": ${mira}, "distancia": ${distancia}, "altura": ${altura}, "giro": ${giro} }`;
+  const medidas = `"distancia": ${distancia}, "altura": ${altura}, "giro": ${giro}`;
+  return `"${NOMBRE_DE_UN_PLANO_NUEVO}": { "mira": ${mira}, ${medidas} }`;
 }
 
 function redondearMetros(metros: number): number {

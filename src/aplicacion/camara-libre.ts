@@ -40,7 +40,8 @@ const GRADOS_DE_UNA_VUELTA = 360;
 
 const AYUDA_SIN_CAMARA_LIBRE = 'Depuración — C: cámara libre';
 const AYUDA_CON_CAMARA_LIBRE =
-  'Cámara libre — C: salir · arrastrar: girar y subir · rueda: acercar · clic: fijar a qué mira · 1–9: planos · P: copiar';
+  'Cámara libre — C: salir · arrastrar: girar y subir · rueda: acercar · ' +
+  'clic: fijar a qué mira · 1–9: planos · P: copiar';
 
 export interface PiezasDeLaCamaraLibre {
   readonly contenido: Contenido;

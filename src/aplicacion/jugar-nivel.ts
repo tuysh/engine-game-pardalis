@@ -147,6 +147,9 @@ export async function jugarNivel(
       avisos.alSalir(destino);
       return;
     }
+    // Si otra cinemática empieza enseguida, la pantalla y la cámara se quedan como las dejó esta escena:
+    // acomodarlas ahora daría un destello entre las dos. Se acomodan cuando termine la última.
+    if (cinematicas.hayOtraPorEmpezar) return;
     // Una escena nunca deja al jugador con la cámara en otro lado ni con la pantalla a oscuras.
     camara.volverAlJugador();
     fundido.dejar('abrir');

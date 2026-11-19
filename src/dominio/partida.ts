@@ -84,6 +84,14 @@ export function actualizarPartida(
   return { v: VERSION_DE_PARTIDA, nivel: idDelNivel, niveles };
 }
 
+/**
+ * La misma partida, pero diciendo que el jugador está en otro nivel. Se usa cuando un nivel sale hacia otro:
+ * desde ese momento, si el juego se cierra, debe continuar en el nivel de destino.
+ */
+export function conElJugadorEn(partida: Partida, idDelNivel: string): Partida {
+  return { v: partida.v, nivel: idDelNivel, niveles: partida.niveles };
+}
+
 /** Las variables guardadas de un nivel, o `undefined` si la partida no tiene ese nivel. */
 export function variablesGuardadasDe(partida: Partida | undefined, idDelNivel: string): VariablesDeEstado | undefined {
   if (partida === undefined || !Object.hasOwn(partida.niveles, idDelNivel)) return undefined;
