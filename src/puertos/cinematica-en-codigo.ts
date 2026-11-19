@@ -1,8 +1,11 @@
 // El contrato de una cinemática escrita en código (docs/DISENO-3.0.md §7.3).
 // El host escribe una función que recibe `escena` y va llamando sus pasos con `await`.
 //
-// Estado: aquí están los pasos que el diseño ya define con su firma. Los pasos `efecto`,
-// `secuencia` y `cuando` se agregan en la fase 7, cuando exista el ejecutor de pasos.
+// Cada método hace lo mismo que el paso del mismo nombre en el JSON de un nivel. El paso `cuando`
+// no tiene método: en código se escribe un `if` con `escena.estado.cumple('...')`.
+//
+// Si un método nombra algo que no existe (un personaje, un punto del mapa, un plano), lanza un error
+// que dice qué llamada fue; la cinemática termina ahí y el juego sigue.
 
 import type { LectorDeEstado, ValorDeEstado } from '../dominio/estado.ts';
 
@@ -60,11 +63,18 @@ export interface EscenaDeCinematica {
   dice(personaje: string, texto: string, opciones?: OpcionesDeLinea): Promise<void>;
   /** Un personaje camina hasta un punto del mapa. */
   camina(personaje: string, punto: string): Promise<void>;
-  /** Termina el nivel hacia un destino: otro nivel o un destino que decide el host. */
+  /** Un efecto visual con sonido: `'magia'` o `'confeti'`. */
+  efecto(nombre: string): Promise<void>;
+  /** Ejecuta una secuencia de `secuencias` del nivel, por su nombre. */
+  secuencia(nombre: string): Promise<void>;
+  /**
+   * Pide que el nivel termine hacia un destino (otro nivel, o uno que decide el host).
+   * La salida ocurre cuando la cinemática acaba: lo que la función haga después de esta llamada todavía se ejecuta.
+   */
   sale(destino: string): void;
 
   readonly estado: EstadoParaCinematica;
-  /** Se dispara si el host destruye el juego a media cinemática. */
+  /** Se dispara si el nivel termina a media cinemática (por ejemplo, el host destruye el juego). */
   readonly senal: AbortSignal;
 }
 

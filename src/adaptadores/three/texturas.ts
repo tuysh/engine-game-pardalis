@@ -1,15 +1,14 @@
-// Convierte una imagen (SVG, PNG o WebP) en una textura de Three.js.
+// Convierte un archivo de imagen (SVG, PNG o WebP) en una textura de Three.js.
 //
 // La imagen se dibuja primero en un lienzo, al tamaño en píxeles que conviene, y ese lienzo es la textura.
 // Así un SVG, que es un dibujo sin píxeles propios, queda nítido en tablet y en proyector
 // (docs/DISENO-3.0.md §8.2).
 //
-// Estado: de una animación solo se usa el primer cuadro; reproducir sus cuadros llega con las cinemáticas.
+// Quien guarda las texturas ya hechas, para no repetir este trabajo, es almacen-de-texturas.ts.
 
 import { CanvasTexture, SRGBColorSpace } from 'three';
 import type { Texture } from 'three';
 import { ErrorDeEscenario } from '../../dominio/error-de-escenario.ts';
-import type { ImagenDeEscena } from '../../puertos/escenario.ts';
 
 /** Crea un lienzo suelto del tamaño pedido. Lo entrega `crear.ts`, porque crear elementos es cosa del DOM. */
 export type CreadorDeLienzos = (anchoEnPixeles: number, altoEnPixeles: number) => HTMLCanvasElement;
@@ -21,22 +20,29 @@ export interface FabricaDeTexturas {
   readonly densidadDePantalla: number;
 }
 
+/** El tamaño del dibujo original de una imagen. */
+export interface MedidasDeDibujo {
+  readonly anchoEnPixeles: number;
+  readonly altoEnPixeles: number;
+}
+
 /** Las texturas se dibujan con más píxeles que el dibujo original, para que no se vean borrosas de cerca. */
 const DETALLE_EXTRA = 2;
 
 /** Ninguna textura mide más que esto por lado: es lo que aguantan sin problema las tablets. */
 const LADO_MAXIMO_DE_TEXTURA_EN_PIXELES = 4096;
 
-export async function cargarTextura(imagen: ImagenDeEscena, fabrica: FabricaDeTexturas): Promise<Texture> {
-  const direccion = imagen.direcciones[0];
-  if (direccion === undefined) {
-    throw new ErrorDeEscenario(['una imagen del escenario no tiene ningún archivo']);
-  }
+/** Descarga el archivo de `direccion` y lo convierte en textura. `medidas` es el tamaño de su dibujo original. */
+export async function cargarTextura(
+  direccion: string,
+  medidas: MedidasDeDibujo,
+  fabrica: FabricaDeTexturas,
+): Promise<Texture> {
   const imagenDescargada = await descargarImagen(direccion);
 
-  const escala = calcularEscala(imagen, fabrica.densidadDePantalla);
-  const anchoEnPixeles = Math.max(1, Math.round(imagen.anchoEnPixeles * escala));
-  const altoEnPixeles = Math.max(1, Math.round(imagen.altoEnPixeles * escala));
+  const escala = calcularEscala(medidas, fabrica.densidadDePantalla);
+  const anchoEnPixeles = Math.max(1, Math.round(medidas.anchoEnPixeles * escala));
+  const altoEnPixeles = Math.max(1, Math.round(medidas.altoEnPixeles * escala));
 
   const lienzo = fabrica.crearLienzo(anchoEnPixeles, altoEnPixeles);
   const pincel = lienzo.getContext('2d');
@@ -52,9 +58,9 @@ export async function cargarTextura(imagen: ImagenDeEscena, fabrica: FabricaDeTe
 }
 
 /** Por cuánto se multiplica el tamaño del dibujo original para obtener el de la textura. */
-function calcularEscala(imagen: ImagenDeEscena, densidadDePantalla: number): number {
+function calcularEscala(medidas: MedidasDeDibujo, densidadDePantalla: number): number {
   const escalaDeseada = DETALLE_EXTRA * densidadDePantalla;
-  const ladoMayorEnPixeles = Math.max(imagen.anchoEnPixeles, imagen.altoEnPixeles);
+  const ladoMayorEnPixeles = Math.max(medidas.anchoEnPixeles, medidas.altoEnPixeles);
   const escalaMaxima = LADO_MAXIMO_DE_TEXTURA_EN_PIXELES / ladoMayorEnPixeles;
   return Math.min(escalaDeseada, escalaMaxima);
 }

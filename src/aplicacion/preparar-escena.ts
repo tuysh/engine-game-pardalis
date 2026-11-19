@@ -1,9 +1,11 @@
 // Convierte un nivel ya validado en lo que el escenario necesita para dibujarlo:
-// la escenografía (suelo, telones, decorado) y los personajes, cada imagen con su dirección y su tamaño en metros.
+// la escenografía (suelo, telones, decorado), los personajes y las imágenes que las escenas usarán después,
+// cada imagen con su dirección y su tamaño en metros.
 
 import type { Asset } from '../dominio/manifiesto.ts';
 import type { LugarDePersonaje } from '../dominio/mundo.ts';
 import type { Nivel } from '../dominio/nivel.ts';
+import { recorrerPasos } from '../dominio/recorrer-pasos.ts';
 import type {
   DecoradoDeEscena,
   Escenografia,
@@ -67,6 +69,34 @@ export function prepararPersonajes(nivel: Nivel, ubicacion: UbicacionDeAssets): 
   return personajes;
 }
 
+/**
+ * Las imágenes que los pasos de las escenas van a necesitar más tarde: las animaciones de los pasos `anima`
+ * y el dibujo de quien entra con un paso `aparece`. Sirve para descargarlas antes de que les toque.
+ */
+export function prepararImagenesDeEscenas(nivel: Nivel, ubicacion: UbicacionDeAssets): ImagenDeEscena[] {
+  const claves = new Set<string>();
+  recorrerPasos(nivel.contenido, {
+    alVerPaso(paso) {
+      if (paso.tipo === 'anima') {
+        claves.add(paso.clave);
+      }
+      if (paso.tipo === 'aparece') {
+        const personaje = nivel.contenido.meta.personajes[paso.personaje]!; // la validación garantiza que existe
+        claves.add(personaje.sprite);
+      }
+    },
+    alVerSecuenciaPorNombre() {
+      // No hace falta: los pasos de cada secuencia ya se recorren.
+    },
+  });
+
+  const imagenes: ImagenDeEscena[] = [];
+  for (const clave of claves) {
+    imagenes.push(crearImagenDeEscena(clave, nivel, ubicacion));
+  }
+  return imagenes;
+}
+
 function crearPersonajeDeEscena(
   datos: { readonly id: string; readonly lugar: LugarDePersonaje; readonly sePuedeTocar: boolean },
   nivel: Nivel,
@@ -83,7 +113,7 @@ function crearPersonajeDeEscena(
 }
 
 /** La imagen de una clave de assets, con la dirección de cada cuadro y su tamaño en metros. */
-function crearImagenDeEscena(clave: string, nivel: Nivel, ubicacion: UbicacionDeAssets): ImagenDeEscena {
+export function crearImagenDeEscena(clave: string, nivel: Nivel, ubicacion: UbicacionDeAssets): ImagenDeEscena {
   const ubicado = nivel.assets[clave]!; // la validación garantiza que la clave existe y es una imagen
   const asset: Asset = ubicado.asset;
 

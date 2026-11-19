@@ -1,6 +1,8 @@
 # escenario-engine 3.0 — diseño de la API
 
-Estado: **diseño acordado**, listo para empezar a construir.
+Estado: **diseño acordado y construido** (el avance por fases está en el [`README`](../README.md)).
+Los detalles que el diseño no decía y se definieron al construir están reunidos en §7.6, para que el equipo
+los revise en un solo lugar.
 Es una **reescritura completa**: no se mantiene compatibilidad con la versión 2.0 (`EscenarioEngine` sobre Phaser),
 ni con sus mapas, ni con sus partidas guardadas.
 
@@ -95,7 +97,7 @@ si no pudo arrancar. `error.problemas` es la lista de mensajes del validador (un
 | `nivel` | `string` | — | Id del nivel inicial, o directamente una URL si solo hay un nivel. |
 | `minijuegos` | `Record<string, Minijuego>` | `{}` | Ver §6. |
 | `cinematicas` | `Record<string, Cinematica>` | `{}` | Cinemáticas escritas en código. Ver §7. |
-| `partida` | `object \| null` | `null` | Partida a restaurar. Corrupta o de otra versión: se ignora con advertencia. |
+| `partida` | `object \| null` | `null` | Partida a restaurar. Corrupta o de otra versión: se ignora con advertencia. Si nombra un nivel de `niveles`, el juego continúa en ese nivel y no en `nivel`. |
 | `raizDeAssets` | `string` | junto a cada `nivel.json` | Carpeta o CDN donde están los assets. Ver §8. |
 | `origenesPermitidos` | `string[]` | `[]` | Orígenes HTTPS externos permitidos (el CDN). |
 | `idioma` | `'es' \| 'en'` | `'es'` | Idioma base de la interfaz. |
@@ -112,8 +114,8 @@ si no pudo arrancar. `error.problemas` es la lista de mensajes del validador (un
 | --- | --- |
 | `on(evento, funcion)` | Escucha un evento. **Devuelve una función que cancela la suscripción.** |
 | `guardar()` | Devuelve la partida actual como objeto plano. |
-| `cargar(nivel, opciones?)` | Cambia de nivel reutilizando el mismo lienzo. Promesa que se resuelve cuando ya se puede jugar. |
-| `reproducir(idDeCinematica)` | Lanza una cinemática del nivel actual. Promesa que se resuelve al terminar. |
+| `cargar(nivel)` | Cambia de nivel reutilizando el mismo lienzo. `nivel` es un id de `niveles` o la dirección de un `nivel.json`. Promesa que se resuelve cuando ya se puede jugar y rechaza con `ErrorDeEscenario` si el nivel tiene errores (entonces sigue el nivel que estaba). |
+| `reproducir(idDeCinematica)` | Lanza una cinemática del nivel actual, aunque ya se haya visto. Promesa que se resuelve al terminar. |
 | `interrumpir()` | Salta la cinemática o cierra el diálogo en curso. |
 | `pausar()` / `reanudar()` | Congela y reanuda juego, audio y video. |
 | `proyeccion` | Propiedad booleana; se puede cambiar sin reiniciar. |
@@ -127,7 +129,7 @@ si no pudo arrancar. `error.problemas` es la lista de mensajes del validador (un
 | `guardar` | `partida` | Cada vez que conviene guardar: objetivo cumplido, fin de cinemática, cambio de nivel. |
 | `objetivo` | `id` | Se cumplió un objetivo. |
 | `palabra` | `{ en, es }` | Se mostró una tarjeta de vocabulario. |
-| `nivel` | `{ id, anterior }` | Se terminó de cargar otro nivel. |
+| `nivel` | `{ id, anterior }` | Se terminó de cargar otro nivel. `anterior` es el id del que se dejó. |
 | `cinematica` | `{ id, fase }` | `fase` es `'inicio'` o `'fin'`. Sirve para ocultar la interfaz del host. |
 | `salida` | `destino` | El jugador salió hacia un destino que **no** es un nivel registrado: el host decide. |
 | `error` | `ErrorDeEscenario` | Falla después de arrancar (por ejemplo, un nivel siguiente que no carga). |
@@ -251,7 +253,12 @@ export async function intro(escena) {
 ```
 
 Se registra en `crearEscenario({ cinematicas: { intro } })` y en el JSON se declara `"codigo": "intro"`.
-`escena` ofrece además `escena.estado` (lectura y `pon`) y `escena.senal`.
+`escena` ofrece además `escena.efecto()`, `escena.secuencia()`, `escena.estado` (lectura y `pon`) y `escena.senal`.
+El paso `cuando` no tiene método: en código se escribe un `if` con `escena.estado.cumple('...')`.
+
+El validador no puede leer el código, así que cada método revisa al ejecutarse que exista lo que nombra
+(personajes, puntos, planos, animaciones). Si algo no existe, lanza un error que dice qué llamada fue;
+la cinemática termina ahí, el juego sigue y el host recibe el evento `error`.
 
 **Regla para quien escribe código:** usar `escena.espera()` y no `setTimeout`, para que la cinemática se pueda saltar.
 
@@ -276,6 +283,32 @@ Se registra en `crearEscenario({ cinematicas: { intro } })` y en el JSON se decl
   el motor muestra un botón grande de jugar; con `'host'` el host garantiza que ya hubo un toque.
 - Con «movimiento reducido» activo en el sistema, los movimientos de cámara se vuelven cortes.
 - Si se guarda a media cinemática, al volver empieza de nuevo.
+
+### 7.6 Detalles definidos al construir
+
+El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se cambia aquí primero.
+
+- **`sale` no corta la escena.** El nivel termina cuando el diálogo o la cinemática acaba; lo que siga a `sale`
+  todavía se ejecuta. Vale igual para `escena.sale()` en código.
+- **Al terminar una escena,** si la cámara quedó en otro lado regresa sola al jugador (un viaje corto) y la
+  pantalla se aclara. No pasa si la escena pidió salir: la pantalla puede quedar en negro mientras carga el
+  nivel siguiente. Un nivel que empieza sin cinemática de entrada abre la pantalla de una vez.
+- **`fundido`:** `abrir` siempre parte de negro; `cerrar` parte de lo oscura que ya esté la pantalla.
+- **Una cinemática espera su turno:** nunca interrumpe un diálogo; varias en espera se reproducen en orden.
+  La de un objetivo que ya venía cumplido en la partida, si no se había visto, empieza al entrar al nivel.
+- **Al saltar** se omiten las líneas, los efectos, las esperas, los sonidos, los videos y las animaciones que
+  pasan una sola vez; todo lo demás deja su resultado final. `juego.interrumpir()` salta también una
+  cinemática con `saltable: false`: ese campo solo decide si el jugador ve el botón.
+- **`anima`** sin `repite` regresa al personaje a su `sprite` al terminar; con `repite` lo deja con el dibujo nuevo.
+  Un `sprite` o un objeto del decorado que sean animación se repiten solos todo el tiempo.
+- **`aparece`** con alguien que ya está en el escenario solo lo cambia de lugar. Quien entra con `aparece`
+  puede tener diálogo en `npcs` aunque no esté en el mapa. **`desaparece`** no acepta al personaje del jugador.
+- **Con el botón de inicio** (`iniciarCon: 'boton'`) el tiempo no pasa hasta que lo tocan: la cinemática de
+  entrada empieza con ese toque.
+- **El id de un nivel** es su clave en `niveles`; si se cargó por su dirección, es el `meta.id` de su contenido.
+- **Cada nivel tiene su propio estado.** Un nivel no puede preguntar por las variables de otro.
+- **Todavía no se hace:** que el nivel termine de cargar por detrás mientras se ve un video (§7.4), ni avisar
+  el progreso de carga con `alCargar` (§4).
 
 ## 8. Assets
 
@@ -513,7 +546,8 @@ Cada fase termina con tipos y pruebas en verde, el validador aceptando el nivel 
 ## 14. Pendiente
 
 - Nombres finales de los eventos (§4): se ajustan al usarlos en el primer host real.
-- Completar `README.md` y `docs/NIVELES.md` conforme avance cada fase.
+- La opción `alCargar` (§4) y cargar el nivel por detrás de un video (§7.4).
+- El campo `momento` de la partida (§10): hoy, al volver a un nivel, el jugador aparece en su inicio.
 
 Resuelto: el motor se escribe en **TypeScript estricto** y se publica como JavaScript compilado con tipos
 (ver `AGENTS.md` §4.5).

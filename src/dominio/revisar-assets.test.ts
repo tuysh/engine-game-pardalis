@@ -192,3 +192,18 @@ test('en los pasos de escena, la animación y el video deben existir; un sonido 
     'secuencias.prueba[4].musica: no existe el audio "mus_barrio"; no sonará',
   ]);
 });
+
+test('animar con una imagen fija sin "repite" se advierte: no se alcanzaría a ver', () => {
+  // "spr_tortu" es una imagen fija; "img_rosa" es una animación, que sí dura.
+  const diagnostico = revisarPasos([
+    { tipo: 'anima', personaje: 'tortu', clave: 'spr_tortu', repite: false },
+    { tipo: 'anima', personaje: 'tortu', clave: 'spr_tortu', repite: true },
+    { tipo: 'anima', personaje: 'tortu', clave: 'img_rosa', repite: false },
+  ]);
+
+  expect(diagnostico.errores).toEqual([]);
+  expect(diagnostico.advertencias).toEqual([
+    'secuencias.prueba[0]: "spr_tortu" es una imagen fija y el paso no lleva "repite": no se alcanzará a ver; ' +
+      'agrega "repite": true para dejar al personaje con ese dibujo',
+  ]);
+});

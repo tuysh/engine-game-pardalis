@@ -80,12 +80,22 @@ test('un NPC del mapa sin diálogo en el contenido está permitido: solo no se p
   expect(revisar(contenido, MUNDO).errores).toEqual([]);
 });
 
-test('un diálogo de "npcs" necesita su objeto en el mapa', () => {
+test('un diálogo de "npcs" necesita que su personaje esté en el mapa o entre con un paso "aparece"', () => {
   const mundo: Mundo = { ...MUNDO, npcs: {} };
 
   expect(revisar(CONTENIDO, mundo).errores).toEqual([
-    'npcs.tortu no tiene un objeto con ese id en la capa "npcs" del mapa',
+    'npcs.tortu no tiene un objeto con ese id en la capa "npcs" del mapa, ni entra con un paso "aparece"',
   ]);
+});
+
+test('alguien que no está en el mapa pero entra con "aparece" sí puede tener diálogo', () => {
+  const mundo: Mundo = { ...MUNDO, npcs: {} };
+  const contenido: Contenido = {
+    ...CONTENIDO,
+    secuencias: { llega_tortu: [{ tipo: 'aparece', personaje: 'tortu', punto: 'frente' }] },
+  };
+
+  expect(revisar(contenido, mundo).errores).toEqual([]);
 });
 
 test('los interactivos deben coincidir en los dos sentidos', () => {

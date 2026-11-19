@@ -8,7 +8,7 @@ import type { AssetsDeNivel } from './assets-de-nivel.ts';
 import type { Contenido } from './contenido.ts';
 import type { Diagnostico } from './diagnostico.ts';
 import type { Asset } from './manifiesto.ts';
-import type { Paso } from './paso.ts';
+import type { Paso, PasoDeAnimacion } from './paso.ts';
 import { recorrerPasos } from './recorrer-pasos.ts';
 
 /** Lo que comparten las revisiones de este archivo. */
@@ -55,6 +55,7 @@ function revisarAssetsDePaso(paso: Paso, ruta: string, revision: RevisionDeAsset
 
     case 'anima':
       revisarImagen(paso.clave, `${ruta}.con`, revision);
+      revisarQueLaAnimacionSeVea(paso, ruta, revision);
       break;
 
     case 'musica':
@@ -88,6 +89,20 @@ function revisarAssetsDePaso(paso: Paso, ruta: string, revision: RevisionDeAsset
     case 'fundido':
     case 'sale':
       break; // estos pasos no nombran assets
+  }
+}
+
+/**
+ * Sin `repite`, el personaje vuelve a su dibujo normal en cuanto la animación termina.
+ * Una imagen fija «termina» al instante, así que no se alcanzaría a ver.
+ */
+function revisarQueLaAnimacionSeVea(paso: PasoDeAnimacion, ruta: string, revision: RevisionDeAssets): void {
+  const asset = buscarAsset(paso.clave, revision.assets);
+  if (asset !== undefined && asset.tipo === 'imagen' && !paso.repite) {
+    revision.diagnostico.advertencias.push(
+      `${ruta}: "${paso.clave}" es una imagen fija y el paso no lleva "repite": no se alcanzará a ver; ` +
+        'agrega "repite": true para dejar al personaje con ese dibujo',
+    );
   }
 }
 

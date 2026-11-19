@@ -3,6 +3,7 @@
 //
 // Reglas:
 // - Solo hay un diálogo a la vez. Si ya hay uno, el nuevo se ignora (no hay fila de espera).
+// - Una cinemática ocupa el mismo turno que un diálogo (`ejecutarEscena`): mientras dura, nadie habla.
 // - Al hablar con alguien se usa la primera rama de su diálogo cuya condición se cumple.
 // - Hablar con alguien marca la variable `charlas.<id>`.
 
@@ -26,6 +27,8 @@ export interface PiezasDeConversacion {
   readonly alFallar: (error: unknown) => void;
   /** Se llama justo antes de que empiece cada diálogo; sirve, por ejemplo, para callar un comentario. */
   readonly alEmpezar?: () => void;
+  /** Se llama cuando un diálogo ya terminó (bien, interrumpido o con error) y el turno quedó libre. */
+  readonly alTerminar?: () => void;
 }
 
 export class Conversacion {
@@ -75,6 +78,15 @@ export class Conversacion {
     });
   }
 
+  /**
+   * Ejecuta una escena que no es un diálogo (una cinemática) con la misma regla de «una cosa a la vez»:
+   * si hay un diálogo en curso, la escena no se ejecuta. Mientras dura, cuenta como diálogo en curso,
+   * y `interrumpir()` dispara la señal que la escena recibe.
+   */
+  async ejecutarEscena(escena: (senal: AbortSignal) => Promise<void>): Promise<void> {
+    await this.ejecutarSiNoHayOtroDialogo(escena);
+  }
+
   /** Termina el diálogo en curso. Si no hay ninguno, no hace nada. */
   interrumpir(): void {
     if (this.cancelador !== undefined) {
@@ -105,6 +117,11 @@ export class Conversacion {
     } finally {
       // Pase lo que pase, el diálogo se libera: si no, nadie podría volver a hablar.
       this.cancelador = undefined;
+      // Si el diálogo falló con pasos todavía en marcha (los de un `juntos`), esto los detiene.
+      cancelador.abort();
+      if (this.piezas.alTerminar !== undefined) {
+        this.piezas.alTerminar();
+      }
     }
   }
 }

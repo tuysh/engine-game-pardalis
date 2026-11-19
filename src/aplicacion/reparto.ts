@@ -4,7 +4,7 @@
 
 import type { Punto } from '../dominio/geometria.ts';
 import type { Mira } from '../dominio/mundo.ts';
-import type { Escenario, PersonajeDeEscena } from '../puertos/escenario.ts';
+import type { Escenario, ImagenDeEscena, PersonajeDeEscena } from '../puertos/escenario.ts';
 
 interface Miembro {
   posicion: Punto;
@@ -25,8 +25,24 @@ export class Reparto {
     await this.escenario.agregarPersonaje(personaje);
   }
 
+  /** Saca a un personaje del escenario. Si no está, no hace nada. */
+  quitar(id: string): void {
+    if (!this.miembros.has(id)) return;
+    this.miembros.delete(id);
+    this.escenario.quitarPersonaje(id);
+  }
+
   estaEnEscena(id: string): boolean {
     return this.miembros.has(id);
+  }
+
+  /**
+   * Cambia el dibujo de un personaje por otra imagen o animación (ver `Escenario.ponerDibujoDePersonaje`).
+   * Termina cuando el dibujo nuevo ya se ve. Si el personaje no está en el escenario, no hace nada.
+   */
+  async ponerDibujo(id: string, imagen: ImagenDeEscena, opciones: { readonly repite: boolean }): Promise<void> {
+    if (!this.miembros.has(id)) return;
+    await this.escenario.ponerDibujoDePersonaje(id, imagen, opciones);
   }
 
   /** Dónde pisa un personaje, o `undefined` si no está en el escenario. */

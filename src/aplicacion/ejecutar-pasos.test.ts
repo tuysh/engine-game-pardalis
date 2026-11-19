@@ -51,6 +51,48 @@ function crearAccionesFalsas(bitacora: string[], respuestas: Respuestas = {}): A
       bitacora.push(`minijuego: ${nombre}`);
       return respuestas.resultadoDelMinijuego ?? { exito: true };
     },
+    colocar(personaje, punto) {
+      bitacora.push(`${personaje} queda en ${punto}`);
+    },
+    async esperar(esperaEnSegundos) {
+      bitacora.push(`espera: ${esperaEnSegundos}`);
+    },
+    async moverCamara(paso) {
+      bitacora.push(`cámara viaja a ${paso.destino} en ${paso.duracionEnSegundos}`);
+    },
+    cortarCamara(destino) {
+      bitacora.push(`cámara corta a ${destino}`);
+    },
+    mirar(paso) {
+      bitacora.push(`${paso.personaje} mira a ${paso.hacia}`);
+    },
+    async animar(paso) {
+      bitacora.push(`${paso.personaje} se anima con ${paso.clave}`);
+    },
+    async aparecer(paso) {
+      bitacora.push(`${paso.personaje} aparece en ${paso.punto}`);
+    },
+    desaparecer(personaje) {
+      bitacora.push(`${personaje} desaparece`);
+    },
+    ponerMusica(clave) {
+      bitacora.push(`música: ${clave}`);
+    },
+    tocarSonido(clave) {
+      bitacora.push(`sonido: ${clave}`);
+    },
+    async fundir(paso) {
+      bitacora.push(`fundido: ${paso.sentido} en ${paso.duracionEnSegundos}`);
+    },
+    dejarFundido(sentido) {
+      bitacora.push(`fundido ya: ${sentido}`);
+    },
+    async reproducirVideo(clavePorIdioma) {
+      bitacora.push(`video: ${clavePorIdioma.es}`);
+    },
+    pedirSalida(destino) {
+      bitacora.push(`sale: ${destino}`);
+    },
   };
 }
 
@@ -295,4 +337,169 @@ test('al cancelar, termina aunque una acción nunca termine, y no ejecuta los pa
   await ejecucion;
 
   expect(bitacora).toEqual([]);
+});
+
+test('los pasos de escena piden su acción, en orden', async () => {
+  const bitacora: string[] = [];
+  const pasos: Paso[] = [
+    { tipo: 'fundido', sentido: 'abrir', duracionEnSegundos: 1 },
+    { tipo: 'camara', destino: 'plano_sala', duracionEnSegundos: 2 },
+    { tipo: 'aparece', personaje: 'tortu', punto: 'puerta' },
+    { tipo: 'mira', personaje: 'tommy', hacia: 'tortu' },
+    { tipo: 'anima', personaje: 'tommy', clave: 'tommy_saluda', repite: false },
+    { tipo: 'espera', esperaEnSegundos: 2 },
+    { tipo: 'musica', clave: 'mus_barrio' },
+    { tipo: 'sonido', clave: 'puerta_abre' },
+    { tipo: 'video', clavePorIdioma: { es: 'intro_es', en: 'intro_en' } },
+    { tipo: 'desaparece', personaje: 'tortu' },
+    { tipo: 'sale', destino: 'barrio' },
+  ];
+
+  await ejecutarPasos(pasos, {
+    contenido: CONTENIDO,
+    estado: crearEstado(),
+    acciones: crearAccionesFalsas(bitacora),
+    senal: new AbortController().signal,
+  });
+
+  expect(bitacora).toEqual([
+    'fundido: abrir en 1',
+    'cámara viaja a plano_sala en 2',
+    'tortu aparece en puerta',
+    'tommy mira a tortu',
+    'tommy se anima con tommy_saluda',
+    'espera: 2',
+    'música: mus_barrio',
+    'sonido: puerta_abre',
+    'video: intro_es',
+    'tortu desaparece',
+    'sale: barrio',
+  ]);
+});
+
+test('los pasos de "juntos" empiezan a la vez y el siguiente espera a que todos terminen', async () => {
+  const bitacora: string[] = [];
+  const acciones = crearAccionesFalsas(bitacora);
+  let terminarLaCaminata = (): void => {};
+  acciones.caminar = (personaje) => {
+    bitacora.push(`${personaje} empieza a caminar`);
+    return new Promise((terminar) => {
+      terminarLaCaminata = terminar;
+    });
+  };
+  const pasos: Paso[] = [
+    {
+      tipo: 'juntos',
+      pasos: [
+        { tipo: 'camina', punto: 'frente', personaje: 'tortu' },
+        { tipo: 'sonido', clave: 'pasos' },
+      ],
+    },
+    { tipo: 'efecto', nombre: 'magia' },
+  ];
+
+  const ejecucion = ejecutarPasos(pasos, {
+    contenido: CONTENIDO,
+    estado: crearEstado(),
+    acciones,
+    senal: new AbortController().signal,
+  });
+  await Promise.resolve();
+  // El sonido ya sonó aunque la caminata no ha terminado; el efecto todavía espera.
+  expect(bitacora).toEqual(['tortu empieza a caminar', 'sonido: pasos']);
+
+  terminarLaCaminata();
+  await ejecucion;
+  expect(bitacora).toEqual(['tortu empieza a caminar', 'sonido: pasos', 'efecto: magia']);
+});
+
+test('al saltar una escena, lo que solo se ve o se oye se omite y lo demás deja su resultado final', async () => {
+  const bitacora: string[] = [];
+  const estado = crearEstado();
+  const pasos: Paso[] = [
+    { tipo: 'linea', hablante: 'tortu', texto: '¡Hola!' },
+    { tipo: 'efecto', nombre: 'magia' },
+    { tipo: 'espera', esperaEnSegundos: 2 },
+    { tipo: 'sonido', clave: 'puerta_abre' },
+    { tipo: 'video', clavePorIdioma: { es: 'intro', en: 'intro' } },
+    { tipo: 'anima', personaje: 'tommy', clave: 'tommy_saluda', repite: false },
+    { tipo: 'camina', punto: 'frente', personaje: 'tortu' },
+    { tipo: 'camara', destino: 'plano_sala', duracionEnSegundos: 2 },
+    { tipo: 'fundido', sentido: 'cerrar', duracionEnSegundos: 1 },
+    { tipo: 'anima', personaje: 'tommy', clave: 'tommy_sentado', repite: true },
+    { tipo: 'aparece', personaje: 'tortu', punto: 'puerta' },
+    { tipo: 'mira', personaje: 'tommy', hacia: 'tortu' },
+    { tipo: 'pon', valores: { globo: 'rosa' } },
+    { tipo: 'musica', clave: 'mus_barrio' },
+    { tipo: 'sale', destino: 'barrio' },
+  ];
+  const cancelador = new AbortController();
+  cancelador.abort();
+
+  await ejecutarPasos(pasos, {
+    contenido: CONTENIDO,
+    estado,
+    acciones: crearAccionesFalsas(bitacora),
+    senal: cancelador.signal,
+    seEstaSaltando: () => true,
+  });
+
+  expect(bitacora).toEqual([
+    'tortu queda en frente',
+    'cámara corta a plano_sala',
+    'fundido ya: cerrar',
+    'tommy se anima con tommy_sentado',
+    'tortu aparece en puerta',
+    'tommy mira a tortu',
+    'música: mus_barrio',
+    'sale: barrio',
+  ]);
+  expect(valorDe(estado.actual, 'globo')).toBe('rosa');
+});
+
+test('si la escena se salta a media caminata, el personaje queda en su destino y siguen los pasos que faltan', async () => {
+  const bitacora: string[] = [];
+  const cancelador = new AbortController();
+  let seSalto = false;
+  const acciones = crearAccionesFalsas(bitacora);
+  acciones.caminar = () => new Promise(() => {}); // una caminata que nunca llega
+  const pasos: Paso[] = [
+    { tipo: 'camina', punto: 'frente', personaje: 'tortu' },
+    { tipo: 'linea', hablante: 'tortu', texto: '¡Ya llegué!' },
+    { tipo: 'aparece', personaje: 'tommy', punto: 'puerta' },
+  ];
+
+  const ejecucion = ejecutarPasos(pasos, {
+    contenido: CONTENIDO,
+    estado: crearEstado(),
+    acciones,
+    senal: cancelador.signal,
+    seEstaSaltando: () => seSalto,
+  });
+  seSalto = true;
+  cancelador.abort();
+  await ejecucion;
+
+  expect(bitacora).toEqual(['tortu queda en frente', 'tommy aparece en puerta']);
+});
+
+test('en una escena que se salta no se pregunta nada ni se abre un minijuego', async () => {
+  const bitacora: string[] = [];
+  const pasos: Paso[] = [
+    { tipo: 'elige', pregunta: '¿Cuál?', opciones: [{ imagen: 'img', alElegir: { tipo: 'pasos', pasos: [] } }] },
+    { tipo: 'juego', nombre: 'Tortilleria', config: undefined },
+    { tipo: 'musica', clave: 'mus_barrio' },
+  ];
+  const cancelador = new AbortController();
+  cancelador.abort();
+
+  await ejecutarPasos(pasos, {
+    contenido: CONTENIDO,
+    estado: crearEstado(),
+    acciones: crearAccionesFalsas(bitacora),
+    senal: cancelador.signal,
+    seEstaSaltando: () => true,
+  });
+
+  expect(bitacora).toEqual(['música: mus_barrio']);
 });

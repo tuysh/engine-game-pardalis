@@ -1,7 +1,8 @@
 // Cruza el mapa (el DÓNDE) con el contenido (el QUÉ PASA): lo que uno nombra debe existir en el otro.
 //
 // - Cada NPC del mapa es un personaje del contenido. Su diálogo es opcional: sin él, no se puede tocar.
-// - Cada diálogo de `npcs` e `interactivos` tiene su objeto en el mapa, y cada objeto interactivo su diálogo.
+// - Cada diálogo de `npcs` es de alguien que está en el mapa o que entra después con un paso `aparece`.
+// - Cada diálogo de `interactivos` tiene su objeto en el mapa, y cada objeto interactivo su diálogo.
 // - Hay piso, y si el nivel tiene jugador, exactamente un inicio dentro del piso.
 // - Los puntos de los pasos `camina`, los grupos de las zonas y la salida existen en los dos lados.
 //
@@ -42,11 +43,30 @@ function revisarNpcs(contenido: Contenido, mundo: Mundo, diagnostico: Diagnostic
       diagnostico.errores.push(`mapa: ${npc.descripcion} (npc) tiene id "${id}", que no existe en meta.personajes`);
     }
   }
+  const quienesAparecen = reunirQuienesAparecen(contenido);
   for (const id of Object.keys(contenido.npcs)) {
-    if (!Object.hasOwn(mundo.npcs, id)) {
-      diagnostico.errores.push(`npcs.${id} no tiene un objeto con ese id en la capa "npcs" del mapa`);
+    if (!Object.hasOwn(mundo.npcs, id) && !quienesAparecen.has(id)) {
+      diagnostico.errores.push(
+        `npcs.${id} no tiene un objeto con ese id en la capa "npcs" del mapa, ni entra con un paso "aparece"`,
+      );
     }
   }
+}
+
+/** Los personajes que entran al escenario con un paso `aparece` en algún lugar del contenido. */
+function reunirQuienesAparecen(contenido: Contenido): Set<string> {
+  const quienesAparecen = new Set<string>();
+  recorrerPasos(contenido, {
+    alVerPaso(paso) {
+      if (paso.tipo === 'aparece') {
+        quienesAparecen.add(paso.personaje);
+      }
+    },
+    alVerSecuenciaPorNombre() {
+      // No hace falta: los pasos de cada secuencia ya se recorren.
+    },
+  });
+  return quienesAparecen;
 }
 
 function revisarInteractivos(contenido: Contenido, mundo: Mundo, diagnostico: Diagnostico): void {

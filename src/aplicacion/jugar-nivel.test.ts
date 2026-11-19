@@ -5,6 +5,7 @@ import { ControlesDeMemoria } from '../adaptadores/memoria/controles-de-memoria.
 import { EscenarioDeMemoria } from '../adaptadores/memoria/escenario-de-memoria.ts';
 import { InterfazDeMemoria } from '../adaptadores/memoria/interfaz-de-memoria.ts';
 import { RelojDeMemoria } from '../adaptadores/memoria/reloj-de-memoria.ts';
+import { VideoDeMemoria } from '../adaptadores/memoria/video-de-memoria.ts';
 import { leerCondicionDeTexto } from '../dominio/condicion.ts';
 import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from '../dominio/contenido.ts';
 import type { VariablesDeEstado } from '../dominio/estado.ts';
@@ -76,6 +77,7 @@ async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
   const escenario = new EscenarioDeMemoria();
   const interfaz = new InterfazDeMemoria();
   const audio = new AudioDeMemoria();
+  const video = new VideoDeMemoria();
   const controles = new ControlesDeMemoria();
   const reloj = new RelojDeMemoria();
   const objetivosCumplidos: string[] = [];
@@ -85,12 +87,14 @@ async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
   const ubicacion = { direccionDelNivel: '/niveles/barrio/nivel.json', cargador: new CargadorDeMemoria({}) };
   const nivelEnJuego = await jugarNivel(
     { nivel, ubicacion, idiomaBase: 'es', minijuegos: {}, variablesGuardadas },
-    { escenario, interfaz, audio, controles, reloj, azar: () => 0 },
+    { escenario, interfaz, audio, video, controles, reloj, azar: () => 0 },
     {
       alCumplirObjetivo: (objetivo) => objetivosCumplidos.push(objetivo),
       alVerPalabra: () => {},
       alSalir: (destino) => salidas.push(destino),
       alFallar: (error) => fallas.push(error),
+      alEmpezarCinematica: () => {},
+      alTerminarCinematica: () => {},
     },
   );
   return { nivelEnJuego, escenario, interfaz, audio, controles, reloj, objetivosCumplidos, salidas, fallas };

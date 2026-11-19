@@ -1,0 +1,235 @@
+// Lleva el juego completo: qué nivel se está jugando, el paso de un nivel a otro y la partida de todos
+// (docs/DISENO-3.0.md §4, §5.3 y §10).
+//
+// Reglas:
+// - Solo se juega un nivel a la vez. Al cargar otro, el anterior termina y su estado queda en la partida.
+// - Cuando un nivel termina hacia un destino que es otro nivel registrado, ese nivel se carga solo.
+//   Cualquier otro destino se le avisa al host, que decide qué hacer.
+// - Conviene guardar al cumplir un objetivo, al terminar una cinemática, al salir y al cambiar de nivel.
+// - Al volver a un nivel ya visitado, se restauran sus variables.
+
+import { ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
+import type { Idioma } from '../dominio/idioma.ts';
+import { actualizarPartida, variablesGuardadasDe } from '../dominio/partida.ts';
+import type { Partida } from '../dominio/partida.ts';
+import type { PalabraDeVocabulario } from '../dominio/paso.ts';
+import type { Cargador } from '../puertos/cargador.ts';
+import type { CinematicaEnCodigo } from '../puertos/cinematica-en-codigo.ts';
+import type { Minijuego } from '../puertos/minijuego.ts';
+import { jugarNivel } from './jugar-nivel.ts';
+import { leerNivelPorJugar } from './leer-nivel-por-jugar.ts';
+import type { FuenteDeNiveles, NivelPorJugar } from './leer-nivel-por-jugar.ts';
+import type { AvisosDelNivel, NivelEnJuego, PuertosParaJugar } from './nivel-en-juego.ts';
+
+/** Cómo el juego le avisa de lo que pasa a quien lo creó. */
+export interface AvisosDelJuego {
+  /** Conviene guardar: aquí va la partida de este momento. */
+  alGuardar(partida: Partida): void;
+  alCumplirObjetivo(objetivo: string): void;
+  alVerPalabra(palabra: PalabraDeVocabulario): void;
+  /** Ya se puede jugar otro nivel. `anterior` es el id del que se dejó. */
+  alCambiarDeNivel(id: string, anterior: string): void;
+  alEmpezarCinematica(id: string): void;
+  alTerminarCinematica(id: string): void;
+  /** El nivel terminó hacia un destino que no es un nivel registrado: el host decide. */
+  alSalir(destino: string): void;
+  /** Algo falló después de arrancar: un diálogo, una cinemática o la carga del nivel siguiente. */
+  alFallar(error: ErrorDeEscenario): void;
+}
+
+export interface PiezasDelJuegoEnCurso {
+  readonly fuente: FuenteDeNiveles;
+  /** Carpeta o CDN donde están los assets. `undefined` = junto a cada `nivel.json`. */
+  readonly raizDeAssets?: string;
+  readonly cargador: Cargador;
+  /** El idioma del sitio. */
+  readonly idiomaBase: Idioma;
+  readonly minijuegos: Readonly<Record<string, Minijuego>>;
+  readonly cinematicasEnCodigo: Readonly<Record<string, CinematicaEnCodigo>>;
+  /** `true` si el sistema pide menos movimiento. */
+  readonly conMenosMovimiento: boolean;
+  readonly puertos: PuertosParaJugar;
+  readonly avisos: AvisosDelJuego;
+  /** La partida con la que empieza el juego, ya revisada. `undefined` = partida nueva. */
+  readonly partidaInicial: Partida | undefined;
+}
+
+/** El nivel que se está jugando, con el id por el que se le conoce. */
+interface NivelActual {
+  readonly id: string;
+  readonly enJuego: NivelEnJuego;
+}
+
+export class JuegoEnCurso {
+  private readonly piezas: PiezasDelJuegoEnCurso;
+  /** La partida tal como estaba la última vez que se cambió de nivel: guarda el estado de los otros niveles. */
+  private partidaDeOtrosNiveles: Partida | undefined;
+  /** `undefined` mientras se carga el primer nivel o se pasa de un nivel a otro. */
+  private nivelActual: NivelActual | undefined;
+  /** Id del último nivel que se jugó: es el que se informa mientras se carga el siguiente. */
+  private idDelUltimoNivel = '';
+  private seEstaCargandoUnNivel = false;
+  private estaTerminado = false;
+
+  constructor(piezas: PiezasDelJuegoEnCurso) {
+    this.piezas = piezas;
+    this.partidaDeOtrosNiveles = piezas.partidaInicial;
+  }
+
+  /** Id del nivel que se está jugando. */
+  get idDelNivel(): string {
+    return this.idDelUltimoNivel;
+  }
+
+  /** La partida de este momento: el estado del nivel actual y el de los niveles visitados antes. */
+  leerPartida(): Partida {
+    if (this.nivelActual === undefined) {
+      return actualizarPartida(this.partidaDeOtrosNiveles, this.idDelUltimoNivel, {});
+    }
+    const variables = this.nivelActual.enJuego.leerVariables();
+    return actualizarPartida(this.partidaDeOtrosNiveles, this.nivelActual.id, variables);
+  }
+
+  /**
+   * Pone a jugar un nivel ya leído y validado; el que se estuviera jugando termina.
+   * La promesa termina cuando el nivel ya se puede jugar.
+   */
+  async jugar(porJugar: NivelPorJugar): Promise<void> {
+    const anterior = this.nivelActual;
+    if (anterior !== undefined) {
+      // El estado del nivel que se deja queda en la partida, para restaurarlo si el jugador vuelve.
+      this.partidaDeOtrosNiveles = this.leerPartida();
+      anterior.enJuego.terminar();
+      this.nivelActual = undefined;
+    }
+
+    const pedido = {
+      nivel: porJugar.nivel,
+      ubicacion: {
+        direccionDelNivel: porJugar.direccion,
+        raizDeAssets: this.piezas.raizDeAssets,
+        cargador: this.piezas.cargador,
+      },
+      idiomaBase: this.piezas.idiomaBase,
+      minijuegos: this.piezas.minijuegos,
+      cinematicasEnCodigo: this.piezas.cinematicasEnCodigo,
+      variablesGuardadas: variablesGuardadasDe(this.partidaDeOtrosNiveles, porJugar.id),
+      conMenosMovimiento: this.piezas.conMenosMovimiento,
+    };
+    const enJuego = await jugarNivel(pedido, this.piezas.puertos, this.crearAvisosDelNivel());
+    if (this.estaTerminado) {
+      // El juego se destruyó mientras el nivel cargaba: ya no se juega.
+      enJuego.terminar();
+      return;
+    }
+
+    this.nivelActual = { id: porJugar.id, enJuego };
+    this.idDelUltimoNivel = porJugar.id;
+    if (anterior !== undefined) {
+      this.piezas.avisos.alCambiarDeNivel(porJugar.id, anterior.id);
+      this.piezas.avisos.alGuardar(this.leerPartida());
+    }
+  }
+
+  /**
+   * Cambia de nivel: lo lee, lo valida y lo pone a jugar. `nombre` es un id de `niveles` o la dirección
+   * de un `nivel.json`. Rechaza con `ErrorDeEscenario` si el nivel no se pudo leer o tiene errores;
+   * en ese caso se sigue jugando el nivel que estaba.
+   */
+  async cargar(nombre: string): Promise<void> {
+    if (this.estaTerminado) {
+      throw new ErrorDeEscenario([`no se cargó el nivel "${nombre}": el juego ya se destruyó`]);
+    }
+    if (this.seEstaCargandoUnNivel) {
+      throw new ErrorDeEscenario([`no se cargó el nivel "${nombre}": ya se está cargando otro nivel`]);
+    }
+
+    this.seEstaCargandoUnNivel = true;
+    try {
+      const porJugar = await leerNivelPorJugar(nombre, this.piezas.fuente);
+      if (this.estaTerminado) return;
+      await this.jugar(porJugar);
+    } finally {
+      this.seEstaCargandoUnNivel = false;
+    }
+  }
+
+  /** Reproduce una cinemática del nivel actual a pedido del host. Termina cuando la cinemática terminó. */
+  reproducir(idDeCinematica: string): Promise<void> {
+    if (this.nivelActual === undefined) {
+      return Promise.reject(
+        new ErrorDeEscenario([`no se reprodujo la cinemática "${idDeCinematica}": no hay un nivel en juego`]),
+      );
+    }
+    return this.nivelActual.enJuego.reproducirCinematica(idDeCinematica);
+  }
+
+  /** Salta la cinemática o cierra el diálogo en curso. */
+  interrumpir(): void {
+    if (this.nivelActual !== undefined) {
+      this.nivelActual.enJuego.interrumpir();
+    }
+  }
+
+  /** Termina el nivel en juego y ya no carga ninguno más. Se puede llamar más de una vez. */
+  terminar(): void {
+    if (this.estaTerminado) return;
+    if (this.nivelActual !== undefined) {
+      // Se conserva la última partida, por si el host la pide después de destruir el juego.
+      this.partidaDeOtrosNiveles = this.leerPartida();
+      this.nivelActual.enJuego.terminar();
+      this.nivelActual = undefined;
+    }
+    this.estaTerminado = true;
+  }
+
+  private crearAvisosDelNivel(): AvisosDelNivel {
+    const avisos = this.piezas.avisos;
+    return {
+      alCumplirObjetivo: (objetivo) => {
+        avisos.alCumplirObjetivo(objetivo);
+        avisos.alGuardar(this.leerPartida());
+      },
+      alVerPalabra: (palabra) => avisos.alVerPalabra(palabra),
+      alSalir: (destino) => this.salirHacia(destino),
+      alFallar: (error) => {
+        console.error('[escenario-engine] una escena falló y se dio por terminada:', error);
+        avisos.alFallar(convertirEnErrorDeEscenario(error));
+      },
+      alEmpezarCinematica: (id) => avisos.alEmpezarCinematica(id),
+      alTerminarCinematica: (id) => {
+        avisos.alTerminarCinematica(id);
+        avisos.alGuardar(this.leerPartida());
+      },
+    };
+  }
+
+  /** El nivel terminó hacia un destino: si es otro nivel registrado se carga solo; si no, decide el host. */
+  private salirHacia(destino: string): void {
+    this.piezas.avisos.alGuardar(this.leerPartida());
+
+    const esOtroNivel = Object.hasOwn(this.piezas.fuente.niveles, destino);
+    if (!esOtroNivel) {
+      this.piezas.avisos.alSalir(destino);
+      return;
+    }
+    // Si el jugador vuelve a pisar la salida mientras el nivel siguiente carga, no se carga dos veces.
+    if (this.seEstaCargandoUnNivel) return;
+    void this.cargarOAvisarDeLaFalla(destino);
+  }
+
+  private async cargarOAvisarDeLaFalla(nombre: string): Promise<void> {
+    try {
+      await this.cargar(nombre);
+    } catch (error) {
+      console.error(`[escenario-engine] no se pudo cargar el nivel "${nombre}":`, error);
+      this.piezas.avisos.alFallar(convertirEnErrorDeEscenario(error));
+    }
+  }
+}
+
+function convertirEnErrorDeEscenario(error: unknown): ErrorDeEscenario {
+  if (error instanceof ErrorDeEscenario) return error;
+  if (error instanceof Error) return new ErrorDeEscenario([error.message]);
+  return new ErrorDeEscenario([String(error)]);
+}

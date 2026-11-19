@@ -265,3 +265,15 @@ test('las condiciones de la salida también se revisan', () => {
     'condición "aguacates" usada en salida.flecha.visibleCuando: no está en estado.objetivos ni en estado.variables',
   ]);
 });
+
+test('no se puede sacar del escenario al personaje del jugador', () => {
+  const diagnostico = revisarPasosDeTortu([
+    { tipo: 'desaparece', personaje: 'tommy' },
+    { tipo: 'desaparece', personaje: 'tortu' },
+  ]);
+
+  expect(diagnostico.errores).toEqual([
+    'npcs.tortu.dialogo[0].dice[0]: "desaparece": "tommy" no se puede usar: ' +
+      'es el personaje del jugador y debe seguir en el escenario',
+  ]);
+});

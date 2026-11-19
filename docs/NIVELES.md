@@ -3,12 +3,9 @@
 Referencia para quien dibuja mapas y escribe diálogos. El ejemplo completo está en
 [`ejemplo/niveles/barrio/`](../ejemplo/niveles/barrio).
 
-> **Estado:** este documento describe lo que el motor **ya lee y valida**: `nivel.json`, el mapa, el contenido y los assets.
-> Las cinemáticas se documentan aquí cuando se construya su fase ([`DISENO-3.0.md` §13](DISENO-3.0.md));
-> mientras tanto, su diseño está en `DISENO-3.0.md` §7.
->
-> Todo lo que este documento describe ya se puede jugar: caminar, hablar con personajes y objetos, elegir opciones,
-> minijuegos, efectos, comentarios de las zonas, música y salir.
+> **Estado:** todo lo que este documento describe ya se lee, se valida y se puede jugar: caminar, hablar con
+> personajes y objetos, elegir opciones, minijuegos, efectos, comentarios de las zonas, música, cinemáticas,
+> y pasar de un nivel a otro.
 
 Un nivel es **una carpeta** con estos archivos, que se unen por `id` y por clave:
 
@@ -20,6 +17,9 @@ Un nivel es **una carpeta** con estos archivos, que se unen por `id` y por clave
 | Assets (`img/`, `voz/`, `video/`) y su `assets.json` | **CON QUÉ**: imágenes, voces, sonidos y videos | quien dibuja y graba; `assets.json` lo genera un comando |
 
 Mover algo en Tiled nunca rompe un diálogo, y cambiar un diálogo nunca rompe una posición.
+
+Los dos ejemplos del repositorio se juegan uno tras otro: [`casa`](../ejemplo/niveles/casa) (un nivel sin jugador:
+solo una cinemática de entrada que termina saliendo al barrio) y [`barrio`](../ejemplo/niveles/barrio).
 
 > **Principios de Pardalis que todo nivel respeta:** nada requiere leer (todo texto lleva `audio` o se dice con voz
 > sintetizada, y las opciones llevan `imagen`); nunca castigar (un minijuego sin éxito lleva a un diálogo amable, `siNo`);
@@ -72,6 +72,13 @@ La clase de un objeto de `decorado` dice cómo se dibuja:
 Con la propiedad `id`, el objeto se puede tocar: su diálogo está en `interactivos` del contenido.
 Lo que se dibuja en el plano es exactamente lo que bloquea: no hay ajustes de «huella» a mano.
 
+Si el `asset` de un objeto es una **animación** (archivos numerados, ver §4), se repite sola todo el tiempo:
+sirve para una tele encendida, una bandera o un foco que parpadea.
+
+> **Para que el lugar se vea completo:** la cámara de una cinemática puede girar y acercarse, y entonces deja ver
+> lo que hay más allá del fondo. Cierra el lugar con telones también a los lados (como las paredes de la casa
+> de ejemplo) y haz el suelo un poco más grande que el piso por donde se camina.
+
 ### Clases de la capa `interaccion`
 
 | Clase | Forma | Propiedades |
@@ -85,10 +92,13 @@ Lo que se dibuja en el plano es exactamente lo que bloquea: no hay ajustes de «
 
 - Un objeto de `npcs` con `id: "tortu"` es el personaje `tortu` de `meta.personajes`: de ahí sale su dibujo.
   **Su diálogo es opcional:** sin entrada en `npcs` del contenido, el personaje está en el escenario pero no se puede tocar.
-- Cada entrada de `npcs` e `interactivos` del contenido necesita su objeto en el mapa.
-- Cada `punto` que nombra un paso `camina` debe existir, y quien camina debe estar en el escenario
-  (ser el jugador o un NPC del mapa).
+- Cada entrada de `npcs` del contenido es de alguien que está en el mapa **o que entra después** con un paso
+  `aparece`. Cada entrada de `interactivos` necesita su objeto en el mapa.
+- Cada `punto` que nombran los pasos `camina`, `aparece` y `mira` debe existir, y a quien se mueve, voltea o anima
+  debe estar alguna vez en el escenario (ser el jugador, un NPC del mapa o alguien que entra con `aparece`).
 - El `grupo` de una zona debe existir en `comentarios`, y la sección `salida` del contenido necesita un objeto `salida`.
+- Un plano de cámara apunta a un personaje, a un `punto` o a un objeto del decorado con `id`; y la zona que hace
+  empezar una cinemática debe existir en el mapa.
 
 La clase de un objeto se escribe en el campo **Clase** de Tiled. No se usan tilesets ni objetos de imagen.
 
@@ -100,12 +110,18 @@ La clase de un objeto se escribe en el campo **Clase** de Tiled. No se usan tile
 {
   "meta": { "id": "barrio", "titulo": "El barrio", "personajes": { ... } },
   "jugador": { "personaje": "tommy" },    // opcional: un nivel sin jugador no tiene control libre
-  "mundo": { "pixelesPorMetro": 100, "camara": { "distancia": 8, "altura": 4, "giro": 0 }, "sonidos": { "musica": "mus_barrio" } },
+  "mundo": {
+    "pixelesPorMetro": 100,
+    "camara": { "distancia": 8, "altura": 4, "giro": 0 },
+    "sonidos": { "musica": "mus_barrio" },
+    "planos": { "plano_puesto": { "mira": "tortu", "distancia": 5, "altura": 2.5, "giro": 20 } }
+  },
   "estado": { "objetivos": [...], "variables": [...], "lista": { ... }, "dinero": 100 },
   "secuencias": { "nombre": [ ...pasos ] },
   "npcs": { "tortu": { "dialogo": [...], "alVolver": { ... } } },
   "interactivos": { "comal": { "dialogo": [...] } },
   "comentarios": { "general": [ ...líneas ] },
+  "cinematicas": { "intro": { "inicia": "alEntrar", "pasos": [...] } },
   "salida": { ... }
 }
 ```
@@ -123,8 +139,10 @@ Solo `meta` es obligatoria. **Una clave que el motor no conoce es un error**: as
 ```
 
 - `idioma`: `es` o `en`. Si es distinto del idioma base del sitio, sus líneas pueden traer `trad`.
-- `sprite`: clave de su imagen.
+- `sprite`: clave de su imagen. Si la clave es una **animación**, el personaje la repite todo el tiempo
+  (así respira o parpadea mientras está quieto).
 - Un NPC del mapa con `id: "tortu"` se dibuja con el personaje `tortu`.
+- Los dibujos miran **a la derecha**: para mirar a la izquierda, el motor voltea la figura como un papel.
 
 ### `jugador` y `mundo`
 
@@ -138,7 +156,27 @@ Solo `meta` es obligatoria. **Una clave que el motor no conoce es un error**: as
 | `mundo.camara.giro` | 0 | Grados que la cámara gira alrededor de lo que sigue. 0 = de frente. |
 | `mundo.sonidos.musica` | — | Clave de la música de fondo, que se repite mientras se juega. Si falta el archivo, hay advertencia y el nivel se juega sin música. |
 
-La cámara sigue al jugador. Sus tres campos son los mismos que los de un plano de cinemática.
+| `mundo.planos` | — | Planos de cámara con nombre, para los pasos `camara`. Ver abajo. |
+
+La cámara sigue al jugador; en un nivel sin jugador mira al centro del lugar.
+
+#### Planos de cámara
+
+Un plano dice **a qué** mira la cámara y **desde dónde**:
+
+```json
+"planos": {
+  "plano_puesto": { "mira": "tortu", "distancia": 5, "altura": 2.5, "giro": 20 },
+  "plano_sala":   { "mira": "centro_sala", "distancia": 8, "altura": 3.2 }
+}
+```
+
+- `mira` (obligatorio): el id de un personaje (y entonces la cámara lo sigue si camina), el nombre de un `punto`
+  del mapa, o el `id` de un objeto del decorado.
+- `distancia`, `altura` y `giro` son los mismos de `mundo.camara`, con sus mismos valores por defecto.
+  Un `giro` positivo lleva la cámara hacia la derecha de lo que mira.
+- Para ir de un giro a otro la cámara toma el camino recto entre los dos números: de `350` a `10` daría la vuelta
+  larga. Escribe giros cercanos (por ejemplo `-10` y `10`).
 
 ### `estado`
 
@@ -155,6 +193,7 @@ La cámara sigue al jugador. Sus tres campos son los mismos que los de un plano 
   - los `objetivos` y las `variables`;
   - `dinero`, si el nivel lo trae;
   - `charlas.<id>` por cada NPC e interactivo: el motor la marca sola al hablar con él. No hace falta escribirla.
+  - `vista.<id>` por cada cinemática: el motor la marca sola cuando la cinemática termina.
 - `lista` da el nombre con artículo para `{faltan}` → «Te faltan las tortillas y los aguacates».
 
 ### Diálogo de un NPC o interactivo: ramas
@@ -184,6 +223,44 @@ Gana **la primera rama cuya condición se cumple**. Una rama sin `cuando` siempr
 
 Los textos admiten `{faltan}` (objetivos pendientes, en español) y `{dinero}`. Otro nombre entre llaves es error.
 
+### Pasos de escena
+
+Mueven la cámara y a los personajes. Nacieron para las cinemáticas, pero sirven igual dentro de cualquier diálogo.
+
+| Paso | Ejemplo | Qué hace |
+| --- | --- | --- |
+| A la vez | `{ "juntos": [ ...pasos ] }` | Empieza todos sus pasos al mismo tiempo y sigue cuando el último terminó. |
+| Espera | `{ "espera": 2 }` | Una pausa, en segundos. |
+| Cámara | `{ "camara": "plano_puesto", "duracion": 2 }` | Lleva la cámara a un plano de `mundo.planos`, a un personaje (por su id) o a `"jugador"`. Con `duracion` viaja con suavidad; sin ella es un corte. |
+| Voltear | `{ "mira": "tommy", "hacia": "mama" }` | Voltea a un personaje hacia otro personaje o hacia un `punto` del mapa, con giro de papel. |
+| Animar | `{ "anima": "tommy", "con": "tommy_saluda" }` | Cambia el dibujo de un personaje por una animación (o una imagen) de los assets. Ver abajo. |
+| Aparecer | `{ "aparece": "mama", "en": "puerta" }` | Mete a un personaje al escenario, parado en un `punto`. Si ya estaba, solo lo cambia de lugar. |
+| Desaparecer | `{ "desaparece": "mama" }` | Lo saca del escenario. No se puede sacar al personaje del jugador. |
+| Música | `{ "musica": "mus_fiesta" }` | Cambia la música de fondo. |
+| Sonido | `{ "sonido": "puerta_abre" }` | Toca un sonido corto, sin esperar a que termine. |
+| Fundido | `{ "fundido": "cerrar", "duracion": 1 }` | `cerrar` oscurece la pantalla hasta negro; `abrir` la aclara partiendo de negro. Sin `duracion` es de golpe. |
+| Video | `{ "video": "intro_tele" }` | Reproduce un video a pantalla completa. Con voces, uno por idioma: `{ "video": { "es": "intro_es", "en": "intro_en" } }`. |
+| Salir | `{ "sale": "barrio" }` | Pide terminar el nivel hacia un destino. Ver abajo. |
+
+**Animar.** Hay dos formas:
+
+- Sin `repite`, la animación pasa **una vez**, el paso espera a que termine y el personaje regresa a su dibujo
+  normal (su `sprite`). Sirve para un gesto: saludar, brincar.
+- Con `"repite": true`, el personaje **se queda** con el dibujo nuevo y el paso sigue de inmediato. Sirve para
+  dejarlo en una pose («sentado viendo la tele»); para volver al dibujo normal se anima con su propio `sprite`:
+  `{ "anima": "tommy", "con": "spr_tommy", "repite": true }`. Una imagen fija necesita `repite`
+  (sin él no se alcanzaría a ver, y el validador lo advierte).
+
+El dibujo nuevo puede medir distinto que el `sprite`. Como este, debe mirar a la derecha.
+
+**Salir.** `sale` no corta la escena: el nivel termina cuando el diálogo o la cinemática **acaba**, así que lo
+normal es escribirlo al final. Si el destino es otro nivel que el sitio registró, el motor lo carga solo;
+cualquier otro destino (`"Selector"`, `"Creditos"`) se le avisa al sitio, que decide qué hacer.
+
+**Al terminar una escena** (un diálogo o una cinemática), si la cámara quedó en otro lado regresa sola al jugador
+y, si la pantalla quedó oscura, se aclara: el jugador nunca se queda sin ver. La excepción es una escena que
+termina con `sale`: ahí la pantalla puede quedarse en negro mientras carga el nivel siguiente.
+
 ### Condiciones
 
 | Expresión | Se cumple cuando |
@@ -193,6 +270,7 @@ Los textos admiten `{faltan}` (objetivos pendientes, en español) y `{dinero}`. 
 | `"no tengo limones"` | negación; `no` va delante de cualquier condición |
 | `"objetivosCompletos"` | todos los objetivos están cumplidos |
 | `"charlas.tortu"` | ya se habló con `tortu` |
+| `"vista.intro"` | ya se vio la cinemática `intro` |
 | `["a", "b"]` | se cumplen `a` **y** `b` |
 | `{ "alguno": ["a", "b"] }` | se cumple `a` **o** `b` |
 
@@ -216,6 +294,48 @@ interrumpe un diálogo, y su globo no detiene al jugador: puede seguir caminando
 "comentarios": { "general": [ { "dice": "tommy", "texto": "Wow!", "trad": "¡Qué colorido!", "audio": "vo_wow" } ] }
 ```
 
+### `cinematicas`
+
+Una cinemática es una escena que se reproduce sola: mientras dura, el jugador no controla nada y se ven las
+franjas negras de cine. Es una lista de pasos, los mismos de los diálogos.
+
+```jsonc
+"cinematicas": {
+  "intro": {
+    "inicia": "alEntrar",
+    "cuando": "no vista.intro",   // opcional
+    "saltable": true,             // opcional
+    "pasos": [
+      { "fundido": "abrir", "duracion": 1 },
+      { "juntos": [ { "aparece": "mama", "en": "puerta" }, { "sonido": "puerta_abre" } ] },
+      { "camina": "junto_al_sillon", "quien": "mama" },
+      { "dice": "mama", "texto": "¿Me traes tortillas, mijo?", "audio": "vo_mama_tortillas" },
+      { "sale": "barrio" }
+    ]
+  }
+}
+```
+
+| Campo | Por defecto | Qué es |
+| --- | --- | --- |
+| `inicia` | — (obligatorio) | Qué la hace empezar: `"alEntrar"` (al entrar al nivel), `{ "zona": "nombre" }` (cuando el jugador entra a esa zona del mapa), `{ "objetivo": "nombre" }` (cuando se cumple ese objetivo) o `"manual"` (solo cuando el sitio la pide). |
+| `cuando` | `"no vista.<id>"` | Solo empieza si se cumple. Sin `cuando`, **se ve una sola vez**. |
+| `saltable` | `true` | Si aparece el botón de saltar. |
+| `pasos` | — | Los pasos de la escena. En vez de `pasos` puede llevar `"codigo": "nombre"`: una cinemática que el sitio escribió en código. |
+
+- **No puede llevar** `elige` ni `juego` (ni directo, ni dentro de `juntos` o de una secuencia): necesitan al jugador.
+- **Nunca interrumpe un diálogo:** si le toca empezar a media conversación, espera a que acabe. Varias en espera
+  se reproducen en orden.
+- **Saltar** no la corta: la pasa en modo rápido. Cada paso que falta deja su resultado final al instante
+  (los personajes en su destino, lo que hagan `pon`, `aparece`, `musica` y `sale`); las líneas, los sonidos,
+  los efectos y los videos se omiten. Así el nivel queda igual que si se hubiera visto completa.
+- Al terminar, el motor marca `vista.<id>`. Si la partida se guarda a media cinemática, al volver empieza de nuevo.
+- Las líneas (`dice`) se cierran solas al acabar la voz, o con un toque.
+- Con «movimiento reducido» activo en el dispositivo, los viajes de cámara se vuelven cortes.
+
+La **casa de ejemplo** es un nivel hecho solo de una cinemática: no tiene `jugador`, su `intro` empieza
+`alEntrar` y termina con `{ "sale": "barrio" }`.
+
 ### `salida`
 
 ```json
@@ -228,7 +348,11 @@ interrumpe un diálogo, y su globo no detiene al jugador: puede seguir caminando
 ```
 
 El jugador intenta salir al entrar al área de la salida (caminando o tocándola). Si `requiere` no se cumple,
-se ejecuta `siBloqueada`; si se cumple, el destino llega al host con el evento `salida`.
+se ejecuta `siBloqueada`. Si se cumple, el nivel termina hacia `destino`: si es otro nivel que el sitio registró,
+el motor lo carga solo; si no, el destino le llega al sitio con el evento `salida`.
+
+Cada nivel guarda su propio estado. Al volver a un nivel ya visitado se restauran sus variables
+(objetivos cumplidos, charlas, cinemáticas vistas) y el jugador aparece en su inicio.
 
 Una flecha que sube y baja señala la salida. Aparece cuando se cumple `flecha.visibleCuando`, o siempre si la
 salida no lo dice. `flecha.texto` es opcional y solo debe usar palabras que la niña o el niño ya vio.
@@ -254,7 +378,7 @@ niveles/
 | Imagen | `.svg` (preferido), `.png`, `.webp` | Un SVG debe traer `viewBox` (o `width` y `height`): de ahí sale su tamaño. |
 | Animación | `clave_1.svg`, `clave_2.svg`… | Dos o más imágenes numeradas se agrupan solas en la animación `clave`, en orden numérico. Todos los cuadros deben medir lo mismo. |
 | Audio | `.mp3`, `.ogg`, `.wav`, `.m4a` | Voces, sonidos y música. |
-| Video | `.mp4` | H.264 + AAC, que funciona en iPad y en Chrome. |
+| Video | `.mp4` | H.264 + AAC, que funciona en iPad y en Chrome. Suena junto con la música que esté puesta: si el video trae su propio sonido, conviene que el nivel no tenga música en ese momento. |
 
 Las subcarpetas (`img/`, `voz/`…) son para ordenar: no cambian la clave. Por eso **dos archivos de una carpeta
 de assets no pueden llamarse igual**, aunque estén en subcarpetas distintas o tengan otra extensión.
@@ -282,6 +406,8 @@ El generador avisa si un SVG enlaza archivos externos (una foto, una fuente): al
 
 - Una **imagen** que el contenido o el mapa nombran y no existe es **error**: el nivel no puede dibujarse.
 - Una **voz** que no existe es **advertencia**: se usa voz sintetizada, así que se puede escribir el nivel antes de grabar.
+- La animación de un paso `anima` y un **video** que no existen son **error**; un **sonido** o una **música**
+  que faltan son **advertencia**: solo no suenan.
 - Usar una clave del tipo equivocado (una imagen donde va un audio) es error.
 - Si la misma clave está en dos carpetas de `assets`, **gana la primera de la lista** y hay advertencia.
   Así un nivel puede reemplazar a propósito un asset común.
@@ -289,8 +415,11 @@ El generador avisa si un SVG enlaza archivos externos (una foto, una fuente): al
 ## 5. Validar
 
 ```bash
-bunx escenario-engine validar ruta/al/nivel.json --minijuegos Tortilleria,Fruteria
+bunx escenario-engine validar ruta/al/nivel.json --minijuegos Tortilleria,Fruteria --cinematicas intro
 ```
+
+`--minijuegos` y `--cinematicas` son los nombres que el sitio registró; sin ellos, los pasos `juego` y las
+cinemáticas con `codigo` no se revisan.
 
 Corrige hasta tener **cero errores**; el comando termina con código 1 si queda alguno. Las advertencias se revisan,
 pero no bloquean. Cada mensaje dice dónde está el problema, con la ruta dentro del contenido:
@@ -310,14 +439,26 @@ Los problemas del mapa nombran el objeto de Tiled por su número y su nombre:
 ✗ camina "frente_tortileria" en npcs.tortu.dialogo[1].dice[0]: no hay un punto con ese nombre en el mapa
 ```
 
+Y los de las cinemáticas y los pasos de escena:
+
+```
+✗ cinematicas.intro.pasos[2]: una cinemática no puede llevar "elige", que necesita al jugador
+✗ cinematicas.intro.pasos[0]: "camara": "plano_sla" no es un plano de mundo.planos, ni un personaje, ni "jugador"
+✗ cinematicas.intro.pasos[3]: "desaparece": "tommy" no se puede usar: es el personaje del jugador y debe seguir en el escenario
+✗ mundo.planos.plano_sala.mira: "sillon" no es un personaje, ni un punto del mapa, ni un objeto del decorado con id
+⚠ cinematicas.intro.pasos[1]: "tommy_sentado" es una imagen fija y el paso no lleva "repite": no se alcanzará a ver; agrega "repite": true para dejar al personaje con ese dibujo
+```
+
 ### Cómo se juega
 
 | Para… | Con dedo o ratón | Con teclado |
 | --- | --- | --- |
 | Caminar | Tocar un lugar del piso | Mantener oprimida `W` `A` `S` `D` o una flecha |
 | Hablar con alguien o usar un objeto | Tocarlo: el jugador camina hasta ahí | — |
+| Hablar con quien se tiene a la mano | — | `E`, `Enter` o la barra espaciadora |
 | Seguir un diálogo | Tocar la pantalla | `Enter` o la barra espaciadora |
 | Elegir una opción | Tocar su tarjeta | Las teclas `1` a `9` |
+| Saltar una cinemática | Tocar el botón de saltar | — |
 
 ### Verlo en la demo
 
@@ -325,9 +466,9 @@ Los problemas del mapa nombran el objeto de Tiled por su número y su nombre:
 bun ejemplo/servidor.ts     # y abrir http://localhost:3000
 ```
 
-La demo carga `ejemplo/niveles/barrio`. Para probar otro nivel, cambia la dirección en `ejemplo/demo.ts`.
-
-`--minijuegos` es opcional: sin él, los pasos `juego` no se revisan.
+La demo empieza en `ejemplo/niveles/casa` y sigue en `ejemplo/niveles/barrio`. Para entrar directo a un nivel,
+nómbralo en la dirección: `http://localhost:3000/?nivel=barrio`. Para agregar un nivel, regístralo en
+`ejemplo/demo.ts`.
 
 Desde código (por ejemplo, en una prueba del host):
 
@@ -359,4 +500,4 @@ Para quien trae niveles de la versión anterior (no hay conversión automática)
 | `zonaComentario` con `cooldown`; `enfoqueCamara`; `puntoInteraccion` | `zona` con `grupo` y `espera`; los otros dos no existen. |
 | Todo NPC del mapa necesitaba diálogo | El diálogo es opcional. |
 | `velocidadX`/`velocidadY` en píxeles; cámara `follow`/`rails`/`pan` | `jugador.velocidad` en metros por segundo; `mundo.camara` con `distancia`, `altura` y `giro`. |
-| `jugador.animaciones`, `radioAviso`, `mundo.fondo`, `mundo.sonidos`… | Todavía no existen en la 3.0; se definen cuando se construya lo que los usa. |
+| `jugador.animaciones`, `radioAviso`, `mundo.fondo`… | No existen en la 3.0. Un personaje se anima con un `sprite` que sea animación y con el paso `anima`. |

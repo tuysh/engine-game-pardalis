@@ -1,4 +1,4 @@
-// El control libre del jugador, con la cámara siguiéndolo. Hay dos formas de moverlo:
+// El control libre del jugador. Hay dos formas de moverlo:
 //   - tocar (o hacer clic en) un lugar del piso: su personaje camina hasta ahí;
 //   - mantener oprimida una dirección en el teclado: camina hacia ese lado mientras se oprime.
 //
@@ -7,24 +7,20 @@
 // hasta que el jugador la suelte y oprima otra vez.
 
 import { avanzarEnDireccion, avanzarHacia } from '../dominio/caminar.ts';
-import type { AjustesDeCamara } from '../dominio/contenido.ts';
 import type { Punto } from '../dominio/geometria.ts';
 import { ajustarAlPiso } from '../dominio/terreno.ts';
 import type { Terreno } from '../dominio/terreno.ts';
-import type { Escenario } from '../puertos/escenario.ts';
 import type { Reparto } from './reparto.ts';
 
 const SIN_DIRECCION: Punto = { x: 0, y: 0 };
 
 /** Lo que una exploración necesita para funcionar. */
 export interface PiezasDeExploracion {
-  readonly escenario: Escenario;
   readonly reparto: Reparto;
   readonly terreno: Terreno;
   /** Id del personaje que controla el jugador. Ya debe estar en el reparto. */
   readonly idDelJugador: string;
   readonly velocidadEnMetrosPorSegundo: number;
-  readonly camara: AjustesDeCamara;
 }
 
 export class Exploracion {
@@ -42,8 +38,6 @@ export class Exploracion {
 
   constructor(piezas: PiezasDeExploracion) {
     this.piezas = piezas;
-    // Al empezar, la cámara aparece ya sobre el jugador, sin recorrido.
-    piezas.escenario.enfocar(this.posicion, piezas.camara, { deInmediato: true });
   }
 
   get posicion(): Punto {
@@ -92,8 +86,6 @@ export class Exploracion {
     } else if (this.destino !== undefined) {
       this.darUnPaso(this.destino, segundos);
     }
-    // La cámara sigue al jugador siempre, también cuando lo mueve un diálogo y no el propio jugador.
-    this.piezas.escenario.enfocar(this.posicion, this.piezas.camara, { deInmediato: false });
   }
 
   private darUnPaso(destino: Punto, segundos: number): void {

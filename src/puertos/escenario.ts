@@ -75,13 +75,36 @@ export type Toque =
   | { readonly tipo: 'decorado'; readonly id: string };
 
 export interface Escenario {
-  /** Arma la escenografía. Termina cuando sus imágenes ya cargaron. Reemplaza la que hubiera. */
+  /**
+   * Arma la escenografía. Termina cuando sus imágenes ya cargaron.
+   * Reemplaza la que hubiera y saca a los personajes que estaban: es un lugar nuevo.
+   */
   montar(escenografia: Escenografia): Promise<void>;
 
-  /** Pone un personaje de papel en el escenario. Termina cuando su imagen ya cargó. */
+  /**
+   * Pone un personaje de papel en el escenario. Termina cuando su imagen ya cargó.
+   * Si su imagen es una animación, se repite sin parar (sirve para que alguien respire o parpadee).
+   */
   agregarPersonaje(personaje: PersonajeDeEscena): Promise<void>;
+  /** Saca a un personaje del escenario. Si no está, no hace nada. */
+  quitarPersonaje(id: string): void;
   moverPersonaje(id: string, posicion: Punto): void;
   voltearPersonaje(id: string, mira: Mira): void;
+
+  /**
+   * Cambia el dibujo de un personaje por otra imagen o animación. Termina cuando el dibujo nuevo ya se ve.
+   * Una animación empieza en su primer cuadro; con `repite` vuelve a empezar al terminar y, sin él,
+   * se queda en su último cuadro. Si el personaje no está en el escenario, no hace nada.
+   */
+  ponerDibujoDePersonaje(id: string, imagen: ImagenDeEscena, opciones: { readonly repite: boolean }): Promise<void>;
+
+  /**
+   * Descarga por adelantado imágenes que se usarán más tarde (las animaciones de una cinemática,
+   * un personaje que todavía no entra), para que aparezcan sin demora cuando les toque.
+   * Se llama una vez por lugar, cuando ya tiene su escenografía y sus personajes: lo que el escenario
+   * había descargado para el lugar anterior y este no usa, se libera aquí.
+   */
+  precargar(imagenes: readonly ImagenDeEscena[]): Promise<void>;
 
   /**
    * Dónde se ve en la pantalla el punto justo encima de la cabeza de un personaje: ahí apunta su globo.
@@ -99,10 +122,10 @@ export interface Escenario {
   reproducirEfecto(nombre: string, punto: Punto): void;
 
   /**
-   * Apunta la cámara a un punto del piso. Con `deInmediato` la cámara salta ahí;
-   * sin él, se acerca con suavidad en los cuadros siguientes.
+   * Coloca la cámara: apunta a un punto del piso desde donde dicen los ajustes. La cámara salta ahí;
+   * quien quiera un movimiento suave llama en cada cuadro con un encuadre un poco más cerca del final.
    */
-  enfocar(punto: Punto, camara: AjustesDeCamara, opciones: { readonly deInmediato: boolean }): void;
+  enfocar(punto: Punto, camara: AjustesDeCamara): void;
 
   /** Dibuja un cuadro. `segundos` es el tiempo desde el cuadro anterior. */
   dibujar(segundos: number): void;

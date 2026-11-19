@@ -11,8 +11,12 @@ export function revisarPasoDeEscena(paso: Paso, ruta: string, revision: Revision
     case 'mira':
     case 'anima':
     case 'aparece':
+      revisarPersonaje(paso.personaje, ruta, revision);
+      break;
+
     case 'desaparece':
       revisarPersonaje(paso.personaje, ruta, revision);
+      revisarQueNoSeaElJugador(paso.personaje, ruta, revision);
       break;
 
     case 'camara':
@@ -27,6 +31,16 @@ export function revisarPasoDeEscena(paso: Paso, ruta: string, revision: Revision
 function revisarPersonaje(personaje: string, ruta: string, revision: Revision): void {
   if (!Object.hasOwn(revision.contenido.meta.personajes, personaje)) {
     revision.diagnostico.errores.push(`${ruta}: el personaje "${personaje}" no existe en meta.personajes`);
+  }
+}
+
+/** El control libre necesita a su personaje en el escenario todo el tiempo. */
+function revisarQueNoSeaElJugador(personaje: string, ruta: string, revision: Revision): void {
+  const jugador = revision.contenido.jugador;
+  if (jugador !== undefined && jugador.personaje === personaje) {
+    revision.diagnostico.errores.push(
+      `${ruta}: "desaparece": "${personaje}" no se puede usar: es el personaje del jugador y debe seguir en el escenario`,
+    );
   }
 }
 

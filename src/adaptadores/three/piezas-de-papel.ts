@@ -7,10 +7,13 @@
 //   altura                    →   y   (0 = el piso)
 //
 // Nada lleva luces: todo usa `MeshBasicMaterial`, que muestra la imagen con sus colores tal cual.
+// Las texturas no son de las piezas: son del almacén (almacen-de-texturas.ts), que es quien las libera.
 
 import { CircleGeometry, DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three';
-import type { Texture } from 'three';
+import type { Object3D, Texture } from 'three';
+import { centroDeRectangulo } from '../../dominio/forma.ts';
 import type { Punto, Rectangulo } from '../../dominio/geometria.ts';
+import type { DecoradoDeEscena } from '../../puertos/escenario.ts';
 
 /**
  * Orden en que se dibujan las piezas. Lo que está pegado al piso va siempre antes que lo que está parado;
@@ -98,6 +101,20 @@ export function crearTelon(textura: Texture, desde: Punto, hasta: Punto, altoEnM
   return telon;
 }
 
+/** La pieza de un objeto del decorado, según su clase: pintada en el piso, parada o colgada en lo alto. */
+export function crearPiezaDeDecorado(objeto: DecoradoDeEscena, textura: Texture): Mesh {
+  if (objeto.clase === 'plano') {
+    return crearHojaAcostada(textura, objeto.huella, ORDEN_DE_LO_PINTADO_EN_EL_PISO);
+  }
+
+  // `parado` y `colgado` son hojas paradas en el centro de su huella; lo colgado, además, va en lo alto.
+  const hoja = crearHojaParada(textura, objeto.imagen);
+  const centro = centroDeRectangulo(objeto.huella);
+  const altura = objeto.clase === 'colgado' ? objeto.alturaEnMetros : 0;
+  hoja.position.set(centro.x, altura, centro.y);
+  return hoja;
+}
+
 /** La sombra de un personaje: un óvalo oscuro y transparente, pegado al piso bajo sus pies. */
 export function crearSombra(anchoDelPersonajeEnMetros: number): Mesh {
   const radio = (anchoDelPersonajeEnMetros * PROPORCION_DE_ANCHO_DE_LA_SOMBRA) / 2;
@@ -118,15 +135,13 @@ export function crearSombra(anchoDelPersonajeEnMetros: number): Mesh {
   return sombra;
 }
 
-/** Libera la memoria de video de una pieza: su forma, su material y su textura. */
-export function liberarPieza(pieza: Mesh): void {
+/** Libera la memoria de video de una pieza: su forma y su material. Su textura es del almacén y no se toca. */
+export function liberarPieza(pieza: Object3D): void {
+  if (!(pieza instanceof Mesh)) return;
   pieza.geometry.dispose();
   const material = pieza.material;
   // Todas las piezas de este archivo usan un solo `MeshBasicMaterial`.
   if (material instanceof MeshBasicMaterial) {
-    if (material.map !== null) {
-      material.map.dispose();
-    }
     material.dispose();
   }
 }

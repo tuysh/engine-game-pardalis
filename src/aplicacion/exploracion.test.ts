@@ -11,8 +11,6 @@ const TERRENO: Terreno = {
   obstaculos: [{ x: 4.5, y: 1.5, ancho: 1, alto: 1 }],
 };
 
-const CAMARA = { distanciaEnMetros: 8, alturaEnMetros: 4, giroEnGrados: 0 };
-
 const IMAGEN: ImagenDeEscena = {
   direcciones: ['spr_tommy.svg'],
   cuadrosPorSegundo: 0,
@@ -28,21 +26,13 @@ async function crearExploracion(): Promise<{ escenario: EscenarioDeMemoria; expl
   const reparto = new Reparto(escenario);
   await reparto.agregar({ id: 'tommy', imagen: IMAGEN, posicion: { x: 2, y: 3 }, mira: 'derecha', sePuedeTocar: false });
   const exploracion = new Exploracion({
-    escenario,
     reparto,
     terreno: TERRENO,
     idDelJugador: 'tommy',
     velocidadEnMetrosPorSegundo: 2,
-    camara: CAMARA,
   });
   return { escenario, exploracion };
 }
-
-test('al empezar, la cámara ya está sobre el jugador', async () => {
-  const { escenario } = await crearExploracion();
-
-  expect(escenario.puntoEnfocado).toEqual({ x: 2, y: 3 });
-});
 
 test('sin destino, el jugador no se mueve', async () => {
   const { escenario, exploracion } = await crearExploracion();
@@ -53,7 +43,7 @@ test('sin destino, el jugador no se mueve', async () => {
   expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 2, y: 3 });
 });
 
-test('camina hacia donde se le manda a su velocidad, y la cámara lo sigue', async () => {
+test('camina hacia donde se le manda, a su velocidad', async () => {
   const { escenario, exploracion } = await crearExploracion();
 
   exploracion.irA({ x: 8, y: 3 });
@@ -62,7 +52,6 @@ test('camina hacia donde se le manda a su velocidad, y la cámara lo sigue', asy
   expect(exploracion.estaCaminando).toBe(true);
   expect(exploracion.posicion).toEqual({ x: 3, y: 3 });
   expect(escenario.personajes.get('tommy')?.posicion).toEqual({ x: 3, y: 3 });
-  expect(escenario.puntoEnfocado).toEqual({ x: 3, y: 3 });
 });
 
 test('al llegar se detiene justo en el destino', async () => {

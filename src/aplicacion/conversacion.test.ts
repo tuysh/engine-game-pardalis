@@ -44,6 +44,21 @@ function crearAccionesFalsas(bitacora: string[]): AccionesDePaso {
     async jugarMinijuego() {
       return { exito: true };
     },
+    // Los pasos de escena no aparecen en estas pruebas: sus acciones no hacen nada.
+    colocar() {},
+    async esperar() {},
+    async moverCamara() {},
+    cortarCamara() {},
+    mirar() {},
+    async animar() {},
+    async aparecer() {},
+    desaparecer() {},
+    ponerMusica() {},
+    tocarSonido() {},
+    async fundir() {},
+    dejarFundido() {},
+    async reproducirVideo() {},
+    pedirSalida() {},
   };
 }
 

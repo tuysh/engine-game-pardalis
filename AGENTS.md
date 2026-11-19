@@ -344,6 +344,7 @@ Para validar un nivel y regenerar un manifiesto de assets (el formato está en [
 
 ```bash
 bun src/cli.ts validar ejemplo/niveles/barrio/nivel.json --minijuegos Tortilleria
+bun src/cli.ts validar ejemplo/niveles/casa/nivel.json
 bun src/cli.ts assets ejemplo/niveles/barrio
 ```
 
@@ -352,7 +353,7 @@ Si agregas, quitas o renombras un archivo de `ejemplo/niveles/`, regenera su `as
 Para ver el motor funcionando en el navegador:
 
 ```bash
-bun ejemplo/servidor.ts     # la demo, en http://localhost:3000
+bun ejemplo/servidor.ts     # la demo, en http://localhost:3000 (con ?nivel=barrio entra directo a ese nivel)
 ```
 
 Los comandos de demo se documentan aquí conforme se agreguen.

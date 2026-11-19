@@ -9,10 +9,10 @@ export interface PalabraMostrada {
   readonly es: string;
 }
 
-/** Dato del evento `nivel`. `anterior` es `null` en el primer nivel. */
+/** Dato del evento `nivel`: el id del nivel que ya se puede jugar y el del que se dejó. */
 export interface CambioDeNivel {
   readonly id: string;
-  readonly anterior: string | null;
+  readonly anterior: string;
 }
 
 /** Dato del evento `cinematica`. */
@@ -48,9 +48,16 @@ export interface Juego {
   on<Evento extends NombreDeEvento>(evento: Evento, funcion: (dato: EventosDeJuego[Evento]) => void): () => void;
   /** Devuelve la partida actual como objeto plano. */
   guardar(): Partida;
-  /** Cambia de nivel reutilizando el mismo lienzo. Termina cuando el nivel ya se puede jugar. */
+  /**
+   * Cambia de nivel reutilizando el mismo lienzo. `nivel` es un id de `niveles` o la dirección de un `nivel.json`.
+   * Termina cuando el nivel ya se puede jugar. Rechaza con `ErrorDeEscenario` si el nivel no se pudo leer
+   * o tiene errores; entonces se sigue jugando el nivel que estaba.
+   */
   cargar(nivel: string): Promise<void>;
-  /** Lanza una cinemática del nivel actual. Termina cuando la cinemática terminó. */
+  /**
+   * Lanza una cinemática del nivel actual, aunque ya se haya visto. Termina cuando la cinemática terminó
+   * (si hay un diálogo en curso, espera a que acabe). Rechaza con `ErrorDeEscenario` si el nivel no la tiene.
+   */
   reproducir(idDeCinematica: string): Promise<void>;
   /** Salta la cinemática o cierra el diálogo en curso. */
   interrumpir(): void;
