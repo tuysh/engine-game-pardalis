@@ -12,3 +12,8 @@ El diseño acordado de la API está en [`docs/DISENO-3.0.md`](docs/DISENO-3.0.md
 - `bunx <paquete>`, no `npx`.
 
 Node solo se usa para comprobar que el paquete ya construido (`dist/`) también corre ahí.
+
+## Commits
+
+- Deja la línea `Co-Authored-By` de Claude, pero **no** agregues la línea `Claude-Session:`
+  ni ninguna otra URL de la sesión.
