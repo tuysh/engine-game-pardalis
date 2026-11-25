@@ -193,7 +193,7 @@ encima del escenario. Puede llenarlo con lo que quiera: un componente, un `<canv
 
 ```js
 /** @type {import('@pardalis/escenario-engine').Minijuego} */
-export function Tortilleria({ elemento, config, estado, audio, assets, senal }) {
+export function Tortilleria({ elemento, config, estado, audio, assets, azar, senal }) {
   return new Promise((terminar) => {
     // ...dibujar dentro de `elemento`...
     // terminar({ exito: true, otorgar: { tortillas: true } });
@@ -206,7 +206,8 @@ export function Tortilleria({ elemento, config, estado, audio, assets, senal }) 
 | `elemento` | `HTMLElement` vacío. El motor lo crea antes y lo borra después. Está en el DOM normal, así que le aplican los estilos del host. |
 | `config` | Lo que venga en el paso `{ "juego": ..., "config": ... }`. |
 | `estado` | Solo lectura: `obtener(nombre)`, `cumple(condicion)`. Para cambiarlo se usa `otorgar` en el resultado. |
-| `audio` | `tocar(clave)` y `decir(texto, idioma, clave?)`. |
+| `audio` | `tocar(clave)`, `tocarTono(frecuenciaEnHertz, duracionEnSegundos)` (un «ding» sin archivo) y `decir(texto, idioma, clave?)`. `decir` devuelve una promesa que termina cuando acaba de hablar: `await audio.decir('¡Lechuga!', 'es'); await audio.decir('lettuce!', 'en');`. Solo se dice una frase a la vez: una frase nueva **corta** la que estuviera sonando. |
+| `azar` | `azar()` entrega un número de 0 a 1, como `Math.random`, pero sale del azar del motor: con la opción `semilla`, el minijuego también es repetible. |
 | `assets` | `url(clave)` para usar imágenes del manifiesto. |
 | `senal` | `AbortSignal`: se dispara si el host destruye el juego. El minijuego debe limpiar lo suyo. |
 

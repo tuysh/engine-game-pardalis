@@ -109,6 +109,7 @@ function crearPiezasDeEscena(base: BaseDelNivel): PiezasDeEscena {
     interfaz: puertos.interfaz,
     audio: puertos.audio,
     reloj: puertos.reloj,
+    azar: puertos.azar,
     reparto: base.reparto,
     estado: base.estado,
     minijuegos: pedido.minijuegos,

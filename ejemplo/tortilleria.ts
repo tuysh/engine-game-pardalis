@@ -41,7 +41,8 @@ export const Tortilleria: Minijuego = ({ elemento, config, audio, senal }) => {
           // Cada tortilla dice una de las palabras del nivel, en inglés.
           const palabra = palabras[i % palabras.length];
           if (palabra !== undefined) {
-            audio.decir(palabra, 'en');
+            // No se espera a que termine de decirla: se puede voltear otra tortilla mientras tanto.
+            void audio.decir(palabra, 'en');
           }
           if (tortillasVolteadas === TORTILLAS_POR_VOLTEAR) {
             terminarConExito();

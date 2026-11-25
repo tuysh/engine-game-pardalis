@@ -17,6 +17,7 @@ function crearEscena(minijuegos: Record<string, Minijuego>) {
   const interfaz = new InterfazDeMemoria();
   const audio = new AudioDeMemoria();
   const avisos: string[] = [];
+  const reloj = new RelojDeMemoria();
   const estadoInicial = crearEstadoDeNivel({ objetivos: ['tortillas'], variables: ['globo'], lista: {} }, { globo: 'rosa' });
   const piezas: PiezasDeEscena = {
     contenido: {
@@ -35,16 +36,17 @@ function crearEscena(minijuegos: Record<string, Minijuego>) {
     escenario,
     interfaz,
     audio,
-    reloj: new RelojDeMemoria(),
+    reloj,
     reparto: new Reparto(escenario),
     estado: new EstadoEnJuego(estadoInicial, () => {}),
     minijuegos,
     direccionDeAsset: (clave) => (clave === 'comal' ? '/assets/img/comal.svg' : undefined),
+    azar: () => 0.25,
     alVerPalabra: () => {},
     alEmpezarMinijuego: (nombre) => avisos.push(`inicio ${nombre}`),
     alTerminarMinijuego: (nombre) => avisos.push(`fin ${nombre}`),
   };
-  return { piezas, interfaz, audio, avisos };
+  return { piezas, interfaz, audio, avisos, reloj };
 }
 
 const SIN_INTERRUMPIR = new AbortController().signal;
@@ -199,4 +201,84 @@ test('avisa cuando el minijuego empieza y cuando termina, también si falla', as
   await jugarMinijuego({ nombre: 'Roto', config: undefined }, SIN_INTERRUMPIR, piezas);
 
   expect(avisos).toEqual(['inicio Tortilleria', 'fin Tortilleria', 'inicio Roto', 'fin Roto']);
+});
+
+test('decir termina cuando la voz acaba: dos frases se encadenan con await', async () => {
+  const Verduras: Minijuego = async ({ audio }) => {
+    await audio.decir('¡Lechuga!', 'es');
+    await audio.decir('lettuce!', 'en');
+    return { exito: true };
+  };
+  const { piezas, audio, reloj } = crearEscena({ Verduras });
+
+  const juego = jugarMinijuego({ nombre: 'Verduras', config: undefined }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(0);
+  // La segunda frase espera a que termine la primera.
+  expect(audio.frasesDichas).toEqual([{ texto: '¡Lechuga!', idioma: 'es', direccionDeLaVoz: undefined }]);
+
+  audio.terminarDeHablar();
+  await reloj.avanzar(0);
+  expect(audio.frasesDichas).toHaveLength(2);
+  audio.terminarDeHablar();
+
+  expect(await juego).toEqual({ exito: true });
+});
+
+test('una frase nueva corta la que estaba sonando, y la promesa de la que se cortó termina', async () => {
+  let primeraTermino = false;
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const Verduras: Minijuego = ({ audio }) => {
+    void audio.decir('una frase muy larga', 'es').then(() => {
+      primeraTermino = true;
+    });
+    void audio.decir('¡Ya!', 'es');
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, audio, reloj } = crearEscena({ Verduras });
+
+  const juego = jugarMinijuego({ nombre: 'Verduras', config: undefined }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(0);
+
+  expect(primeraTermino).toBe(true);
+  expect(audio.hayAlguienHablando).toBe(true);
+  terminar({ exito: true });
+  await juego;
+  // Al cerrarse el minijuego, la voz se calla.
+  expect(audio.hayAlguienHablando).toBe(false);
+});
+
+test('si la voz sintetizada nunca avisa que terminó, decir termina de todos modos', async () => {
+  let termino = false;
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const Verduras: Minijuego = ({ audio }) => {
+    void audio.decir('lettuce!', 'en').then(() => {
+      termino = true;
+    });
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Verduras });
+
+  const juego = jugarMinijuego({ nombre: 'Verduras', config: undefined }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(10);
+
+  expect(termino).toBe(true);
+  terminar({ exito: true });
+  await juego;
+});
+
+test('el minijuego recibe el azar del motor y puede tocar tonos sin archivo', async () => {
+  const numeros: number[] = [];
+  const Rascadita: Minijuego = async ({ azar, audio }) => {
+    numeros.push(azar());
+    audio.tocarTono(880, 0.2);
+    audio.tocarTono(-1, 0.2);
+    return { exito: true };
+  };
+  const { piezas, audio } = crearEscena({ Rascadita });
+
+  await jugarMinijuego({ nombre: 'Rascadita', config: undefined }, SIN_INTERRUMPIR, piezas);
+
+  expect(numeros).toEqual([0.25]);
+  // El tono con una frecuencia que no sirve se ignora con una advertencia.
+  expect(audio.tonosTocados).toEqual([880]);
 });

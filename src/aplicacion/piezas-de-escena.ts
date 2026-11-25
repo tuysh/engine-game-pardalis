@@ -6,6 +6,7 @@ import type { Punto } from '../dominio/geometria.ts';
 import type { Idioma } from '../dominio/idioma.ts';
 import type { PalabraDeVocabulario } from '../dominio/paso.ts';
 import type { Audio } from '../puertos/audio.ts';
+import type { Azar } from '../puertos/azar.ts';
 import type { Escenario } from '../puertos/escenario.ts';
 import type { Interfaz } from '../puertos/interfaz.ts';
 import type { Minijuego } from '../puertos/minijuego.ts';
@@ -25,6 +26,8 @@ export interface PiezasDeEscena {
   readonly interfaz: Interfaz;
   readonly audio: Audio;
   readonly reloj: Reloj;
+  /** El azar del juego. Lo reciben los minijuegos, para que una `semilla` los haga repetibles también a ellos. */
+  readonly azar: Azar;
   readonly reparto: Reparto;
   /** El estado del nivel. Los minijuegos lo leen; solo el ejecutor de pasos lo cambia. */
   readonly estado: EstadoEnJuego;

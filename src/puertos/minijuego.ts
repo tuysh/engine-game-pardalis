@@ -4,16 +4,30 @@
 
 import type { CambiosDeEstado, LectorDeEstado } from '../dominio/estado.ts';
 import type { Idioma } from '../dominio/idioma.ts';
+import type { Azar } from './azar.ts';
 
 /** El audio del motor, visto desde un minijuego. */
 export interface AudioParaMinijuego {
   /** Toca un sonido del manifiesto de assets. */
   tocar(clave: string): void;
   /**
+   * Toca una nota corta hecha por el dispositivo, sin archivo: sirve para un «ding» sin grabar nada.
+   * Ejemplo: `tocarTono(880, 0.2)` es un la agudo de dos décimas de segundo.
+   */
+  tocarTono(frecuenciaEnHertz: number, duracionEnSegundos: number): void;
+  /**
    * Dice un texto en voz alta. Si `clave` nombra una voz grabada se usa esa;
    * si no, se usa la voz sintetizada del navegador.
+   *
+   * La promesa termina cuando acaba de hablar, así que dos frases se encadenan con `await`.
+   * Solo se dice una frase a la vez: llamar a `decir` mientras otra suena **la corta** (y la promesa de la
+   * que se cortó termina en ese momento). También termina al cerrarse el minijuego. Nunca rechaza.
+   *
+   * @example
+   * await audio.decir('¡Lechuga!', 'es');
+   * await audio.decir('lettuce!', 'en');
    */
-  decir(texto: string, idioma: Idioma, clave?: string): void;
+  decir(texto: string, idioma: Idioma, clave?: string): Promise<void>;
 }
 
 /** Los assets del nivel, vistos desde un minijuego. */
@@ -35,6 +49,12 @@ export interface ContextoDeMinijuego {
   readonly estado: LectorDeEstado;
   readonly audio: AudioParaMinijuego;
   readonly assets: AssetsParaMinijuego;
+  /**
+   * El azar del motor: cada llamada entrega un número mayor o igual a 0 y menor que 1, como `Math.random`.
+   * Conviene usarlo en vez de `Math.random`: con la opción `semilla` de `crearEscenario`, el minijuego
+   * también se vuelve repetible.
+   */
+  readonly azar: Azar;
   /** Se dispara si el host destruye el juego. El minijuego debe limpiar lo suyo. */
   readonly senal: AbortSignal;
 }

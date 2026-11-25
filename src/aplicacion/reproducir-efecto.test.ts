@@ -53,6 +53,7 @@ async function crearEscena(jugador?: Jugador) {
     estado: new EstadoEnJuego(crearEstadoDeNivel({ objetivos: [], variables: [], lista: {} }), () => {}),
     minijuegos: {},
     direccionDeAsset: () => undefined,
+    azar: () => 0,
     alVerPalabra: () => {},
     alEmpezarMinijuego: () => {},
     alTerminarMinijuego: () => {},

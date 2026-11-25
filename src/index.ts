@@ -27,6 +27,7 @@ export type {
   VariablesDeEstado,
 } from './dominio/estado.ts';
 export type { Idioma } from './dominio/idioma.ts';
+export type { Azar } from './puertos/azar.ts';
 export type { Partida, PartidaDeNivel } from './dominio/partida.ts';
 
 export type {

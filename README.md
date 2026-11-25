@@ -126,6 +126,12 @@ export function Tortilleria({ elemento, assets, senal }) {
 ```
 
 `exito: false` nunca es un castigo: solo lleva al diálogo amable `siNo` del nivel.
+
+El minijuego recibe además `audio` y `azar`. Como nada requiere leer, un minijuego habla mucho:
+`audio.decir` termina cuando acaba de hablar, así que dos frases se encadenan con `await`
+(`await audio.decir('¡Lechuga!', 'es'); await audio.decir('lettuce!', 'en');`), y `audio.tocarTono(880, 0.2)`
+da un «ding» sin grabar nada. Para sortear algo conviene `azar()` en lugar de `Math.random()`: con la opción
+`semilla` el minijuego sale igual cada vez.
 Un ejemplo completo: [`ejemplo/tortilleria.ts`](ejemplo/tortilleria.ts).
 
 ### Una cinemática en código

@@ -6,11 +6,10 @@
 // - su resultado se limpia antes de usarse;
 // - si el diálogo se interrumpe y el minijuego no termina, su espacio se cierra de todos modos.
 
-import { cumpleCondicion, leerCondicionDeTexto } from '../dominio/condicion.ts';
 import { esObjetoPlano } from '../dominio/es-objeto-plano.ts';
-import { valorDe } from '../dominio/estado.ts';
 import type { CambioDeVariable } from '../dominio/estado.ts';
 import type { ContextoDeMinijuego, Minijuego, ResultadoDeMinijuego } from '../puertos/minijuego.ts';
+import { crearContextoDeMinijuego } from './crear-contexto-de-minijuego.ts';
 import { esperarOCancelar } from './esperar-o-cancelar.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 
@@ -48,7 +47,7 @@ export async function jugarMinijuego(
   // El sitio se entera de cuándo empieza y cuándo termina, para esconder lo que tenga encima del juego.
   piezas.alEmpezarMinijuego(porJugar.nombre);
   try {
-    const contexto = crearContexto(elemento, porJugar.config, cierre.signal, piezas);
+    const contexto = crearContextoDeMinijuego({ elemento, config: porJugar.config, senal: cierre.signal }, piezas);
     const espera = await esperarOCancelar(llamarSinQueFalle(minijuego, contexto, porJugar.nombre), senal);
     if (espera.tipo === 'cancelada') return SIN_EXITO;
     return espera.valor;
@@ -73,51 +72,6 @@ async function llamarSinQueFalle(
     console.error(`[escenario-engine] el minijuego "${nombre}" falló; el diálogo sigue por "siNo":`, error);
     return SIN_EXITO;
   }
-}
-
-function crearContexto(
-  elemento: HTMLElement,
-  config: unknown,
-  senal: AbortSignal,
-  piezas: PiezasDeEscena,
-): ContextoDeMinijuego {
-  return {
-    elemento,
-    config,
-    senal,
-    estado: {
-      obtener: (nombre) => valorDe(piezas.estado.actual, nombre),
-      cumple: (condicion) => cumpleCondicion(leerCondicionDeTexto(condicion), piezas.estado.actual),
-    },
-    audio: {
-      tocar(clave) {
-        const direccion = piezas.direccionDeAsset(clave);
-        if (direccion === undefined) {
-          console.warn(`[escenario-engine] un minijuego pidió tocar "${clave}", que no está en los assets del nivel`);
-          return;
-        }
-        piezas.audio.tocar(direccion);
-      },
-      decir(texto, idioma, clave) {
-        let direccionDeLaVoz: string | undefined;
-        if (clave !== undefined) {
-          direccionDeLaVoz = piezas.direccionDeAsset(clave);
-        }
-        // No se espera a que termine de hablar: el minijuego sigue. Al cerrarse el minijuego, la voz se calla.
-        void piezas.audio.decir({ texto, idioma, direccionDeLaVoz }, senal);
-      },
-    },
-    assets: {
-      url(clave) {
-        const direccion = piezas.direccionDeAsset(clave);
-        if (direccion === undefined) {
-          console.warn(`[escenario-engine] un minijuego pidió "${clave}", que no está en los assets del nivel`);
-          return '';
-        }
-        return direccion;
-      },
-    },
-  };
 }
 
 /**

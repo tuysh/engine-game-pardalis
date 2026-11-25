@@ -60,6 +60,7 @@ async function crearEscena() {
     estado: new EstadoEnJuego(crearEstadoDeNivel({ objetivos: [], variables: [], lista: {} }), () => {}),
     minijuegos: {},
     direccionDeAsset: (clave) => (clave === 'vo_tortu_hola' ? '/voz/vo_tortu_hola.mp3' : undefined),
+    azar: () => 0,
     alVerPalabra: (palabra) => palabrasVistas.push(palabra),
     alEmpezarMinijuego: () => {},
     alTerminarMinijuego: () => {},
