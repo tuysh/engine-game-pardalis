@@ -117,3 +117,15 @@ test('decir que el jugador está en otro nivel cambia solo el nivel: lo guardado
   expect(camino).toEqual({ v: 1, nivel: 'barrio', niveles: { casa: { estado: { 'vista.intro': true } } } });
   expect(partida.nivel).toBe('casa');
 });
+
+test('las variables compartidas de una partida guardada se leen y se limpian igual que las de un nivel', () => {
+  const guardada = { v: 1, nivel: 'mercado', niveles: {}, compartidas: { flor: true, raro: ['x'] } };
+
+  expect(leerPartida(guardada).partida).toEqual({ v: 1, nivel: 'mercado', niveles: {}, compartidas: { flor: true } });
+});
+
+test('una partida sin nada compartido no lleva el campo "compartidas"', () => {
+  const partida = actualizarPartida(undefined, 'barrio', {});
+
+  expect(Object.hasOwn(partida, 'compartidas')).toBe(false);
+});

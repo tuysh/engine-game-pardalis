@@ -32,6 +32,7 @@ export async function jugarNivel(
 
   return {
     leerVariables: () => armado.estado.actual.variables,
+    leerEstado: () => armado.estado.actual,
     interrumpir: () => armado.escenas.interrumpir(),
     reproducirCinematica: (id) => armado.escenas.reproducirCinematica(id),
     terminar(): void {

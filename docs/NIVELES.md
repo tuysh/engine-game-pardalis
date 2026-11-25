@@ -188,17 +188,44 @@ Los números de un plano no se adivinan: se encuadra a mano con la **cámara lib
 "estado": {
   "objetivos": ["tortillas", "aguacates"],
   "variables": ["globo"],
+  "compartidas": ["flor"],
   "lista": { "tortillas": "las tortillas", "aguacates": "los aguacates" },
   "dinero": 100
 }
 ```
 
 - **Toda condición y todo `pon` debe usar un nombre declarado**; si no, es error. Están declarados:
-  - los `objetivos` y las `variables`;
+  - los `objetivos`, las `variables` y las `compartidas`;
   - `dinero`, si el nivel lo trae;
   - `charlas.<id>` por cada NPC e interactivo: el motor la marca sola al hablar con él. No hace falta escribirla.
   - `vista.<id>` por cada cinemática: el motor la marca sola cuando la cinemática termina.
 - `lista` da el nombre con artículo para `{faltan}` → «Te faltan las tortillas y los aguacates».
+- `compartidas` son las variables **de la aventura**: las únicas que pasan de un nivel a otro. Ver abajo.
+
+#### Variables que pasan de un nivel a otro
+
+Cada nivel tiene su propio estado, pero una historia de varios niveles necesita recordar cosas: la flor que
+regalaron en el mercado se entrega después en la casa. Para eso, **cada nivel que usa la variable la declara**
+en `estado.compartidas`:
+
+```jsonc
+// mercado/contenido.json
+"estado": { "compartidas": ["flor", "estrellas"] }
+{ "pon": { "flor": true } }
+
+// comedor/contenido.json
+"estado": { "compartidas": ["flor"] }
+{ "cuando": "tengo flor", "dice": [ { "dice": "mama", "texto": "¡Qué flor tan bonita! Gracias, mijo." } ] }
+```
+
+- Se usan igual que cualquier variable: en `pon`, en las condiciones y en `otorgar` de un minijuego.
+- A un nivel solo le llegan las que él mismo declara. El validador revisa cada nivel por separado, así que
+  **el nombre debe escribirse igual en los dos niveles**: un `"flores"` en uno y `"flor"` en el otro no da error,
+  pero son dos variables distintas.
+- Un objetivo o el `dinero` también se pueden compartir: basta nombrarlos en `compartidas` (el dinero que sobró
+  del mandado vuelve a casa si los dos niveles declaran `"dinero"` ahí; el nivel que llega lo recibe en lugar
+  de su `dinero` inicial).
+- En la partida viven aparte, en el campo `compartidas`, junto a `niveles`.
 
 ### Diálogo de un NPC o interactivo: ramas
 
@@ -375,6 +402,7 @@ Al pasar de un nivel a otro la pantalla se cierra sola a negro y el nivel nuevo 
 
 Cada nivel guarda su propio estado. Al volver a un nivel ya visitado se restauran sus variables
 (objetivos cumplidos, charlas, cinemáticas vistas) y el jugador aparece en su inicio.
+Solo las variables de `estado.compartidas` pasan de un nivel a otro.
 
 Una flecha que sube y baja señala la salida. Aparece cuando se cumple `flecha.visibleCuando`, o siempre si la
 salida no lo dice. `flecha.texto` es opcional y solo debe usar palabras que la niña o el niño ya vio.

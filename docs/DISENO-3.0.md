@@ -337,7 +337,8 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   con su estado guardado y el host recibe el evento `error`.
 - **Números en el contenido:** `pon` suma y resta (`{ "dinero": { "resta": 10 } }`) y las condiciones comparan
   con un número (`"dinero >= 10"`). Una variable sin valor, o con un valor que no es un número, cuenta como 0.
-- **Cada nivel tiene su propio estado.** Un nivel no puede preguntar por las variables de otro.
+- **Cada nivel tiene su propio estado.** Un nivel no puede preguntar por las variables de otro, salvo por las
+  que los dos declaran en `estado.compartidas`: esas son de la aventura y viajan con la partida (§10).
 - **Todavía no se hace:** que el nivel termine de cargar por detrás mientras se ve un video (§7.4).
 
 ## 8. Assets
@@ -496,8 +497,16 @@ En los diálogos, `Enter` o la barra espaciadora siguen la línea, y las teclas 
 La partida guarda el estado de cada nivel visitado:
 
 ```jsonc
-{ "v": 1, "nivel": "barrio", "niveles": { "casa": { "estado": { ... } }, "barrio": { "estado": { ... }, "momento": { ... } } } }
+{
+  "v": 1,
+  "nivel": "barrio",
+  "niveles": { "casa": { "estado": { ... } }, "barrio": { "estado": { ... }, "momento": { ... } } },
+  "compartidas": { "flor": true }
+}
 ```
+
+`compartidas` guarda las variables de la aventura (las de `estado.compartidas` de cada nivel) y solo aparece
+cuando hay alguna. Al empezar un nivel, recibe de ahí las que él declara.
 
 Una partida corrupta o de otra versión se ignora con advertencia; nunca impide jugar.
 No se leen partidas de la versión 2.0.

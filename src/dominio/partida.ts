@@ -8,7 +8,7 @@
 // el jugador empieza en su inicio.
 
 import { esObjetoPlano } from './es-objeto-plano.ts';
-import type { ValorDeEstado, VariablesDeEstado } from './estado.ts';
+import type { DeclaracionDeEstado, ValorDeEstado, VariablesDeEstado } from './estado.ts';
 
 /** Versión del formato de partida. Una partida con otra versión se ignora con advertencia. */
 export const VERSION_DE_PARTIDA = 1;
@@ -26,6 +26,11 @@ export interface Partida {
   readonly nivel: string;
   /** Estado de cada nivel visitado, por id de nivel. */
   readonly niveles: Readonly<Record<string, PartidaDeNivel>>;
+  /**
+   * Las variables de la aventura: las que los niveles declaran en `estado.compartidas` y viajan de uno a otro.
+   * `undefined` = ningún nivel ha compartido nada.
+   */
+  readonly compartidas?: VariablesDeEstado;
 }
 
 /** Resultado de leer una partida que viene de afuera. */
@@ -62,12 +67,14 @@ export function leerPartida(guardada: unknown): LecturaDePartida {
     if (!esObjetoPlano(nivelGuardado)) continue;
     niveles[id] = { estado: limpiarVariables(nivelGuardado.estado) };
   }
-  return { partida: { v: VERSION_DE_PARTIDA, nivel: guardada.nivel, niveles } };
+  const compartidas = limpiarVariables(guardada.compartidas);
+  return { partida: armarPartida(guardada.nivel, niveles, compartidas) };
 }
 
 /**
  * La partida que resulta de jugar un nivel: conserva lo guardado de los demás niveles
  * y pone, para este, sus variables de ahora. `anterior` es la partida con la que se empezó, si había.
+ * Las variables que el nivel comparte se anotan aparte, con `conCompartidas`.
  */
 export function actualizarPartida(
   anterior: Partida | undefined,
@@ -75,13 +82,28 @@ export function actualizarPartida(
   variables: VariablesDeEstado,
 ): Partida {
   const niveles: Record<string, PartidaDeNivel> = {};
+  let compartidas: VariablesDeEstado = {};
   if (anterior !== undefined) {
     for (const id of Object.keys(anterior.niveles)) {
       niveles[id] = anterior.niveles[id]!; // `id` viene de `Object.keys`, así que existe
     }
+    compartidas = anterior.compartidas ?? {};
   }
   niveles[idDelNivel] = { estado: variables };
-  return { v: VERSION_DE_PARTIDA, nivel: idDelNivel, niveles };
+  return armarPartida(idDelNivel, niveles, compartidas);
+}
+
+/** La misma partida, con esas variables de la aventura puestas encima de las que ya tenía. */
+export function conCompartidas(partida: Partida, nuevas: VariablesDeEstado): Partida {
+  const compartidas: Record<string, ValorDeEstado> = {};
+  const anteriores = partida.compartidas ?? {};
+  for (const nombre of Object.keys(anteriores)) {
+    compartidas[nombre] = anteriores[nombre]!; // `nombre` viene de `Object.keys`, así que existe
+  }
+  for (const nombre of Object.keys(nuevas)) {
+    compartidas[nombre] = nuevas[nombre]!; // `nombre` viene de `Object.keys`, así que existe
+  }
+  return armarPartida(partida.nivel, partida.niveles, compartidas);
 }
 
 /**
@@ -89,13 +111,52 @@ export function actualizarPartida(
  * desde ese momento, si el juego se cierra, debe continuar en el nivel de destino.
  */
 export function conElJugadorEn(partida: Partida, idDelNivel: string): Partida {
-  return { v: partida.v, nivel: idDelNivel, niveles: partida.niveles };
+  return armarPartida(idDelNivel, partida.niveles, partida.compartidas ?? {});
 }
 
 /** Las variables guardadas de un nivel, o `undefined` si la partida no tiene ese nivel. */
 export function variablesGuardadasDe(partida: Partida | undefined, idDelNivel: string): VariablesDeEstado | undefined {
   if (partida === undefined || !Object.hasOwn(partida.niveles, idDelNivel)) return undefined;
   return partida.niveles[idDelNivel]!.estado; // `hasOwn` acaba de comprobar que existe
+}
+
+/**
+ * Las variables con las que un nivel empieza a jugarse: las que guardó la última vez y, encima, las de la
+ * aventura que ese nivel declara en `estado.compartidas`. `undefined` = no hay nada guardado: empieza de cero.
+ */
+export function variablesParaJugar(
+  partida: Partida | undefined,
+  idDelNivel: string,
+  declaracion: DeclaracionDeEstado,
+): VariablesDeEstado | undefined {
+  if (partida === undefined) return undefined;
+
+  const variables: Record<string, ValorDeEstado> = {};
+  const propias = variablesGuardadasDe(partida, idDelNivel) ?? {};
+  for (const nombre of Object.keys(propias)) {
+    variables[nombre] = propias[nombre]!; // `nombre` viene de `Object.keys`, así que existe
+  }
+
+  const compartidas = partida.compartidas ?? {};
+  for (const nombre of declaracion.compartidas ?? []) {
+    // Solo entran las que este nivel declara: lo que otro nivel compartió y este no conoce, no le llega.
+    if (Object.hasOwn(compartidas, nombre)) {
+      variables[nombre] = compartidas[nombre]!; // `hasOwn` acaba de comprobar que existe
+    }
+  }
+  return variables;
+}
+
+/** Arma la partida. El campo `compartidas` solo aparece si hay algo que compartir. */
+function armarPartida(
+  nivel: string,
+  niveles: Readonly<Record<string, PartidaDeNivel>>,
+  compartidas: VariablesDeEstado,
+): Partida {
+  if (Object.keys(compartidas).length === 0) {
+    return { v: VERSION_DE_PARTIDA, nivel, niveles };
+  }
+  return { v: VERSION_DE_PARTIDA, nivel, niveles, compartidas };
 }
 
 /** Conserva solo las variables con un valor que el estado puede guardar. */

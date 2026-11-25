@@ -71,7 +71,7 @@ test('una condición solo puede usar variables declaradas', () => {
   ]);
 
   expect(diagnostico.errores).toEqual([
-    'condición "limones" usada en npcs.tortu.dialogo[0].dice[0]: no está en estado.objetivos ni en estado.variables',
+    'condición "limones" usada en npcs.tortu.dialogo[0].dice[0]: no está en estado.objetivos, ni en estado.variables, ni en estado.compartidas',
   ]);
 });
 
@@ -104,7 +104,7 @@ test('"dinero" solo está declarado si el nivel empieza con dinero', () => {
   revisarEnlaces(conDinero, {}, diagnosticoConDinero);
 
   expect(diagnosticoSinDinero.errores).toEqual([
-    '"pon" de "dinero" en npcs.tortu.dialogo[0].dice[0]: no está en estado.objetivos ni en estado.variables',
+    '"pon" de "dinero" en npcs.tortu.dialogo[0].dice[0]: no está en estado.objetivos, ni en estado.variables, ni en estado.compartidas',
   ]);
   expect(diagnosticoConDinero.errores).toEqual([]);
 });
@@ -261,8 +261,8 @@ test('las condiciones de la salida también se revisan', () => {
   revisarEnlaces(contenido, {}, diagnostico);
 
   expect(diagnostico.errores).toEqual([
-    'condición "limones" usada en salida.requiere: no está en estado.objetivos ni en estado.variables',
-    'condición "aguacates" usada en salida.flecha.visibleCuando: no está en estado.objetivos ni en estado.variables',
+    'condición "limones" usada en salida.requiere: no está en estado.objetivos, ni en estado.variables, ni en estado.compartidas',
+    'condición "aguacates" usada en salida.flecha.visibleCuando: no está en estado.objetivos, ni en estado.variables, ni en estado.compartidas',
   ]);
 });
 
@@ -285,8 +285,8 @@ test('la variable de una comparación y la de una suma deben estar declaradas', 
   ]);
 
   expect(diagnostico.errores).toEqual([
-    'condición "dinero" usada en npcs.tortu.dialogo[0].dice[0]: no está en estado.objetivos ni en estado.variables',
-    '"pon" de "estrellas" en npcs.tortu.dialogo[0].dice[1]: no está en estado.objetivos ni en estado.variables',
+    'condición "dinero" usada en npcs.tortu.dialogo[0].dice[0]: no está en estado.objetivos, ni en estado.variables, ni en estado.compartidas',
+    '"pon" de "estrellas" en npcs.tortu.dialogo[0].dice[1]: no está en estado.objetivos, ni en estado.variables, ni en estado.compartidas',
   ]);
 });
 

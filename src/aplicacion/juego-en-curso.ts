@@ -11,8 +11,10 @@
 // - Conviene guardar al cumplir un objetivo, al terminar una cinemática, al salir y al cambiar de nivel.
 //   La partida la lleva partida-en-curso.ts.
 // - Al volver a un nivel ya visitado, se restauran sus variables.
+// - Las variables que un nivel declara en `estado.compartidas` son de la aventura: viajan de un nivel a otro.
 
 import { convertirEnErrorDeEscenario, ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
+import { separarCompartidas } from '../dominio/estado.ts';
 import type { Partida } from '../dominio/partida.ts';
 import { FundidoDePantalla } from './fundido-de-pantalla.ts';
 import { jugarNivel } from './jugar-nivel.ts';
@@ -64,7 +66,8 @@ export class JuegoEnCurso {
     if (this.nivelActual === undefined) {
       return this.partida.leerSinNivelEnJuego(this.idDelNivel);
     }
-    return this.partida.leerJugando(this.nivelActual.porJugar.id, this.nivelActual.enJuego.leerVariables());
+    const variables = separarCompartidas(this.nivelActual.enJuego.leerEstado());
+    return this.partida.leerJugando(this.nivelActual.porJugar.id, variables);
   }
 
   /**
@@ -151,7 +154,7 @@ export class JuegoEnCurso {
 
   /** Termina el nivel que se juega y anota su estado en la partida, para restaurarlo si el jugador vuelve. */
   private dejarElNivel(nivel: NivelActual): void {
-    this.partida.anotarNivel(nivel.porJugar.id, nivel.enJuego.leerVariables());
+    this.partida.anotarNivel(nivel.porJugar.id, separarCompartidas(nivel.enJuego.leerEstado()));
     nivel.enJuego.terminar();
     this.nivelActual = undefined;
   }
@@ -171,7 +174,7 @@ export class JuegoEnCurso {
       idiomaBase: this.piezas.idiomaBase,
       minijuegos: this.piezas.minijuegos,
       cinematicasEnCodigo: this.piezas.cinematicasEnCodigo,
-      variablesGuardadas: this.partida.variablesDe(porJugar.id),
+      variablesGuardadas: this.partida.variablesPara(porJugar.id, porJugar.nivel.contenido.estado),
       conMenosMovimiento: this.piezas.conMenosMovimiento,
       alCargar: this.piezas.alCargar,
       depuracion: this.piezas.depuracion,

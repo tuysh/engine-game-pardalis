@@ -31,6 +31,11 @@ export interface DeclaracionDeEstado {
   readonly objetivos: readonly string[];
   /** Otras variables que el nivel usa en sus condiciones y pasos `pon`. */
   readonly variables: readonly string[];
+  /**
+   * Variables de la aventura: viajan con la partida de un nivel a otro (la flor que se consiguió en el mercado
+   * y se entrega en la casa). Cada nivel que quiera usarlas las declara aquí. `undefined` = ninguna.
+   */
+  readonly compartidas?: readonly string[];
   /** Cómo nombrar cada objetivo con su artículo: `{ tortillas: 'las tortillas' }`. */
   readonly lista: Readonly<Record<string, string>>;
   /** Dinero con el que empieza el jugador. `undefined` = el nivel no usa dinero. */
@@ -41,6 +46,12 @@ export interface DeclaracionDeEstado {
 export interface EstadoDeNivel {
   readonly declaracion: DeclaracionDeEstado;
   readonly variables: VariablesDeEstado;
+}
+
+/** Las variables de un nivel, separadas en las que son solo suyas y las que comparte con los demás niveles. */
+export interface VariablesSeparadas {
+  readonly propias: VariablesDeEstado;
+  readonly compartidas: VariablesDeEstado;
 }
 
 /** Vista de solo lectura del estado. Es lo que reciben los minijuegos. */
@@ -96,6 +107,23 @@ function calcularCambio(numeroActual: number, cambio: CambioDeVariable): ValorDe
   if (operacion.suma !== undefined) return numeroActual + operacion.suma;
   if (operacion.resta !== undefined) return numeroActual - operacion.resta;
   return numeroActual;
+}
+
+/** Separa las variables de un estado según lo que el nivel declaró en `estado.compartidas`. */
+export function separarCompartidas(estado: EstadoDeNivel): VariablesSeparadas {
+  const nombresCompartidos = estado.declaracion.compartidas ?? [];
+  const propias: Record<string, ValorDeEstado> = {};
+  const compartidas: Record<string, ValorDeEstado> = {};
+
+  for (const nombre of Object.keys(estado.variables)) {
+    const valor = estado.variables[nombre]!; // `nombre` viene de `Object.keys`, así que existe
+    if (nombresCompartidos.includes(nombre)) {
+      compartidas[nombre] = valor;
+    } else {
+      propias[nombre] = valor;
+    }
+  }
+  return { propias, compartidas };
 }
 
 /** Valor de una variable, o `undefined` si nunca se le dio valor. */

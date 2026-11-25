@@ -1,7 +1,7 @@
 // Lo que se le pide a `jugarNivel` (jugar-nivel.ts), lo que necesita del exterior, cómo avisa de lo que pasa
 // y lo que entrega: el nivel que se está jugando.
 
-import type { VariablesDeEstado } from '../dominio/estado.ts';
+import type { EstadoDeNivel, VariablesDeEstado } from '../dominio/estado.ts';
 import type { Idioma } from '../dominio/idioma.ts';
 import type { Nivel } from '../dominio/nivel.ts';
 import type { PalabraDeVocabulario } from '../dominio/paso.ts';
@@ -81,8 +81,10 @@ export interface AvisosDelNivel {
 
 /** Un nivel que se está jugando. */
 export interface NivelEnJuego {
-  /** Las variables del nivel en este momento, para guardarlas en una partida. */
+  /** Las variables del nivel en este momento. */
   leerVariables(): VariablesDeEstado;
+  /** El estado del nivel en este momento: sus variables y lo que el nivel declaró de ellas. */
+  leerEstado(): EstadoDeNivel;
   /** Salta la cinemática en curso o, si no hay, termina el diálogo en curso. Sin ninguno, no hace nada. */
   interrumpir(): void;
   /**

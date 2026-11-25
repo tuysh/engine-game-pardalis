@@ -99,6 +99,7 @@ const esquemaDeMundo = z
 const esquemaDeEstado = z.strictObject({
   objetivos: z.array(z.string().min(1)).default([]),
   variables: z.array(z.string().min(1)).default([]),
+  compartidas: z.array(z.string().min(1)).optional(),
   lista: z.record(z.string(), z.string()).default({}),
   dinero: z.number().optional(),
 });

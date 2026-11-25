@@ -5,8 +5,8 @@
 // aunque ese nivel todavía esté cargando: si el juego se cierra en ese momento, continúa allá
 // y no en un nivel intermedio que ya no tiene nada que hacer.
 
-import type { VariablesDeEstado } from '../dominio/estado.ts';
-import { actualizarPartida, conElJugadorEn, variablesGuardadasDe } from '../dominio/partida.ts';
+import type { DeclaracionDeEstado, VariablesDeEstado, VariablesSeparadas } from '../dominio/estado.ts';
+import { actualizarPartida, conCompartidas, conElJugadorEn, variablesParaJugar } from '../dominio/partida.ts';
 import type { Partida } from '../dominio/partida.ts';
 
 export class PartidaEnCurso {
@@ -20,9 +20,12 @@ export class PartidaEnCurso {
     this.anotada = partidaInicial;
   }
 
-  /** Las variables con las que se dejó un nivel, o `undefined` si nunca se ha visitado. */
-  variablesDe(idDelNivel: string): VariablesDeEstado | undefined {
-    return variablesGuardadasDe(this.anotada, idDelNivel);
+  /**
+   * Las variables con las que un nivel empieza: las que dejó la última vez y las de la aventura que declara
+   * en `estado.compartidas`. `undefined` = no hay partida: empieza de cero.
+   */
+  variablesPara(idDelNivel: string, declaracion: DeclaracionDeEstado): VariablesDeEstado | undefined {
+    return variablesParaJugar(this.anotada, idDelNivel, declaracion);
   }
 
   /**
@@ -30,8 +33,8 @@ export class PartidaEnCurso {
    * Si se deja saliendo hacia otro nivel, lo anotado ya nombra ese destino: así, si después ningún nivel
    * logra empezar (ni el destino ni el anterior), la partida no regresa al jugador al nivel que dejó.
    */
-  anotarNivel(idDelNivel: string, variables: VariablesDeEstado): void {
-    this.anotada = this.nombrarElDestino(actualizarPartida(this.anotada, idDelNivel, variables));
+  anotarNivel(idDelNivel: string, variables: VariablesSeparadas): void {
+    this.anotada = this.nombrarElDestino(this.conElNivel(idDelNivel, variables));
   }
 
   /** Desde ahora la partida dice que el jugador está en `destino`, aunque ese nivel todavía esté cargando. */
@@ -45,8 +48,8 @@ export class PartidaEnCurso {
   }
 
   /** La partida de este momento, con el nivel que se está jugando y sus variables de ahora. */
-  leerJugando(idDelNivel: string, variables: VariablesDeEstado): Partida {
-    return this.nombrarElDestino(actualizarPartida(this.anotada, idDelNivel, variables));
+  leerJugando(idDelNivel: string, variables: VariablesSeparadas): Partida {
+    return this.nombrarElDestino(this.conElNivel(idDelNivel, variables));
   }
 
   /**
@@ -58,6 +61,12 @@ export class PartidaEnCurso {
       return this.nombrarElDestino(actualizarPartida(undefined, idDelUltimoNivel, {}));
     }
     return this.nombrarElDestino(this.anotada);
+  }
+
+  /** La partida anotada más ese nivel: sus variables propias en `niveles` y las que comparte en `compartidas`. */
+  private conElNivel(idDelNivel: string, variables: VariablesSeparadas): Partida {
+    const conLasPropias = actualizarPartida(this.anotada, idDelNivel, variables.propias);
+    return conCompartidas(conLasPropias, variables.compartidas);
   }
 
   private nombrarElDestino(partida: Partida): Partida {

@@ -7,6 +7,7 @@ import {
   objetivosQueFaltan,
   numeroDe,
   objetivosRecienCumplidos,
+  separarCompartidas,
   tieneValor,
   valorDe,
 } from './estado.ts';
@@ -119,4 +120,11 @@ test('sumarle a una variable sin valor, o con un valor que no es un número, par
 
   expect(calcularCambios(conGlobo, { estrellas: { suma: 1 }, globo: { suma: 2 } })).toEqual({ estrellas: 1, globo: 2 });
   expect(numeroDe(conGlobo, 'globo')).toBe(0);
+});
+
+test('las variables se separan en propias y compartidas según lo que el nivel declara', () => {
+  const declaracion: DeclaracionDeEstado = { ...DECLARACION, compartidas: ['flor'] };
+  const estado = crearEstadoDeNivel(declaracion, { flor: true, globo: 'rosa' });
+
+  expect(separarCompartidas(estado)).toEqual({ propias: { globo: 'rosa' }, compartidas: { flor: true } });
 });

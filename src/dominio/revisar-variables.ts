@@ -1,7 +1,7 @@
 // Revisa que toda variable que un nivel usa esté declarada.
 // Una variable se usa en dos lugares: en las condiciones y en los pasos `pon`.
 //
-// Están declaradas: los objetivos y variables de la sección `estado`, el dinero (si el nivel lo usa),
+// Están declaradas: los objetivos, las variables y las compartidas de la sección `estado`, el dinero (si el nivel lo usa),
 // una variable `charlas.<id>` por cada NPC e interactivo (el motor la marca sola al hablar con él)
 // y una variable `vista.<id>` por cada cinemática (el motor la marca sola cuando termina).
 
@@ -25,6 +25,9 @@ export function reunirVariablesDeclaradas(contenido: Contenido): Set<string> {
   }
   for (const variable of contenido.estado.variables) {
     declaradas.add(variable);
+  }
+  for (const compartida of contenido.estado.compartidas ?? []) {
+    declaradas.add(compartida);
   }
   if (contenido.estado.dinero !== undefined) {
     declaradas.add(NOMBRE_DEL_DINERO);
@@ -71,5 +74,5 @@ function explicarPorQueNoEstaDeclarada(nombre: string): string {
   if (SIGNOS_DE_COMPARACION.test(nombre)) {
     return 'una comparación lleva el nombre de una variable, un signo (>=, <=, >, < o =) y un número, como "dinero >= 10"';
   }
-  return 'no está en estado.objetivos ni en estado.variables';
+  return 'no está en estado.objetivos, ni en estado.variables, ni en estado.compartidas';
 }
