@@ -6,7 +6,7 @@ import { generarManifiesto } from './generar-manifiesto.ts';
 
 /**
  * Escritor falso: «redacta» el manifiesto como JSON del dominio, sin cambiarle los nombres,
- * y acepta cualquier configuración que tenga la forma `{ cuadrosPorSegundo }`.
+ * y acepta cualquier configuración que tenga la forma `{ cuadrosPorSegundo, secuencias }`.
  */
 const ESCRITOR_FALSO: EscritorDeManifiestos = {
   leerConfiguracion(json) {
@@ -54,7 +54,7 @@ test('genera el manifiesto con imágenes medidas, audio y video, e ignora lo que
 test('las imágenes numeradas salen como animación, con la velocidad de assets.config.json', async () => {
   const carpetas = new CarpetasDeMemoria({
     'niveles/casa': {
-      'assets.config.json': '{ "cuadrosPorSegundo": { "tommy_tele": 4 } }',
+      'assets.config.json': '{ "cuadrosPorSegundo": { "tommy_tele": 4 }, "secuencias": {} }',
       'img/tommy_tele_1.svg': svgDe(90, 160),
       'img/tommy_tele_2.svg': svgDe(90, 160),
     },

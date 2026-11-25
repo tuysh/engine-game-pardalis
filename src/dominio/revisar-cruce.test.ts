@@ -264,3 +264,21 @@ test('la zona que hace empezar una cinemática debe existir en el mapa', () => {
     'cinematicas.paseo.inicia: no hay una zona llamada "plaza" en el mapa',
   ]);
 });
+
+test('quien reacciona a una línea debe estar en el escenario', () => {
+  const contenido: Contenido = {
+    ...CONTENIDO,
+    meta: {
+      ...CONTENIDO.meta,
+      personajes: { ...CONTENIDO.meta.personajes, mama: { idioma: 'es', sprite: 'spr_mama' } },
+    },
+    secuencias: {
+      saludo: [{ tipo: 'linea', hablante: 'tommy', texto: 'Hi!', reacciones: { tortu: 'tortu_feliz', mama: 'mama_feliz' } }],
+    },
+  };
+
+  expect(revisar(contenido, MUNDO).errores).toEqual([
+    'secuencias.saludo[0].reacciona: "mama" nunca está en el escenario: no es el jugador, ni un NPC del mapa, ' +
+      'ni entra con un paso "aparece"',
+  ]);
+});

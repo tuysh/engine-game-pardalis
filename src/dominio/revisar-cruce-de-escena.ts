@@ -2,7 +2,7 @@
 // - el punto donde alguien aparece, y hacia dónde voltea alguien;
 // - a qué apunta cada plano de cámara;
 // - la zona que hace empezar una cinemática;
-// - que todo personaje al que se mueve, voltea o anima esté alguna vez en el escenario.
+// - que todo personaje al que se mueve, voltea, anima o hace reaccionar esté alguna vez en el escenario.
 
 import type { Contenido } from './contenido.ts';
 import type { Diagnostico } from './diagnostico.ts';
@@ -114,6 +114,13 @@ function revisarPaso(paso: Paso, ruta: string, cruce: CruceDeEscena): void {
     case 'anima':
     case 'desaparece':
       revisarQueEsteEnEscena(paso.personaje, ruta, cruce);
+      break;
+
+    case 'linea':
+      // Quien reacciona a una línea cambia de dibujo, así que debe estar en el escenario.
+      for (const personaje of Object.keys(paso.reacciones ?? {})) {
+        revisarQueEsteEnEscena(personaje, `${ruta}.reacciona`, cruce);
+      }
       break;
 
     default:

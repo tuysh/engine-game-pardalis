@@ -12,6 +12,11 @@ export interface GloboPorMostrar {
   readonly traduccion?: string;
   /** Si existe, el globo lleva una tarjeta de vocabulario con la palabra en los dos idiomas. */
   readonly palabra?: PalabraDeVocabulario;
+  /**
+   * `true` = el personaje lo piensa y no lo dice: el globo es una nube con burbujitas, para que se entienda
+   * sin leer. `undefined` = es un globo de diálogo normal.
+   */
+  readonly esPensamiento?: boolean;
 }
 
 /** Una de las tarjetas entre las que el jugador elige. */

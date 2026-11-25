@@ -243,7 +243,7 @@ Gana **la primera rama cuya condición se cumple**. Una rama sin `cuando` siempr
 
 | Paso | Ejemplo | Qué hace |
 | --- | --- | --- |
-| Línea | `{ "dice": "tortu", "texto": "¡Hola!", "audio": "vo_hola" }` | Globo sobre quien habla. Termina con un toque o al acabar el audio. Opcional: `trad`, y `en` + `es` (siempre juntos) para una **tarjeta de vocabulario**. |
+| Línea | `{ "dice": "tortu", "texto": "¡Hola!", "audio": "vo_hola" }` | Globo sobre quien habla. Termina con un toque o al acabar el audio. Opcional: `trad`, y `en` + `es` (siempre juntos) para una **tarjeta de vocabulario**; `con`, `reacciona` y `piensa` (ver «Caras y pensamientos»). |
 | Opción | `{ "elige": "¿Cuál quieres?", "opciones": [ { "imagen": "img_rosa", "audio": "vo_rosa", "secuencia": [...] } ] }` | Espera la elección. Cada opción: `texto`, `trad`, `imagen`, `audio`, `cuando`, y `secuencia` (pasos o nombre de secuencia). Una opción sin `imagen` da advertencia. |
 | Efecto | `{ "efecto": "magia" }` | Partículas y sonido. Disponibles: `magia`, `confeti`. |
 | Estado | `{ "pon": { "globo": "rosa" } }` | Asigna objetivos o variables. Con números también suma y resta: `{ "pon": { "dinero": { "resta": 10 }, "estrellas": { "suma": 1 } } }`. |
@@ -253,6 +253,25 @@ Gana **la primera rama cuya condición se cumple**. Una rama sin `cuando` siempr
 | Condicional | `{ "cuando": "globo", "dice": [ ...pasos ] }` | Ejecuta sus pasos solo si se cumple la condición. |
 
 Los textos admiten `{faltan}` (objetivos pendientes, en español) y `{dinero}`. Otro nombre entre llaves es error.
+
+#### Caras y pensamientos
+
+Los personajes se sienten vivos cuando cambian de cara al hablar. Una línea puede llevar:
+
+```json
+{ "dice": "pardi", "texto": "¡Esa lista es interminable!", "con": "pardi_sorpresa", "reacciona": { "bobby": "bobby_feliz" } }
+{ "dice": "pardi", "texto": "¿Y si no me alcanza?", "piensa": true }
+```
+
+- `con`: la clave del dibujo (una imagen o una animación) que **quien habla** toma mientras dura la línea.
+- `reacciona`: el dibujo que toman **quienes escuchan**, por id de personaje.
+- Al terminar la línea, cada quien **vuelve solo al dibujo que tenía** (su `sprite`, o la pose en que lo dejó un
+  paso `anima` con `repite`). No hace falta ningún paso para regresarlo.
+- `piensa`: el personaje no lo dice, lo piensa. El globo se dibuja como una nube con burbujitas, para que se
+  note sin leer. La voz se oye igual: nada requiere leer.
+
+Los dibujos deben existir en los assets (si no, es error) y, como el `sprite`, mirar a la derecha.
+Quien reacciona debe estar en el escenario.
 
 ### Pasos de escena
 
@@ -281,6 +300,9 @@ Mueven la cámara y a los personajes. Nacieron para las cinemáticas, pero sirve
   dejarlo en una pose («sentado viendo la tele»); para volver al dibujo normal se anima con su propio `sprite`:
   `{ "anima": "tommy", "con": "spr_tommy", "repite": true }`. Una imagen fija necesita `repite`
   (sin él no se alcanzaría a ver, y el validador lo advierte).
+
+Para una cara que solo dura **lo que dura una línea** no hace falta `anima`: usa `con` en el paso `dice`
+(ver «Caras y pensamientos»), que regresa solo al dibujo anterior.
 
 El dibujo nuevo puede medir distinto que el `sprite`. Como este, debe mirar a la derecha.
 
@@ -454,8 +476,14 @@ Por defecto una animación va a 8 cuadros por segundo. Para cambiarlo, crea junt
 `assets.config.json`:
 
 ```json
-{ "fps": { "tommy_viendo_tele": 4 } }
+{ "fps": { "tommy_viendo_tele": 4 }, "secuencia": { "spr_pardi": [1, 1, 1, 1, 1, 2] } }
 ```
+
+`secuencia` dice **en qué orden pasan los cuadros**, y un cuadro se puede repetir. Sirve para que un personaje
+parpadee con solo dos dibujos: con `spr_pardi_1.svg` (ojos abiertos) y `spr_pardi_2.svg` (ojos cerrados), la
+secuencia de arriba deja los ojos abiertos cinco cuadros y los cierra uno; a `"fps": { "spr_pardi": 3 }` son
+casi dos segundos abiertos y un instante cerrados. Cada número es el del archivo; nombrar uno que no existe
+es error. Sin `secuencia`, los cuadros pasan del primero al último.
 
 El generador avisa si un SVG enlaza archivos externos (una foto, una fuente): al usarse en el juego no se cargan.
 

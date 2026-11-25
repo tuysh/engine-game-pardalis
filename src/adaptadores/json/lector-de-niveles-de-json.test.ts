@@ -392,3 +392,20 @@ test('"pon" acepta sumar y restar, y cualquier otra forma dice qué se espera', 
     'secuencias.pago[0].pon.dinero: se espera un texto, un número, true, false, { "suma": número } o { "resta": número }',
   ]);
 });
+
+test('una línea puede traer la pose de quien habla, las reacciones de quienes escuchan y ser un pensamiento', () => {
+  const pasos = leerPasos([
+    { dice: 'tortu', texto: '¡Ay!', con: 'tortu_sorpresa', reacciona: { tommy: 'tommy_feliz' }, piensa: true },
+  ]);
+
+  expect(pasos).toEqual([
+    {
+      tipo: 'linea',
+      hablante: 'tortu',
+      texto: '¡Ay!',
+      pose: 'tortu_sorpresa',
+      reacciones: { tommy: 'tommy_feliz' },
+      esPensamiento: true,
+    },
+  ]);
+});

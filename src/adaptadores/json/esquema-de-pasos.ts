@@ -43,6 +43,9 @@ export const esquemaDeLinea: z.ZodType<PasoDeLinea> = z
     en: z.string().optional(),
     es: z.string().optional(),
     audio: z.string().optional(),
+    con: z.string().min(1).optional(),
+    reacciona: z.record(z.string(), z.string().min(1)).optional(),
+    piensa: z.boolean().optional(),
   })
   .transform((json, contexto): PasoDeLinea => {
     const soloTraeUnaMitad = (json.en === undefined) !== (json.es === undefined);
@@ -62,6 +65,9 @@ export const esquemaDeLinea: z.ZodType<PasoDeLinea> = z
       traduccion: json.trad,
       palabra,
       audio: json.audio,
+      pose: json.con,
+      reacciones: json.reacciona,
+      esPensamiento: json.piensa,
     };
   });
 

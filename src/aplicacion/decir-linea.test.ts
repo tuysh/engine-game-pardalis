@@ -61,11 +61,19 @@ async function crearEscena() {
     minijuegos: {},
     direccionDeAsset: (clave) => (clave === 'vo_tortu_hola' ? '/voz/vo_tortu_hola.mp3' : undefined),
     azar: () => 0,
+    imagenDeAsset: (clave) => ({
+      direcciones: [`/img/${clave}.svg`],
+      cuadrosPorSegundo: 0,
+      anchoEnPixeles: 90,
+      altoEnPixeles: 160,
+      anchoEnMetros: 0.9,
+      altoEnMetros: 1.6,
+    }),
     alVerPalabra: (palabra) => palabrasVistas.push(palabra),
     alEmpezarMinijuego: () => {},
     alTerminarMinijuego: () => {},
   };
-  return { piezas, interfaz, audio, reloj, reparto, palabrasVistas };
+  return { piezas, interfaz, audio, reloj, reparto, palabrasVistas, escenario };
 }
 
 const SIN_INTERRUMPIR = new AbortController().signal;
@@ -211,4 +219,60 @@ test('una voz grabada se espera completa, dure lo que dure', async () => {
 
   expect(interfaz.globo).toBeDefined();
   expect(audio.hayAlguienHablando).toBe(true);
+});
+
+test('con una pose, quien habla cambia de dibujo mientras dura la línea y al terminar vuelve al que tenía', async () => {
+  const { piezas, interfaz, escenario } = await crearEscena();
+  const sorpresa: PasoDeLinea = { tipo: 'linea', hablante: 'tortu', texto: '¡Ay!', pose: 'tortu_sorpresa' };
+
+  const linea = decirLinea({ paso: sorpresa, textoCompleto: '¡Ay!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
+  expect(escenario.dibujos.get('tortu')?.imagen.direcciones).toEqual(['/img/tortu_sorpresa.svg']);
+
+  interfaz.simularToqueParaSeguir();
+  await linea;
+
+  expect(escenario.dibujos.get('tortu')).toEqual({ imagen: IMAGEN, repite: true });
+});
+
+test('quien escucha puede reaccionar con otro dibujo, y quien no está en el escenario no cambia nada', async () => {
+  const { piezas, interfaz, escenario, reparto } = await crearEscena();
+  // Tommy sí está en el escenario y escucha; "pancho" no está.
+  await reparto.agregar({ id: 'tommy', imagen: IMAGEN, posicion: { x: 3, y: 2 }, mira: 'derecha', sePuedeTocar: false });
+  const linea: PasoDeLinea = {
+    tipo: 'linea',
+    hablante: 'tortu',
+    texto: '¡Hola!',
+    reacciones: { tommy: 'tommy_feliz', pancho: 'pancho_feliz' },
+  };
+
+  const dicha = decirLinea({ paso: linea, textoCompleto: '¡Hola!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
+  expect(escenario.dibujos.get('tommy')?.imagen.direcciones).toEqual(['/img/tommy_feliz.svg']);
+  expect(escenario.dibujos.has('pancho')).toBe(false);
+  expect(escenario.dibujos.has('tortu')).toBe(false);
+
+  interfaz.simularToqueParaSeguir();
+  await dicha;
+
+  expect(escenario.dibujos.get('tommy')).toEqual({ imagen: IMAGEN, repite: true });
+});
+
+test('si la línea se interrumpe, quien tenía una pose también vuelve a su dibujo', async () => {
+  const { piezas, escenario } = await crearEscena();
+  const interrupcion = new AbortController();
+  const sorpresa: PasoDeLinea = { tipo: 'linea', hablante: 'tortu', texto: '¡Ay!', pose: 'tortu_sorpresa' };
+
+  const linea = decirLinea({ paso: sorpresa, textoCompleto: '¡Ay!', seCierraConUnToque: true }, interrupcion.signal, piezas);
+  interrupcion.abort();
+  await linea;
+
+  expect(escenario.dibujos.get('tortu')).toEqual({ imagen: IMAGEN, repite: true });
+});
+
+test('un pensamiento se muestra en un globo de pensamiento', async () => {
+  const { piezas, interfaz } = await crearEscena();
+  const duda: PasoDeLinea = { tipo: 'linea', hablante: 'tortu', texto: '¿Y si llueve?', esPensamiento: true };
+
+  void decirLinea({ paso: duda, textoCompleto: '¿Y si llueve?', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
+
+  expect(interfaz.globo?.esPensamiento).toBe(true);
 });

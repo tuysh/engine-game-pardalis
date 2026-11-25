@@ -53,10 +53,16 @@ const esquemaDeAsset = formaDeAsset.transform((json): Asset => {
 
 export const esquemaDeManifiesto: z.ZodType<Manifiesto> = z.record(z.string(), esquemaDeAsset);
 
-/** La forma de `assets.config.json`: `{ "fps": { "tommy_viendo_tele": 4 } }`. */
+/**
+ * La forma de `assets.config.json`:
+ * `{ "fps": { "tommy_viendo_tele": 4 }, "secuencia": { "spr_pardi": [1, 1, 1, 1, 1, 2] } }`.
+ */
 export const esquemaDeConfiguracionDeAssets: z.ZodType<ConfiguracionDeAssets> = z
-  .strictObject({ fps: z.record(z.string(), z.number().positive()).default({}) })
-  .transform((json): ConfiguracionDeAssets => ({ cuadrosPorSegundo: json.fps }));
+  .strictObject({
+    fps: z.record(z.string(), z.number().positive()).default({}),
+    secuencia: z.record(z.string(), z.array(z.number().int().positive()).min(1)).default({}),
+  })
+  .transform((json): ConfiguracionDeAssets => ({ cuadrosPorSegundo: json.fps, secuencias: json.secuencia }));
 
 /** Convierte un asset del dominio a la forma en que se escribe en el archivo. */
 export function convertirAssetAJson(asset: Asset): AssetEnJson {

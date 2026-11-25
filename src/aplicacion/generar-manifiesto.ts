@@ -14,7 +14,11 @@ import type { ArchivoDeAsset } from '../dominio/armar-manifiesto.ts';
 import { crearDiagnostico } from '../dominio/diagnostico.ts';
 import type { Diagnostico } from '../dominio/diagnostico.ts';
 import { ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
-import { NOMBRE_DE_LA_CONFIGURACION_DE_ASSETS, NOMBRE_DEL_MANIFIESTO } from '../dominio/manifiesto.ts';
+import {
+  CONFIGURACION_DE_ASSETS_VACIA,
+  NOMBRE_DE_LA_CONFIGURACION_DE_ASSETS,
+  NOMBRE_DEL_MANIFIESTO,
+} from '../dominio/manifiesto.ts';
 import type { ConfiguracionDeAssets, Manifiesto } from '../dominio/manifiesto.ts';
 import { medirImagen } from '../dominio/medir-imagen.ts';
 import { enlacesExternosDeSvg } from '../dominio/medir-svg.ts';
@@ -87,7 +91,7 @@ async function generar(
   const configuracion = await leerConfiguracion(carpeta, rutas, puertos, diagnostico);
   const archivos = await reconocerAssets(carpeta, rutas, puertos.carpetas, diagnostico);
 
-  const armado = armarManifiesto(archivos, configuracion.cuadrosPorSegundo);
+  const armado = armarManifiesto(archivos, configuracion);
   diagnostico.errores.push(...armado.errores);
   diagnostico.advertencias.push(...armado.advertencias);
   if (diagnostico.errores.length > 0) return NADA_ESCRITO;
@@ -117,7 +121,7 @@ async function leerConfiguracion(
   puertos: PuertosParaGenerar,
   diagnostico: Diagnostico,
 ): Promise<ConfiguracionDeAssets> {
-  const sinAjustes: ConfiguracionDeAssets = { cuadrosPorSegundo: {} };
+  const sinAjustes = CONFIGURACION_DE_ASSETS_VACIA;
   if (!rutas.includes(NOMBRE_DE_LA_CONFIGURACION_DE_ASSETS)) return sinAjustes;
 
   const bytes = await puertos.carpetas.leerArchivo(carpeta, NOMBRE_DE_LA_CONFIGURACION_DE_ASSETS);

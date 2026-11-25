@@ -44,7 +44,16 @@ export type Manifiesto = Readonly<Record<string, Asset>>;
 export interface ConfiguracionDeAssets {
   /** Velocidad de cada animación que no usa la velocidad por defecto, por clave. */
   readonly cuadrosPorSegundo: Readonly<Record<string, number>>;
+  /**
+   * En qué orden pasan los cuadros de una animación que no los pasa del primero al último, por clave.
+   * Cada número es el de un archivo (`spr_pardi_2.svg` es el 2) y se puede repetir: `[1, 1, 1, 1, 1, 2]`
+   * deja los ojos abiertos cinco cuadros y los cierra uno, con solo dos dibujos.
+   */
+  readonly secuencias: Readonly<Record<string, readonly number[]>>;
 }
+
+/** La configuración de una carpeta que no trae `assets.config.json`. */
+export const CONFIGURACION_DE_ASSETS_VACIA: ConfiguracionDeAssets = { cuadrosPorSegundo: {}, secuencias: {} };
 
 /** Velocidad de una animación cuando `assets.config.json` no dice otra. */
 export const CUADROS_POR_SEGUNDO_POR_DEFECTO = 8;

@@ -5,6 +5,9 @@
 //
 //   En el contenido del nivel                      Dentro del motor
 //   { "dice": "tortu", "texto": "Hola" }           { tipo: 'linea', hablante: 'tortu', texto: 'Hola' }
+//   { "dice": "pardi", "texto": "¡Oh!", "con": "pardi_sorpresa", "reacciona": { "bobby": "bobby_feliz" }, "piensa": true }
+//                                                  { tipo: 'linea', hablante: 'pardi', texto: '¡Oh!', pose: 'pardi_sorpresa',
+//                                                    reacciones: { bobby: 'bobby_feliz' }, esPensamiento: true }
 //   { "elige": "¿Cuál?", "opciones": [...] }       { tipo: 'elige', pregunta: '¿Cuál?', opciones: [...] }
 //   { "efecto": "magia" }                          { tipo: 'efecto', nombre: 'magia' }
 //   { "pon": { "globo": "rosa" } }                 { tipo: 'pon', valores: { globo: 'rosa' } }
@@ -55,6 +58,18 @@ export interface PasoDeLinea {
   readonly palabra?: PalabraDeVocabulario;
   /** Clave de la voz grabada. `undefined` = se usa voz sintetizada. */
   readonly audio?: string;
+  /**
+   * Clave del dibujo (imagen o animación) que quien habla toma mientras dura la línea: una cara de sorpresa,
+   * de duda. Al terminar la línea vuelve al dibujo que tenía. `undefined` = no cambia de dibujo.
+   */
+  readonly pose?: string;
+  /**
+   * El dibujo que toman quienes escuchan mientras dura la línea, por id de personaje.
+   * Ejemplo: `{ bobby: 'bobby_feliz' }`. Al terminar, cada quien vuelve al dibujo que tenía.
+   */
+  readonly reacciones?: Readonly<Record<string, string>>;
+  /** `true` = el personaje no lo dice: lo piensa. El globo se dibuja como una nube. Por defecto, lo dice. */
+  readonly esPensamiento?: boolean;
 }
 
 /**

@@ -17,13 +17,13 @@ export async function animarEnEscena(
   const { reparto, reloj, contenido } = piezas.escena;
   if (!reparto.estaEnEscena(paso.personaje)) return;
 
-  const animacion = piezas.imagenDeAsset(paso.clave);
+  const animacion = piezas.escena.imagenDeAsset(paso.clave);
   await reparto.ponerDibujo(paso.personaje, animacion, { repite: paso.repite });
   if (paso.repite) return;
 
   await reloj.esperar(calcularDuracionEnSegundos(animacion), senal);
   const personaje = contenido.meta.personajes[paso.personaje]!; // la validación garantiza que el personaje existe
-  await reparto.ponerDibujo(paso.personaje, piezas.imagenDeAsset(personaje.sprite), { repite: true });
+  await reparto.ponerDibujo(paso.personaje, piezas.escena.imagenDeAsset(personaje.sprite), { repite: true });
 }
 
 /** Lo que tarda una animación en pasar una vez. Una imagen fija no dura nada. */

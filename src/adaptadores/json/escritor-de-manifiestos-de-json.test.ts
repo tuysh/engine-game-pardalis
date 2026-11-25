@@ -65,7 +65,7 @@ test('un asset de un tipo desconocido no se acepta', () => {
 test('assets.config.json se lee como velocidades por animación', () => {
   const lectura = new EscritorDeManifiestosDeJson().leerConfiguracion({ fps: { tommy_tele: 4 } });
 
-  expect(lectura).toEqual({ tipo: 'leido', valor: { cuadrosPorSegundo: { tommy_tele: 4 } } });
+  expect(lectura).toEqual({ tipo: 'leido', valor: { cuadrosPorSegundo: { tommy_tele: 4 }, secuencias: {} } });
 });
 
 test('assets.config.json con una velocidad que no es un número positivo no se acepta', () => {
@@ -75,4 +75,10 @@ test('assets.config.json con una velocidad que no es un número positivo no se a
     tipo: 'invalido',
     errores: ['fps.tommy_tele: Demasiado pequeño: se esperaba que número fuera >0'],
   });
+});
+
+test('la configuración puede traer la secuencia de cuadros de una animación', () => {
+  const lectura = new EscritorDeManifiestosDeJson().leerConfiguracion({ secuencia: { spr_pardi: [1, 1, 2] } });
+
+  expect(lectura).toEqual({ tipo: 'leido', valor: { cuadrosPorSegundo: {}, secuencias: { spr_pardi: [1, 1, 2] } } });
 });

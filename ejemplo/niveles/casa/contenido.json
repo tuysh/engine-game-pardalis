@@ -34,6 +34,7 @@
         { "camina": "junto_al_sillon", "quien": "mama" },
         { "mira": "mama", "hacia": "tommy" },
         { "camara": "plano_mama", "duracion": 1 },
+        { "dice": "tommy", "texto": "Hmm… tortillas!", "trad": "Mmm… ¡tortillas!", "piensa": true },
         { "dice": "mama", "texto": "¿Me traes tortillas, mijo?", "audio": "vo_mama_tortillas" },
         { "mira": "tommy", "hacia": "mama" },
         { "anima": "tommy", "con": "spr_tommy", "repite": true },

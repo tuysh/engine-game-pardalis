@@ -8,10 +8,13 @@
 // - Los cuadros se numeran seguidos desde 1. Si no (`moneda_5`, `moneda_10`), casi seguro son imágenes
 //   distintas cuyo nombre lleva un número: se agrupan igual, pero con una advertencia que lo dice.
 // - Dos archivos no pueden dar la misma clave.
+// - `assets.config.json` puede cambiar la velocidad de una animación y el orden de sus cuadros
+//   (secuencia-de-cuadros.ts).
 
 import { CUADROS_POR_SEGUNDO_POR_DEFECTO } from './manifiesto.ts';
-import type { Asset, Manifiesto, Medidas } from './manifiesto.ts';
+import type { Asset, ConfiguracionDeAssets, Manifiesto, Medidas } from './manifiesto.ts';
 import { nombreSinExtensionDe } from './ruta-de-asset.ts';
+import { ordenarCuadros } from './secuencia-de-cuadros.ts';
 
 /** Un archivo de la carpeta que ya se reconoció como asset. `ruta` es relativa a la carpeta. */
 export type ArchivoDeAsset =
@@ -47,12 +50,12 @@ const NOMBRE_NUMERADO = /^(.+)_(\d+)$/;
 const CUADROS_MINIMOS_DE_UNA_ANIMACION = 2;
 
 /**
- * `cuadrosPorSegundo` son las velocidades que pide `assets.config.json`, por clave de animación.
- * Las animaciones que no aparecen ahí usan la velocidad por defecto.
+ * `configuracion` es lo que pide `assets.config.json`: la velocidad y el orden de los cuadros de las animaciones
+ * que no usan los de siempre.
  */
 export function armarManifiesto(
   archivos: readonly ArchivoDeAsset[],
-  cuadrosPorSegundo: Readonly<Record<string, number>>,
+  configuracion: ConfiguracionDeAssets,
 ): ManifiestoArmado {
   const armado: Armado = { manifiesto: {}, origenDeCadaClave: new Map(), errores: [], advertencias: [] };
   const archivosEnOrden = [...archivos].sort((uno, otro) => compararTextos(uno.ruta, otro.ruta));
@@ -73,9 +76,9 @@ export function armarManifiesto(
   }
 
   for (const [clave, cuadros] of animaciones) {
-    registrarAnimacion(clave, cuadros, cuadrosPorSegundo, armado);
+    registrarAnimacion(clave, cuadros, configuracion, armado);
   }
-  avisarVelocidadesSinAnimacion(cuadrosPorSegundo, animaciones, armado);
+  avisarAjustesSinAnimacion(configuracion, animaciones, armado);
 
   return { manifiesto: armado.manifiesto, errores: armado.errores, advertencias: armado.advertencias };
 }
@@ -116,9 +119,10 @@ function esCuadroDeUnaAnimacion(nombre: string, animaciones: ReadonlyMap<string,
 function registrarAnimacion(
   clave: string,
   cuadros: readonly Cuadro[],
-  cuadrosPorSegundo: Readonly<Record<string, number>>,
+  configuracion: ConfiguracionDeAssets,
   armado: Armado,
 ): void {
+  const cuadrosPorSegundo = configuracion.cuadrosPorSegundo;
   const enOrden = [...cuadros].sort((uno, otro) => uno.numero - otro.numero);
   const primero = enOrden[0]!; // una animación tiene al menos dos cuadros
 
@@ -141,10 +145,16 @@ function registrarAnimacion(
     velocidad = cuadrosPorSegundo[clave]!; // `hasOwn` acaba de comprobar que existe
   }
 
-  const rutasDeLosCuadros = enOrden.map((cuadro) => cuadro.ruta);
+  let secuencia: readonly number[] | undefined;
+  if (Object.hasOwn(configuracion.secuencias, clave)) {
+    secuencia = configuracion.secuencias[clave];
+  }
+  const enSecuencia = ordenarCuadros(clave, enOrden, secuencia);
+  armado.errores.push(...enSecuencia.errores);
+
   const asset: Asset = {
     tipo: 'animacion',
-    cuadros: rutasDeLosCuadros,
+    cuadros: enSecuencia.rutas,
     cuadrosPorSegundo: velocidad,
     ...primero.medidas,
   };
@@ -194,14 +204,22 @@ function registrar(clave: string, asset: Asset, origen: string, armado: Armado):
   armado.manifiesto[clave] = asset;
 }
 
-function avisarVelocidadesSinAnimacion(
-  cuadrosPorSegundo: Readonly<Record<string, number>>,
+/** Un ajuste de `assets.config.json` que nombra algo que no es una animación casi siempre es un error de dedo. */
+function avisarAjustesSinAnimacion(
+  configuracion: ConfiguracionDeAssets,
   animaciones: ReadonlyMap<string, Cuadro[]>,
   armado: Armado,
 ): void {
-  for (const clave of Object.keys(cuadrosPorSegundo)) {
+  for (const clave of Object.keys(configuracion.cuadrosPorSegundo)) {
     if (!animaciones.has(clave)) {
       armado.advertencias.push(`assets.config.json: "fps" nombra "${clave}", que no es una animación de esta carpeta`);
+    }
+  }
+  for (const clave of Object.keys(configuracion.secuencias)) {
+    if (!animaciones.has(clave)) {
+      armado.advertencias.push(
+        `assets.config.json: "secuencia" nombra "${clave}", que no es una animación de esta carpeta`,
+      );
     }
   }
 }

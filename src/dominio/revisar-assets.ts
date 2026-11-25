@@ -8,7 +8,7 @@ import type { AssetsDeNivel } from './assets-de-nivel.ts';
 import type { Contenido } from './contenido.ts';
 import type { Diagnostico } from './diagnostico.ts';
 import type { Asset } from './manifiesto.ts';
-import type { Paso, PasoDeAnimacion } from './paso.ts';
+import type { Paso, PasoDeAnimacion, PasoDeLinea } from './paso.ts';
 import { recorrerPasos } from './recorrer-pasos.ts';
 
 /** Lo que comparten las revisiones de este archivo. */
@@ -41,6 +41,7 @@ function revisarAssetsDePaso(paso: Paso, ruta: string, revision: RevisionDeAsset
   switch (paso.tipo) {
     case 'linea':
       revisarVoz(paso.audio, `${ruta}.audio`, revision);
+      revisarPosesDeLinea(paso, ruta, revision);
       break;
 
     case 'elige':
@@ -89,6 +90,17 @@ function revisarAssetsDePaso(paso: Paso, ruta: string, revision: RevisionDeAsset
     case 'fundido':
     case 'sale':
       break; // estos pasos no nombran assets
+  }
+}
+
+/** El dibujo que toma quien habla (`con`) y el de quienes escuchan (`reacciona`) deben ser imágenes del nivel. */
+function revisarPosesDeLinea(paso: PasoDeLinea, ruta: string, revision: RevisionDeAssets): void {
+  if (paso.pose !== undefined) {
+    revisarImagen(paso.pose, `${ruta}.con`, revision);
+  }
+  const reacciones = paso.reacciones ?? {};
+  for (const personaje of Object.keys(reacciones)) {
+    revisarImagen(reacciones[personaje]!, `${ruta}.reacciona.${personaje}`, revision); // viene de `Object.keys`
   }
 }
 

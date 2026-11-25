@@ -1,5 +1,6 @@
 // El globo de diálogo: una placa con el texto, la traducción opcional debajo y, si la línea
 // enseña una palabra, su tarjeta de vocabulario arriba. Su piquito apunta a quien habla.
+// Si el personaje piensa en vez de decir, el globo es una nube y el piquito son burbujitas.
 
 import type { LugarEnPantalla } from '../../puertos/escenario.ts';
 import type { GloboPorMostrar } from '../../puertos/interfaz.ts';
@@ -35,6 +36,8 @@ export class GloboDeDialogo {
     const numeroDeEsteGlobo = this.globosMostrados;
 
     this.elemento.replaceChildren();
+    // Un pensamiento se dibuja como nube con burbujitas: se distingue de lo que se dice sin leer nada.
+    this.elemento.classList.toggle('pensamiento', globo.esPensamiento === true);
     if (globo.palabra !== undefined) {
       const palabraEnLosDosIdiomas = `${globo.palabra.en} · ${globo.palabra.es}`;
       this.elemento.append(crearConTexto('div', 'tarjeta-de-palabra', palabraEnLosDosIdiomas));

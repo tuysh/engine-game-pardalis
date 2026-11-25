@@ -207,3 +207,15 @@ test('animar con una imagen fija sin "repite" se advierte: no se alcanzaría a v
       'agrega "repite": true para dejar al personaje con ese dibujo',
   ]);
 });
+
+test('la pose de quien habla y las reacciones de quienes escuchan deben ser imágenes del nivel', () => {
+  const diagnostico = revisarPasos([
+    { tipo: 'linea', hablante: 'tortu', texto: '¡Ay!', pose: 'img_rosa', reacciones: { tortu: 'spr_tortu' } },
+    { tipo: 'linea', hablante: 'tortu', texto: '¡Ay!', pose: 'tortu_sorpresa', reacciones: { tortu: 'vo_hola' } },
+  ]);
+
+  expect(diagnostico.errores).toEqual([
+    'secuencias.prueba[1].con: no existe la imagen "tortu_sorpresa" en los assets del nivel',
+    'secuencias.prueba[1].reacciona.tortu: "vo_hola" es un asset de tipo audio, y aquí va una imagen',
+  ]);
+});

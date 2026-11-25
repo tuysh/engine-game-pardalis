@@ -68,6 +68,25 @@ export const ESTILOS_DE_LA_INTERFAZ = `
   transform: translateX(-50%) rotate(45deg);
 }
 
+/* Lo que alguien piensa (no lo dice): una nube de bordes muy redondos y línea punteada... */
+.globo.pensamiento {
+  border-style: dashed;
+  border-radius: calc(46px * var(--escala));
+}
+
+/* ...y en vez de piquito, dos burbujitas que bajan hacia quien piensa (la segunda es la sombra de la primera). */
+.globo.pensamiento::after {
+  bottom: calc(-16px * var(--escala));
+  width: calc(12px * var(--escala));
+  height: calc(12px * var(--escala));
+  border: calc(3px * var(--escala)) solid var(--tinta);
+  border-radius: 50%;
+  transform: translateX(-50%);
+  box-shadow:
+    calc(-9px * var(--escala)) calc(13px * var(--escala)) 0 calc(-2px * var(--escala)) var(--fondo),
+    calc(-9px * var(--escala)) calc(13px * var(--escala)) 0 calc(1px * var(--escala)) var(--tinta);
+}
+
 .traduccion {
   margin-top: calc(6px * var(--escala));
   font-size: 0.75em;

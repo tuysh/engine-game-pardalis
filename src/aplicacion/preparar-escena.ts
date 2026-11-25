@@ -5,6 +5,7 @@
 import type { Asset } from '../dominio/manifiesto.ts';
 import type { LugarDePersonaje } from '../dominio/mundo.ts';
 import type { Nivel } from '../dominio/nivel.ts';
+import type { PasoDeLinea } from '../dominio/paso.ts';
 import { recorrerPasos } from '../dominio/recorrer-pasos.ts';
 import type {
   DecoradoDeEscena,
@@ -68,8 +69,8 @@ export function prepararPersonajes(nivel: Nivel, ubicacion: UbicacionDeAssets): 
 }
 
 /**
- * Las imágenes que los pasos de las escenas van a necesitar más tarde: las animaciones de los pasos `anima`
- * y el dibujo de quien entra con un paso `aparece`. Sirve para descargarlas antes de que les toque.
+ * Las imágenes que los pasos de las escenas van a necesitar más tarde: las animaciones de los pasos `anima`,
+ * las poses de las líneas (`con` y `reacciona`) y el dibujo de quien entra con un paso `aparece`. Sirve para descargarlas antes de que les toque.
  */
 export function prepararImagenesDeEscenas(nivel: Nivel, ubicacion: UbicacionDeAssets): ImagenDeEscena[] {
   const claves = new Set<string>();
@@ -77,6 +78,11 @@ export function prepararImagenesDeEscenas(nivel: Nivel, ubicacion: UbicacionDeAs
     alVerPaso(paso) {
       if (paso.tipo === 'anima') {
         claves.add(paso.clave);
+      }
+      if (paso.tipo === 'linea') {
+        for (const clave of clavesDeLasPosesDe(paso)) {
+          claves.add(clave);
+        }
       }
       if (paso.tipo === 'aparece') {
         const personaje = nivel.contenido.meta.personajes[paso.personaje]!; // la validación garantiza que existe
@@ -93,6 +99,16 @@ export function prepararImagenesDeEscenas(nivel: Nivel, ubicacion: UbicacionDeAs
     imagenes.push(crearImagenDeEscena(clave, nivel, ubicacion));
   }
   return imagenes;
+}
+
+/** Las claves de los dibujos que una línea pone mientras dura: el de quien habla y los de quienes escuchan. */
+function clavesDeLasPosesDe(linea: PasoDeLinea): string[] {
+  const claves: string[] = [];
+  if (linea.pose !== undefined) {
+    claves.push(linea.pose);
+  }
+  claves.push(...Object.values(linea.reacciones ?? {}));
+  return claves;
 }
 
 function crearPersonajeDeEscena(

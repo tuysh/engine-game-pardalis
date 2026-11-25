@@ -275,8 +275,8 @@ export async function intro(escena) {
 
 Se registra en `crearEscenario({ cinematicas: { intro } })` y en el JSON se declara `"codigo": "intro"`.
 `escena` ofrece además `escena.efecto()`, `escena.secuencia()`, `escena.estado` (lectura y `pon`) y `escena.senal`.
-Las opciones de `escena.dice` se llaman igual que los campos del paso `dice`: `audio`, `trad`, y `en` + `es`
-(siempre juntos) para una tarjeta de vocabulario.
+Las opciones de `escena.dice` se llaman igual que los campos del paso `dice`: `audio`, `trad`, `en` + `es`
+(siempre juntos) para una tarjeta de vocabulario, y `con`, `reacciona` y `piensa`.
 El paso `cuando` no tiene método: en código se escribe un `if` con `escena.estado.cumple('...')`.
 
 El validador no puede leer el código, así que cada método revisa al ejecutarse que exista lo que nombra
@@ -327,6 +327,10 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   cinemática con `saltable: false`: ese campo solo decide si el jugador ve el botón.
 - **`anima`** sin `repite` regresa al personaje a su `sprite` al terminar; con `repite` lo deja con el dibujo nuevo.
   Un `sprite` o un objeto del decorado que sean animación se repiten solos todo el tiempo.
+- **Una línea puede cambiar caras:** `con` es el dibujo de quien habla y `reacciona` el de quienes escuchan,
+  solo mientras dura la línea; al terminar, cada quien vuelve al dibujo que tenía. Con `piensa`, el globo es
+  una nube. En código son opciones de `escena.dice` con los mismos nombres. Al saltar una cinemática la línea
+  se omite, así que nadie cambia de dibujo.
 - **`aparece`** con alguien que ya está en el escenario solo lo cambia de lugar. Quien entra con `aparece`
   puede tener diálogo en `npcs` aunque no esté en el mapa. **`desaparece`** no acepta al personaje del jugador.
 - **Con el botón de inicio** (`iniciarCon: 'boton'`) el tiempo no pasa hasta que lo tocan: la cinemática de
@@ -378,6 +382,8 @@ bunx escenario-engine assets niveles/casa
 - **Animación:** archivos numerados `clave_1.svg`, `clave_2.svg`… se agrupan solos en una animación, en orden numérico.
   Todos los cuadros deben tener el mismo `viewBox`; si no, el generador da error.
   Los `fps` (por defecto 8) se ajustan en un archivo opcional `assets.config.json` que el generador respeta.
+  Ahí mismo, `secuencia` cambia el orden de los cuadros y deja repetirlos (`[1, 1, 1, 1, 1, 2]`): un parpadeo
+  se hace con dos dibujos y no con seis archivos iguales.
   El generador lista cada animación que formó y advierte si la numeración no va seguida desde 1: un nombre
   como `moneda_5` casi nunca es un cuadro.
 - El validador cruza cada clave del mapa y del contenido contra el manifiesto: imagen o video que falta es

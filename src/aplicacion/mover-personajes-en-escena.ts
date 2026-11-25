@@ -20,7 +20,7 @@ export async function aparecerEnEscena(paso: PasoDeAparicion, piezas: PiezasDeDi
   const personaje = contenido.meta.personajes[paso.personaje]!; // la validación garantiza que el personaje existe
   await reparto.agregar({
     id: paso.personaje,
-    imagen: piezas.imagenDeAsset(personaje.sprite),
+    imagen: piezas.escena.imagenDeAsset(personaje.sprite),
     posicion,
     mira: 'derecha',
     // Igual que los personajes del mapa: se le puede hablar solo si tiene diálogo en el contenido.

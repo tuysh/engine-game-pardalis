@@ -114,6 +114,7 @@ function crearPiezasDeEscena(base: BaseDelNivel): PiezasDeEscena {
     estado: base.estado,
     minijuegos: pedido.minijuegos,
     direccionDeAsset: (clave) => buscarDireccionDeAsset(clave, nivel.assets, pedido.ubicacion),
+    imagenDeAsset: (clave) => crearImagenDeEscena(clave, nivel, pedido.ubicacion),
     alVerPalabra: (palabra) => avisos.alVerPalabra(palabra),
     alEmpezarMinijuego: (nombre) => avisos.alEmpezarMinijuego(nombre),
     alTerminarMinijuego: (nombre) => avisos.alTerminarMinijuego(nombre),
@@ -166,7 +167,6 @@ function crearEscenas(base: BaseDelNivel, piezas: PiezasParaLasEscenas): Escenas
     camara: piezas.camara,
     fundido: pedido.fundido ?? new FundidoDePantalla(puertos.interfaz, puertos.reloj),
     video: puertos.video,
-    imagenDeAsset: (clave) => crearImagenDeEscena(clave, nivel, pedido.ubicacion),
     cinematicasEnCodigo: pedido.cinematicasEnCodigo ?? {},
     avisos: base.avisos,
     alEmpezarUnaEscena: () => {

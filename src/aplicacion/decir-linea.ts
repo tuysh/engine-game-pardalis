@@ -1,4 +1,5 @@
-// Hace que una línea de diálogo se vea y se oiga: globo sobre quien habla, voz, y tarjeta de vocabulario.
+// Hace que una línea de diálogo se vea y se oiga: globo sobre quien habla, voz, tarjeta de vocabulario
+// y, si la línea las trae, las poses de quien habla y de quienes escuchan (poses-de-linea.ts).
 //
 // Cómo termina una línea (lo primero que pase):
 //   - el jugador toca la pantalla (salvo en los comentarios, que no esperan toques);
@@ -10,6 +11,7 @@
 import type { PasoDeLinea } from '../dominio/paso.ts';
 import { decirSinEsperarDeMas } from './decir-sin-esperar-de-mas.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
+import { ponerPosesDeLinea } from './poses-de-linea.ts';
 
 /** Pausa entre que termina la voz y el globo se cierra solo. */
 const ESPERA_AL_TERMINAR_LA_VOZ_EN_SEGUNDOS = 0.7;
@@ -38,7 +40,15 @@ export async function decirLinea(porDecir: LineaPorDecir, senal: AbortSignal, pi
   const hablaOtroIdioma = personaje.idioma !== piezas.idiomaBase;
   const traduccion = hablaOtroIdioma ? linea.traduccion : undefined;
 
-  const quitarGlobo = piezas.interfaz.mostrarGlobo({ texto: textoCompleto, traduccion, palabra: linea.palabra });
+  // Las poses van antes que el globo: la cara de sorpresa se ve en cuanto empieza la línea.
+  const devolverLosDibujos = ponerPosesDeLinea(linea, piezas);
+
+  const quitarGlobo = piezas.interfaz.mostrarGlobo({
+    texto: textoCompleto,
+    traduccion,
+    palabra: linea.palabra,
+    esPensamiento: linea.esPensamiento,
+  });
   if (linea.palabra !== undefined) {
     piezas.alVerPalabra(linea.palabra);
   }
@@ -84,6 +94,7 @@ export async function decirLinea(porDecir: LineaPorDecir, senal: AbortSignal, pi
     // Si la línea termina por un error, esto calla la voz que hubiera quedado sonando.
     cierre.abort();
     quitarGlobo();
+    devolverLosDibujos();
   }
 }
 

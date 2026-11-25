@@ -13,7 +13,7 @@ import { esObjetoPlano } from '../dominio/es-objeto-plano.ts';
 import { valorDe } from '../dominio/estado.ts';
 import type { Punto } from '../dominio/geometria.ts';
 import { CAMARA_AL_JUGADOR, EFECTOS_DISPONIBLES } from '../dominio/paso.ts';
-import type { PalabraDeVocabulario, Paso } from '../dominio/paso.ts';
+import type { Paso } from '../dominio/paso.ts';
 import type {
   EscenaDeCinematica,
   EstadoParaCinematica,
@@ -24,6 +24,7 @@ import type {
 } from '../puertos/cinematica-en-codigo.ts';
 import type { EjecucionDePasos } from './ejecucion-de-pasos.ts';
 import { ejecutarPasos } from './ejecutar-pasos.ts';
+import { armarLineaDesdeCodigo } from './linea-desde-codigo.ts';
 
 /** Lo que una cinemática en código puede nombrar del mapa y de los assets. */
 export interface LugaresParaCodigo {
@@ -164,17 +165,12 @@ export class EscenaEnCodigo implements EscenaDeCinematica {
     const llamada = `dice("${personaje}", …)`;
     this.#exigirPersonaje(personaje, llamada);
 
-    // Desde JavaScript las opciones pueden llegar en `null`: cuenta igual que no ponerlas.
-    const { audio, trad, en, es } = opciones ?? {};
-    const soloTraeUnaMitad = (en === undefined) !== (es === undefined);
-    if (soloTraeUnaMitad) {
-      this.#fallar(llamada, 'una tarjeta de vocabulario necesita "en" y "es" juntos');
+    const { contenido } = this.#pedido.ejecucion;
+    const linea = armarLineaDesdeCodigo({ personaje, texto, opciones }, contenido, this.#pedido.lugares.assets);
+    if (linea.tipo === 'problema') {
+      this.#fallar(llamada, linea.problema);
     }
-    let palabra: PalabraDeVocabulario | undefined;
-    if (en !== undefined && es !== undefined) {
-      palabra = { en, es };
-    }
-    await this.#ejecutar({ tipo: 'linea', hablante: personaje, texto, traduccion: trad, palabra, audio });
+    await this.#ejecutar(linea.paso);
   };
 
   readonly camina = async (personaje: string, punto: string): Promise<void> => {

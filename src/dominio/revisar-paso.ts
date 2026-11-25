@@ -60,6 +60,11 @@ function revisarLinea(paso: PasoDeLinea, ruta: string, revision: Revision): void
   if (!Object.hasOwn(revision.contenido.meta.personajes, paso.hablante)) {
     revision.diagnostico.errores.push(`${ruta}: el hablante "${paso.hablante}" no existe en meta.personajes`);
   }
+  for (const personaje of Object.keys(paso.reacciones ?? {})) {
+    if (!Object.hasOwn(revision.contenido.meta.personajes, personaje)) {
+      revision.diagnostico.errores.push(`${ruta}.reacciona: el personaje "${personaje}" no existe en meta.personajes`);
+    }
+  }
   revisarVariablesDeTexto(paso.texto, ruta, revision);
 }
 

@@ -35,6 +35,12 @@ export interface OpcionesDeLinea {
   readonly en?: string;
   /** La misma palabra en español. Va siempre junto con `en`. */
   readonly es?: string;
+  /** Clave del dibujo que quien habla toma mientras dura la línea. Al terminar vuelve al que tenía. */
+  readonly con?: string;
+  /** El dibujo que toman quienes escuchan mientras dura la línea: `{ bobby: 'bobby_feliz' }`. */
+  readonly reacciona?: Readonly<Record<string, string>>;
+  /** `true` si el personaje lo piensa y no lo dice: el globo es una nube. */
+  readonly piensa?: boolean;
 }
 
 /** Un video que lleva voces: la clave del video de cada idioma. */

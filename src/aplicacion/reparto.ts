@@ -6,9 +6,16 @@ import type { Punto } from '../dominio/geometria.ts';
 import type { Mira } from '../dominio/mundo.ts';
 import type { Escenario, ImagenDeEscena, PersonajeDeEscena } from '../puertos/escenario.ts';
 
+/** El dibujo que un personaje tiene puesto: su imagen o animación y si la animación se repite. */
+export interface DibujoDePersonaje {
+  readonly imagen: ImagenDeEscena;
+  readonly repite: boolean;
+}
+
 interface Miembro {
   posicion: Punto;
   mira: Mira;
+  dibujo: DibujoDePersonaje;
 }
 
 export class Reparto {
@@ -21,7 +28,9 @@ export class Reparto {
 
   /** Pone un personaje en el escenario. Termina cuando su imagen ya cargó. */
   async agregar(personaje: PersonajeDeEscena): Promise<void> {
-    this.miembros.set(personaje.id, { posicion: personaje.posicion, mira: personaje.mira });
+    // El dibujo con el que alguien entra al escenario, si es una animación, se repite sin parar.
+    const dibujo = { imagen: personaje.imagen, repite: true };
+    this.miembros.set(personaje.id, { posicion: personaje.posicion, mira: personaje.mira, dibujo });
     await this.escenario.agregarPersonaje(personaje);
   }
 
@@ -41,8 +50,17 @@ export class Reparto {
    * Termina cuando el dibujo nuevo ya se ve. Si el personaje no está en el escenario, no hace nada.
    */
   async ponerDibujo(id: string, imagen: ImagenDeEscena, opciones: { readonly repite: boolean }): Promise<void> {
-    if (!this.miembros.has(id)) return;
+    const miembro = this.miembros.get(id);
+    if (miembro === undefined) return;
+    miembro.dibujo = { imagen, repite: opciones.repite };
     await this.escenario.ponerDibujoDePersonaje(id, imagen, opciones);
+  }
+
+  /** El dibujo que un personaje tiene puesto ahora, o `undefined` si no está en el escenario. */
+  dibujoDe(id: string): DibujoDePersonaje | undefined {
+    const miembro = this.miembros.get(id);
+    if (miembro === undefined) return undefined;
+    return miembro.dibujo;
   }
 
   /** Dónde pisa un personaje, o `undefined` si no está en el escenario. */

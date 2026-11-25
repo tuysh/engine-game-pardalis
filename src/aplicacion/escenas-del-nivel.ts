@@ -9,7 +9,6 @@
 import type { Punto } from '../dominio/geometria.ts';
 import type { Nivel } from '../dominio/nivel.ts';
 import type { CinematicaEnCodigo } from '../puertos/cinematica-en-codigo.ts';
-import type { ImagenDeEscena } from '../puertos/escenario.ts';
 import type { Video } from '../puertos/video.ts';
 import type { CamaraDeEscena } from './camara-de-escena.ts';
 import { Cinematicas } from './cinematicas.ts';
@@ -28,8 +27,6 @@ export interface PiezasDeLasEscenas {
   readonly camara: CamaraDeEscena;
   readonly fundido: FundidoDePantalla;
   readonly video: Video;
-  /** La imagen (o la animación) de una clave de assets, lista para dibujarse. */
-  readonly imagenDeAsset: (clave: string) => ImagenDeEscena;
   /** Las cinemáticas escritas en código que registró el host, por nombre. */
   readonly cinematicasEnCodigo: Readonly<Record<string, CinematicaEnCodigo>>;
   readonly avisos: AvisosDelNivel;
@@ -55,7 +52,6 @@ export class EscenasDelNivel {
       camara: piezas.camara,
       fundido: piezas.fundido,
       video: piezas.video,
-      imagenDeAsset: piezas.imagenDeAsset,
       pedirSalida: (destino) => {
         this.destinoPedido = destino;
       },

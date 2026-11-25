@@ -300,3 +300,13 @@ test('una comparación sin número a la derecha explica cómo se escribe', () =>
       'una variable, un signo (>=, <=, >, < o =) y un número, como "dinero >= 10"',
   ]);
 });
+
+test('quien reacciona a una línea debe ser un personaje', () => {
+  const diagnostico = revisarPasosDeTortu([
+    { tipo: 'linea', hablante: 'tortu', texto: '¡Hola!', reacciones: { tomy: 'tommy_feliz' } },
+  ]);
+
+  expect(diagnostico.errores).toEqual([
+    'npcs.tortu.dialogo[0].dice[0].reacciona: el personaje "tomy" no existe en meta.personajes',
+  ]);
+});
