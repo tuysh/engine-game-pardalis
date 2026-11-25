@@ -362,6 +362,8 @@ bunx escenario-engine assets niveles/casa
 - **Animación:** archivos numerados `clave_1.svg`, `clave_2.svg`… se agrupan solos en una animación, en orden numérico.
   Todos los cuadros deben tener el mismo `viewBox`; si no, el generador da error.
   Los `fps` (por defecto 8) se ajustan en un archivo opcional `assets.config.json` que el generador respeta.
+  El generador lista cada animación que formó y advierte si la numeración no va seguida desde 1: un nombre
+  como `moneda_5` casi nunca es un cuadro.
 - El validador cruza cada clave del mapa y del contenido contra el manifiesto: imagen o video que falta es
   **error**; voz que falta es **advertencia** (se usa voz sintetizada, sin pedir el archivo).
 
@@ -505,6 +507,8 @@ No se leen partidas de la versión 2.0.
 - CLI: `escenario-engine validar <nivel.json> [--minijuegos A,B]` y `escenario-engine assets <carpeta>`;
   corre en Bun y en Node.
 - Se quita `private: true` y `typescript` deja de ser dependencia de quien lo usa.
+- Mientras no esté publicado en npm se instala desde GitHub: el script `prepare` construye `dist/` al instalar
+  (los pasos, que cambian según el gestor de paquetes, están en el [`README`](../README.md)).
 
 ## 12. Uso por framework
 

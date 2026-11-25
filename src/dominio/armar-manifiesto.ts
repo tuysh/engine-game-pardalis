@@ -5,6 +5,8 @@
 // - Las imágenes numeradas (`clave_1.svg`, `clave_2.svg`…) se agrupan solas en una animación llamada `clave`,
 //   en orden numérico. Hacen falta al menos dos; una sola imagen numerada se queda como imagen normal.
 // - Todos los cuadros de una animación deben medir lo mismo.
+// - Los cuadros se numeran seguidos desde 1. Si no (`moneda_5`, `moneda_10`), casi seguro son imágenes
+//   distintas cuyo nombre lleva un número: se agrupan igual, pero con una advertencia que lo dice.
 // - Dos archivos no pueden dar la misma clave.
 
 import { CUADROS_POR_SEGUNDO_POR_DEFECTO } from './manifiesto.ts';
@@ -132,6 +134,8 @@ function registrarAnimacion(
     }
   }
 
+  avisarNumeracionQueNoParecenCuadros(clave, enOrden, armado);
+
   let velocidad = CUADROS_POR_SEGUNDO_POR_DEFECTO;
   if (Object.hasOwn(cuadrosPorSegundo, clave)) {
     velocidad = cuadrosPorSegundo[clave]!; // `hasOwn` acaba de comprobar que existe
@@ -145,6 +149,30 @@ function registrarAnimacion(
     ...primero.medidas,
   };
   registrar(clave, asset, `los cuadros ${primero.ruta}…`, armado);
+}
+
+/**
+ * Los cuadros de una animación se numeran 1, 2, 3… Una numeración con saltos o que no empieza en 1
+ * (`moneda_1`, `moneda_5`, `moneda_10`) suele ser de imágenes distintas que nadie quiso animar.
+ */
+function avisarNumeracionQueNoParecenCuadros(clave: string, cuadrosEnOrden: readonly Cuadro[], armado: Armado): void {
+  let vanSeguidosDesdeUno = true;
+  for (let i = 0; i < cuadrosEnOrden.length; i++) {
+    const numeroEsperado = i + 1;
+    if (cuadrosEnOrden[i]!.numero !== numeroEsperado) {
+      vanSeguidosDesdeUno = false; // `i` es menor que el largo de la lista
+    }
+  }
+  if (vanSeguidosDesdeUno) return;
+
+  const nombres: string[] = [];
+  for (const cuadro of cuadrosEnOrden) {
+    nombres.push(`"${nombreSinExtensionDe(cuadro.ruta)}"`);
+  }
+  armado.advertencias.push(
+    `${nombres.join(', ')} se agruparon en la animación "${clave}", pero sus números no van seguidos desde 1; ` +
+      'si son imágenes distintas, cámbiales el nombre para que no termine en _número',
+  );
 }
 
 /** Guarda un asset en el manifiesto, o anota un error si su clave ya salió de otro archivo. */

@@ -386,6 +386,13 @@ niveles/
 | Audio | `.mp3`, `.ogg`, `.wav`, `.m4a` | Voces, sonidos y música. |
 | Video | `.mp4` | H.264 + AAC, que funciona en iPad y en Chrome. Suena junto con la música que esté puesta: si el video trae su propio sonido, conviene que el nivel no tenga música en ese momento. |
 
+> **Cuidado con los nombres que terminan en `_número`.** Dos o más imágenes llamadas igual salvo por ese número
+> **siempre** se toman como cuadros de una animación, y entonces sus claves sueltas dejan de existir:
+> `item_moneda_5.svg` e `item_moneda_10.svg` se vuelven la animación `item_moneda`. Si el número es parte del
+> nombre de la cosa (una moneda de 5, un billete de 50, dos adornos distintos), escríbelo sin guion bajo
+> (`item_moneda5`) o con letras (`papel_picado_a`). El generador lista cada animación que formó, y avisa
+> cuando los números no van seguidos desde 1.
+
 Las subcarpetas (`img/`, `voz/`…) son para ordenar: no cambian la clave. Por eso **dos archivos de una carpeta
 de assets no pueden llamarse igual**, aunque estén en subcarpetas distintas o tengan otra extensión.
 
@@ -407,6 +414,14 @@ Por defecto una animación va a 8 cuadros por segundo. Para cambiarlo, crea junt
 ```
 
 El generador avisa si un SVG enlaza archivos externos (una foto, una fuente): al usarse en el juego no se cargan.
+
+Al terminar dice qué animaciones formó, para que una que nadie quiso se note al momento:
+
+```
+⚠ "item_moneda_1", "item_moneda_5", "item_moneda_10" se agruparon en la animación "item_moneda", pero sus números no van seguidos desde 1; si son imágenes distintas, cámbiales el nombre para que no termine en _número
+• animación "tele": 2 cuadros a 2 por segundo
+✓ niveles/casa/assets.json generado (9 assets, 1 advertencia)
+```
 
 ### Qué revisa el validador
 

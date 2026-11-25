@@ -119,3 +119,31 @@ test('una velocidad para algo que no es una animación da advertencia', () => {
 test('una carpeta sin assets da un manifiesto vacío', () => {
   expect(armarManifiesto([], {})).toEqual({ manifiesto: {}, errores: [], advertencias: [] });
 });
+
+test('una numeración que no va seguida desde 1 se agrupa igual, pero avisa que quizá no son cuadros', () => {
+  const archivos: ArchivoDeAsset[] = [
+    { tipo: 'imagen', ruta: 'img/item_moneda_1.svg', medidas: MEDIDAS_DE_TOMMY },
+    { tipo: 'imagen', ruta: 'img/item_moneda_5.svg', medidas: MEDIDAS_DE_TOMMY },
+    { tipo: 'imagen', ruta: 'img/item_moneda_10.svg', medidas: MEDIDAS_DE_TOMMY },
+  ];
+
+  const armado = armarManifiesto(archivos, {});
+
+  expect(armado.manifiesto['item_moneda']).toMatchObject({ tipo: 'animacion' });
+  expect(armado.advertencias).toEqual([
+    '"item_moneda_1", "item_moneda_5", "item_moneda_10" se agruparon en la animación "item_moneda", ' +
+      'pero sus números no van seguidos desde 1; ' +
+      'si son imágenes distintas, cámbiales el nombre para que no termine en _número',
+  ]);
+});
+
+test('una numeración que no empieza en 1 también avisa', () => {
+  const archivos: ArchivoDeAsset[] = [
+    { tipo: 'imagen', ruta: 'item_billete_20.svg', medidas: MEDIDAS_DE_TOMMY },
+    { tipo: 'imagen', ruta: 'item_billete_50.svg', medidas: MEDIDAS_DE_TOMMY },
+  ];
+
+  const armado = armarManifiesto(archivos, {});
+
+  expect(armado.advertencias).toHaveLength(1);
+});

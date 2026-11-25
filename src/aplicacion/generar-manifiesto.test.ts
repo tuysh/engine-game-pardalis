@@ -43,7 +43,7 @@ test('genera el manifiesto con imágenes medidas, audio y video, e ignora lo que
 
   const resultado = await generarManifiesto('niveles/casa', { carpetas, escritor: ESCRITOR_FALSO });
 
-  expect(resultado).toEqual({ errores: [], advertencias: [], cantidadDeAssets: 3 });
+  expect(resultado).toEqual({ errores: [], advertencias: [], cantidadDeAssets: 3, animaciones: [] });
   expect(manifiestoEscrito(carpetas, 'niveles/casa')).toEqual({
     spr_mama: { tipo: 'imagen', archivo: 'img/spr_mama.svg', anchoEnPixeles: 110, altoEnPixeles: 170 },
     intro_tele: { tipo: 'video', archivo: 'video/intro_tele.mp4' },
@@ -90,6 +90,7 @@ test('un SVG sin viewBox es un error y entonces no se escribe el manifiesto', as
     ],
     advertencias: [],
     cantidadDeAssets: 0,
+    animaciones: [],
   });
   expect(manifiestoEscrito(carpetas, 'niveles/casa')).toBeUndefined();
 });
@@ -115,6 +116,7 @@ test('un SVG que enlaza archivos externos da advertencia, pero el manifiesto se 
     errores: [],
     advertencias: ['img/cartel.svg: el SVG enlaza archivos externos (foto.png); al usarse como textura no se cargan'],
     cantidadDeAssets: 1,
+    animaciones: [],
   });
 });
 
@@ -123,7 +125,12 @@ test('una carpeta que no existe se reporta como error', async () => {
 
   const resultado = await generarManifiesto('niveles/no_existe', { carpetas, escritor: ESCRITOR_FALSO });
 
-  expect(resultado).toEqual({ errores: ['no existe la carpeta niveles/no_existe'], advertencias: [], cantidadDeAssets: 0 });
+  expect(resultado).toEqual({
+    errores: ['no existe la carpeta niveles/no_existe'],
+    advertencias: [],
+    cantidadDeAssets: 0,
+    animaciones: [],
+  });
 });
 
 test('un assets.config.json que no es JSON es un error', async () => {
@@ -141,4 +148,18 @@ test('un assets.config.json con otra forma se reporta con el nombre del archivo'
   const resultado = await generarManifiesto('niveles/casa', { carpetas, escritor: ESCRITOR_FALSO });
 
   expect(resultado.errores).toEqual(['assets.config.json: falta cuadrosPorSegundo']);
+});
+
+test('el resultado lista las animaciones que se formaron, para que una inesperada se note', async () => {
+  const carpetas = new CarpetasDeMemoria({
+    'niveles/casa': {
+      'img/tele_1.svg': svgDe(40, 30),
+      'img/tele_2.svg': svgDe(40, 30),
+      'img/spr_mama.svg': svgDe(110, 170),
+    },
+  });
+
+  const resultado = await generarManifiesto('niveles/casa', { carpetas, escritor: ESCRITOR_FALSO });
+
+  expect(resultado.animaciones).toEqual([{ clave: 'tele', cantidadDeCuadros: 2, cuadrosPorSegundo: 8 }]);
 });

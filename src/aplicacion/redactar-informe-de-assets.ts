@@ -3,7 +3,11 @@
 //
 // Ejemplo:
 //   ⚠ img/cartel.svg: el SVG enlaza archivos externos (foto.png); al usarse como textura no se cargan
+//   • animación "tele": 2 cuadros a 2 por segundo
 //   ✓ niveles/casa/assets.json generado (12 assets, 1 advertencia)
+//
+// Las animaciones se listan una por una: se forman solas con las imágenes numeradas, y así una
+// que nadie quiso (dos imágenes distintas llamadas `adorno_1` y `adorno_2`) se nota al momento.
 
 import { NOMBRE_DEL_MANIFIESTO } from '../dominio/manifiesto.ts';
 import { contarConPlural } from './contar-con-plural.ts';
@@ -17,6 +21,11 @@ export function redactarInformeDeAssets(carpeta: string, resultado: ResultadoDeG
   }
   for (const error of resultado.errores) {
     lineas.push(`✗ ${error}`);
+  }
+
+  for (const animacion of resultado.animaciones) {
+    const cuantosCuadros = contarConPlural(animacion.cantidadDeCuadros, 'cuadro', 'cuadros');
+    lineas.push(`• animación "${animacion.clave}": ${cuantosCuadros} a ${animacion.cuadrosPorSegundo} por segundo`);
   }
 
   const archivo = `${carpeta}/${NOMBRE_DEL_MANIFIESTO}`;

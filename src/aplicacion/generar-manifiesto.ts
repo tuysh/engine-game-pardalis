@@ -15,7 +15,7 @@ import { crearDiagnostico } from '../dominio/diagnostico.ts';
 import type { Diagnostico } from '../dominio/diagnostico.ts';
 import { ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
 import { NOMBRE_DE_LA_CONFIGURACION_DE_ASSETS, NOMBRE_DEL_MANIFIESTO } from '../dominio/manifiesto.ts';
-import type { ConfiguracionDeAssets } from '../dominio/manifiesto.ts';
+import type { ConfiguracionDeAssets, Manifiesto } from '../dominio/manifiesto.ts';
 import { medirImagen } from '../dominio/medir-imagen.ts';
 import { enlacesExternosDeSvg } from '../dominio/medir-svg.ts';
 import { extensionDe, tipoDeArchivoDeAsset } from '../dominio/ruta-de-asset.ts';
@@ -27,19 +27,40 @@ export interface PuertosParaGenerar {
   readonly escritor: EscritorDeManifiestos;
 }
 
+/** Una animación que el generador formó al agrupar imágenes numeradas. */
+export interface AnimacionGenerada {
+  readonly clave: string;
+  readonly cantidadDeCuadros: number;
+  readonly cuadrosPorSegundo: number;
+}
+
 export interface ResultadoDeGenerar {
   readonly errores: readonly string[];
   readonly advertencias: readonly string[];
   /** Cuántos assets quedaron en el manifiesto. Es 0 si hubo errores, porque entonces no se escribe. */
   readonly cantidadDeAssets: number;
+  /**
+   * Las animaciones que quedaron en el manifiesto, en orden alfabético. Se informan una por una para que
+   * una animación que nadie quiso (imágenes distintas con nombre numerado) se note al momento.
+   * Vacía si hubo errores.
+   */
+  readonly animaciones: readonly AnimacionGenerada[];
 }
+
+/** Lo que `generar` escribió. */
+interface ManifiestoEscrito {
+  readonly cantidadDeAssets: number;
+  readonly animaciones: readonly AnimacionGenerada[];
+}
+
+const NADA_ESCRITO: ManifiestoEscrito = { cantidadDeAssets: 0, animaciones: [] };
 
 export async function generarManifiesto(carpeta: string, puertos: PuertosParaGenerar): Promise<ResultadoDeGenerar> {
   const diagnostico = crearDiagnostico();
-  let cantidadDeAssets = 0;
+  let escrito = NADA_ESCRITO;
 
   try {
-    cantidadDeAssets = await generar(carpeta, puertos, diagnostico);
+    escrito = await generar(carpeta, puertos, diagnostico);
   } catch (error) {
     // Una carpeta o un archivo que no se pudo leer se reporta con los demás problemas.
     // Cualquier otro error es una falla del motor y no se esconde.
@@ -47,11 +68,20 @@ export async function generarManifiesto(carpeta: string, puertos: PuertosParaGen
     diagnostico.errores.push(...error.problemas);
   }
 
-  return { errores: diagnostico.errores, advertencias: diagnostico.advertencias, cantidadDeAssets };
+  return {
+    errores: diagnostico.errores,
+    advertencias: diagnostico.advertencias,
+    cantidadDeAssets: escrito.cantidadDeAssets,
+    animaciones: escrito.animaciones,
+  };
 }
 
-/** Devuelve cuántos assets se escribieron; 0 si se anotaron errores. */
-async function generar(carpeta: string, puertos: PuertosParaGenerar, diagnostico: Diagnostico): Promise<number> {
+/** Escribe el manifiesto y dice qué quedó en él. Si se anotaron errores, no escribe nada. */
+async function generar(
+  carpeta: string,
+  puertos: PuertosParaGenerar,
+  diagnostico: Diagnostico,
+): Promise<ManifiestoEscrito> {
   const rutas = await puertos.carpetas.listarArchivos(carpeta);
 
   const configuracion = await leerConfiguracion(carpeta, rutas, puertos, diagnostico);
@@ -60,11 +90,24 @@ async function generar(carpeta: string, puertos: PuertosParaGenerar, diagnostico
   const armado = armarManifiesto(archivos, configuracion.cuadrosPorSegundo);
   diagnostico.errores.push(...armado.errores);
   diagnostico.advertencias.push(...armado.advertencias);
-  if (diagnostico.errores.length > 0) return 0;
+  if (diagnostico.errores.length > 0) return NADA_ESCRITO;
 
   const texto = puertos.escritor.redactarManifiesto(armado.manifiesto);
   await puertos.carpetas.escribirTexto(carpeta, NOMBRE_DEL_MANIFIESTO, texto);
-  return Object.keys(armado.manifiesto).length;
+  return {
+    cantidadDeAssets: Object.keys(armado.manifiesto).length,
+    animaciones: listarAnimaciones(armado.manifiesto),
+  };
+}
+
+function listarAnimaciones(manifiesto: Manifiesto): AnimacionGenerada[] {
+  const animaciones: AnimacionGenerada[] = [];
+  for (const clave of Object.keys(manifiesto).sort()) {
+    const asset = manifiesto[clave]!; // `clave` viene de `Object.keys`, así que existe
+    if (asset.tipo !== 'animacion') continue;
+    animaciones.push({ clave, cantidadDeCuadros: asset.cuadros.length, cuadrosPorSegundo: asset.cuadrosPorSegundo });
+  }
+  return animaciones;
 }
 
 /** Lee `assets.config.json`. Si no existe, o si está mal (y entonces anota el error), no hay ajustes. */
