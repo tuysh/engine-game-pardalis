@@ -20,6 +20,8 @@ export class EmisorDeEventos {
     palabra: new Set(),
     nivel: new Set(),
     cinematica: new Set(),
+    minijuego: new Set(),
+    estado: new Set(),
     salida: new Set(),
     error: new Set(),
   };
@@ -50,6 +52,8 @@ export class EmisorDeEventos {
     this.oyentes.palabra.clear();
     this.oyentes.nivel.clear();
     this.oyentes.cinematica.clear();
+    this.oyentes.minijuego.clear();
+    this.oyentes.estado.clear();
     this.oyentes.salida.clear();
     this.oyentes.error.clear();
   }

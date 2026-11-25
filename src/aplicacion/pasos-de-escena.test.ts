@@ -114,6 +114,9 @@ async function empezarConPasos(pasos: readonly Paso[], idiomaBase: Idioma = 'es'
       },
       alEmpezarCinematica: () => {},
       alTerminarCinematica: () => {},
+      alCambiarElEstado: () => {},
+      alEmpezarMinijuego: () => {},
+      alTerminarMinijuego: () => {},
     },
   );
   await reloj.avanzar(0.1);

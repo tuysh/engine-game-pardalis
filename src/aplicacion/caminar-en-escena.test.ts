@@ -51,6 +51,8 @@ async function crearEscena() {
     minijuegos: {},
     direccionDeAsset: () => undefined,
     alVerPalabra: () => {},
+    alEmpezarMinijuego: () => {},
+    alTerminarMinijuego: () => {},
   };
   return { piezas, escenario, reloj, reparto };
 }

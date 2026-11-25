@@ -132,6 +132,9 @@ async function empezar(nivel: Nivel, opciones: OpcionesDePrueba = {}) {
         }
       },
       alTerminarCinematica: (id) => avisosDeCinematicas.push(`fin ${id}`),
+      alCambiarElEstado: () => {},
+      alEmpezarMinijuego: () => {},
+      alTerminarMinijuego: () => {},
     },
   );
   const adaptadores = { escenario, interfaz, audio, video, controles, reloj };

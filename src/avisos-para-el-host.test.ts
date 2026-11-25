@@ -29,6 +29,32 @@ test('una cinemática llega como el evento "cinematica" dos veces: al empezar y 
   ]);
 });
 
+test('un minijuego llega como el evento "minijuego" dos veces: al empezar y al terminar', () => {
+  const emisor = new EmisorDeEventos();
+  const avisos: unknown[] = [];
+  emisor.on('minijuego', (aviso) => avisos.push(aviso));
+
+  const avisosDelJuego = crearAvisosParaElHost(emisor);
+  avisosDelJuego.alEmpezarMinijuego('Tortilleria');
+  avisosDelJuego.alTerminarMinijuego('Tortilleria');
+
+  expect(avisos).toEqual([
+    { nombre: 'Tortilleria', fase: 'inicio' },
+    { nombre: 'Tortilleria', fase: 'fin' },
+  ]);
+});
+
+test('un cambio del estado llega como el evento "estado", con el nivel, lo que cambió y todas las variables', () => {
+  const emisor = new EmisorDeEventos();
+  const cambios: unknown[] = [];
+  emisor.on('estado', (cambio) => cambios.push(cambio));
+
+  const cambio = { nivel: 'mercado', cambios: { dinero: 90 }, variables: { dinero: 90, maiz: true } };
+  crearAvisosParaElHost(emisor).alCambiarElEstado(cambio);
+
+  expect(cambios).toEqual([cambio]);
+});
+
 test('lo demás llega tal cual con el nombre de su evento', () => {
   const emisor = new EmisorDeEventos();
   const recibido: unknown[] = [];

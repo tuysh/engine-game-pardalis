@@ -61,6 +61,8 @@ async function crearEscena() {
     minijuegos: {},
     direccionDeAsset: (clave) => (clave === 'vo_tortu_hola' ? '/voz/vo_tortu_hola.mp3' : undefined),
     alVerPalabra: (palabra) => palabrasVistas.push(palabra),
+    alEmpezarMinijuego: () => {},
+    alTerminarMinijuego: () => {},
   };
   return { piezas, interfaz, audio, reloj, reparto, palabrasVistas };
 }

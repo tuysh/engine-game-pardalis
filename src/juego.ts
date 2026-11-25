@@ -1,6 +1,7 @@
 // El objeto `juego` que entrega `crearEscenario()` y los eventos que emite (docs/DISENO-3.0.md §4).
 
 import type { ErrorDeEscenario } from './dominio/error-de-escenario.ts';
+import type { LectorDeEstado, VariablesDeEstado } from './dominio/estado.ts';
 import type { Partida } from './dominio/partida.ts';
 
 /** Una palabra de vocabulario, en inglés y en español. */
@@ -21,6 +22,23 @@ export interface AvisoDeCinematica {
   readonly fase: 'inicio' | 'fin';
 }
 
+/** Dato del evento `minijuego`. */
+export interface AvisoDeMinijuego {
+  /** El nombre con el que el host registró el minijuego. */
+  readonly nombre: string;
+  readonly fase: 'inicio' | 'fin';
+}
+
+/** Dato del evento `estado`: qué variables del nivel cambiaron. */
+export interface CambioDeEstado {
+  /** Id del nivel que se está jugando. */
+  readonly nivel: string;
+  /** Solo las variables que cambiaron, con su valor nuevo. Ejemplo: `{ dinero: 90 }`. */
+  readonly cambios: VariablesDeEstado;
+  /** Todas las variables del nivel, ya con el cambio. */
+  readonly variables: VariablesDeEstado;
+}
+
 /** Cada evento del juego con el dato que entrega a quien lo escucha. */
 export interface EventosDeJuego {
   /** Conviene guardar: objetivo cumplido, fin de cinemática o cambio de nivel. */
@@ -33,6 +51,10 @@ export interface EventosDeJuego {
   readonly nivel: CambioDeNivel;
   /** Empezó o terminó una cinemática. Sirve para ocultar la interfaz del host. */
   readonly cinematica: AvisoDeCinematica;
+  /** Se abrió o se cerró un minijuego. Sirve para ocultar lo que el host dibuja encima del juego. */
+  readonly minijuego: AvisoDeMinijuego;
+  /** Cambió alguna variable del nivel: el dinero, un objetivo, lo que hizo un `pon`. */
+  readonly estado: CambioDeEstado;
   /** El jugador salió hacia un destino que no es un nivel registrado: el host decide qué hacer. */
   readonly salida: string;
   /** Falla después de arrancar, por ejemplo un nivel siguiente que no carga. */
@@ -75,6 +97,15 @@ export interface Juego {
   proyeccion: boolean;
   /** Id del nivel actual. */
   readonly nivel: string;
+  /**
+   * El estado del nivel actual, solo para leer. Es el mismo lector que reciben los minijuegos.
+   * Mientras se carga un nivel no hay estado: `obtener` entrega `undefined` y `cumple`, `false`.
+   *
+   * @example
+   * pintarMonedero(juego.estado.obtener('dinero'));
+   * if (juego.estado.cumple('tengo maiz')) tacharDeLaLista('maiz');
+   */
+  readonly estado: LectorDeEstado;
   /** Libera todo: WebGL, audio, video, temporizadores y oyentes. Se puede llamar más de una vez. */
   destruir(): void;
 }

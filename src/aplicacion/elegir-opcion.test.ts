@@ -44,6 +44,8 @@ function crearEscena() {
     minijuegos: {},
     direccionDeAsset: (clave) => `/assets/${clave}`,
     alVerPalabra: () => {},
+    alEmpezarMinijuego: () => {},
+    alTerminarMinijuego: () => {},
   };
   return { piezas, interfaz, audio };
 }

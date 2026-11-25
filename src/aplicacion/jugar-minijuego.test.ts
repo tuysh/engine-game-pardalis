@@ -16,6 +16,7 @@ function crearEscena(minijuegos: Record<string, Minijuego>) {
   const escenario = new EscenarioDeMemoria();
   const interfaz = new InterfazDeMemoria();
   const audio = new AudioDeMemoria();
+  const avisos: string[] = [];
   const estadoInicial = crearEstadoDeNivel({ objetivos: ['tortillas'], variables: ['globo'], lista: {} }, { globo: 'rosa' });
   const piezas: PiezasDeEscena = {
     contenido: {
@@ -40,8 +41,10 @@ function crearEscena(minijuegos: Record<string, Minijuego>) {
     minijuegos,
     direccionDeAsset: (clave) => (clave === 'comal' ? '/assets/img/comal.svg' : undefined),
     alVerPalabra: () => {},
+    alEmpezarMinijuego: (nombre) => avisos.push(`inicio ${nombre}`),
+    alTerminarMinijuego: (nombre) => avisos.push(`fin ${nombre}`),
   };
-  return { piezas, interfaz, audio };
+  return { piezas, interfaz, audio, avisos };
 }
 
 const SIN_INTERRUMPIR = new AbortController().signal;
@@ -179,4 +182,21 @@ test('lo que otorga un minijuego puede ser una suma o una resta, y una cuenta ma
   const resultado = await jugarMinijuego({ nombre: 'Cobro', config: undefined }, SIN_INTERRUMPIR, piezas);
 
   expect(resultado).toEqual({ exito: true, otorgar: { dinero: { resta: 15 }, estrellas: { suma: 1 } } });
+});
+
+test('avisa cuando el minijuego empieza y cuando termina, también si falla', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const Tortilleria: Minijuego = () => new Promise((resolver) => (terminar = resolver));
+  const Roto: Minijuego = async () => {
+    throw new Error('se rompió');
+  };
+  const { piezas, avisos } = crearEscena({ Tortilleria, Roto });
+
+  const juego = jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+  expect(avisos).toEqual(['inicio Tortilleria']);
+  terminar({ exito: true });
+  await juego;
+  await jugarMinijuego({ nombre: 'Roto', config: undefined }, SIN_INTERRUMPIR, piezas);
+
+  expect(avisos).toEqual(['inicio Tortilleria', 'fin Tortilleria', 'inicio Roto', 'fin Roto']);
 });

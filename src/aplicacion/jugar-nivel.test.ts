@@ -96,6 +96,9 @@ async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
       alFallar: (error) => fallas.push(error),
       alEmpezarCinematica: () => {},
       alTerminarCinematica: () => {},
+      alCambiarElEstado: () => {},
+      alEmpezarMinijuego: () => {},
+      alTerminarMinijuego: () => {},
     },
   );
   return { nivelEnJuego, escenario, interfaz, audio, controles, reloj, objetivosCumplidos, salidas, fallas };
@@ -502,6 +505,9 @@ test('en modo depuración se ven las guías del mapa, y con la cámara libre act
       alFallar: () => {},
       alEmpezarCinematica: () => {},
       alTerminarCinematica: () => {},
+      alCambiarElEstado: () => {},
+      alEmpezarMinijuego: () => {},
+      alTerminarMinijuego: () => {},
     },
   );
 
@@ -548,6 +554,9 @@ test('mientras cargan las imágenes del nivel, avisa del avance: una vez al empe
       alFallar: () => {},
       alEmpezarCinematica: () => {},
       alTerminarCinematica: () => {},
+      alCambiarElEstado: () => {},
+      alEmpezarMinijuego: () => {},
+      alTerminarMinijuego: () => {},
     },
   );
 

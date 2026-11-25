@@ -9,6 +9,8 @@ export type { OpcionesDeEscenario } from './opciones-de-escenario.ts';
 export type { ProgresoDeCarga } from './dominio/progreso-de-carga.ts';
 export type {
   AvisoDeCinematica,
+  AvisoDeMinijuego,
+  CambioDeEstado,
   CambioDeNivel,
   EventosDeJuego,
   Juego,

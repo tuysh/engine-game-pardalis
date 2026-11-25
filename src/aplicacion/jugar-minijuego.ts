@@ -45,6 +45,8 @@ export async function jugarMinijuego(
   senal.addEventListener('abort', alInterrumpir, { once: true });
 
   const elemento = piezas.interfaz.abrirEspacioDeMinijuego();
+  // El sitio se entera de cuándo empieza y cuándo termina, para esconder lo que tenga encima del juego.
+  piezas.alEmpezarMinijuego(porJugar.nombre);
   try {
     const contexto = crearContexto(elemento, porJugar.config, cierre.signal, piezas);
     const espera = await esperarOCancelar(llamarSinQueFalle(minijuego, contexto, porJugar.nombre), senal);
@@ -54,6 +56,7 @@ export async function jugarMinijuego(
     senal.removeEventListener('abort', alInterrumpir);
     cierre.abort();
     piezas.interfaz.cerrarEspacioDeMinijuego();
+    piezas.alTerminarMinijuego(porJugar.nombre);
   }
 }
 

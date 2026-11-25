@@ -11,6 +11,9 @@ export function crearAvisosParaElHost(emisor: EmisorDeEventos): AvisosDelJuego {
     alCambiarDeNivel: (id, anterior) => emisor.emitir('nivel', { id, anterior }),
     alEmpezarCinematica: (id) => emisor.emitir('cinematica', { id, fase: 'inicio' }),
     alTerminarCinematica: (id) => emisor.emitir('cinematica', { id, fase: 'fin' }),
+    alCambiarElEstado: (cambio) => emisor.emitir('estado', cambio),
+    alEmpezarMinijuego: (nombre) => emisor.emitir('minijuego', { nombre, fase: 'inicio' }),
+    alTerminarMinijuego: (nombre) => emisor.emitir('minijuego', { nombre, fase: 'fin' }),
     alSalir: (destino) => emisor.emitir('salida', destino),
     alFallar: (error) => emisor.emitir('error', error),
   };

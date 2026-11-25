@@ -92,6 +92,9 @@ llamándolos (`crearEscenario`, `juego.on`, `Minijuego`, `CinematicaEnCodigo`) t
 juego.on('objetivo', (id) => marcarEnLaLista(id));          // devuelve una función que deja de escuchar
 juego.on('palabra', ({ en, es }) => anotarPalabra(en, es));
 juego.on('cinematica', ({ fase }) => ocultarMenu(fase === 'inicio'));
+juego.on('minijuego', ({ fase }) => ocultarMenu(fase === 'inicio'));
+juego.on('estado', ({ variables }) => pintarMonedero(variables.dinero));   // cada vez que cambia una variable
+pintarMonedero(juego.estado.obtener('dinero'));                            // y para leerlo cuando haga falta
 juego.on('salida', (destino) => irA(destino));              // un destino que no es un nivel: decide el host
 juego.on('error', (error) => console.error(error.problemas));
 

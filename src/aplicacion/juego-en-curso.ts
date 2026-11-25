@@ -15,6 +15,7 @@
 
 import { convertirEnErrorDeEscenario, ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
 import { separarCompartidas } from '../dominio/estado.ts';
+import type { EstadoDeNivel } from '../dominio/estado.ts';
 import type { Partida } from '../dominio/partida.ts';
 import { FundidoDePantalla } from './fundido-de-pantalla.ts';
 import { jugarNivel } from './jugar-nivel.ts';
@@ -68,6 +69,12 @@ export class JuegoEnCurso {
     }
     const variables = separarCompartidas(this.nivelActual.enJuego.leerEstado());
     return this.partida.leerJugando(this.nivelActual.porJugar.id, variables);
+  }
+
+  /** El estado del nivel que se está jugando. `undefined` mientras se carga un nivel o si el juego ya terminó. */
+  leerEstado(): EstadoDeNivel | undefined {
+    if (this.nivelActual === undefined) return undefined;
+    return this.nivelActual.enJuego.leerEstado();
   }
 
   /**
@@ -180,7 +187,7 @@ export class JuegoEnCurso {
       depuracion: this.piezas.depuracion,
       fundido: this.fundido,
     };
-    const enJuego = await jugarNivel(pedido, this.piezas.puertos, this.crearAvisosDelNivel());
+    const enJuego = await jugarNivel(pedido, this.piezas.puertos, this.crearAvisosDelNivel(porJugar.id));
     if (this.estaTerminado) {
       enJuego.terminar();
       return undefined;
@@ -204,7 +211,7 @@ export class JuegoEnCurso {
     }
   }
 
-  private crearAvisosDelNivel(): AvisosDelNivel {
+  private crearAvisosDelNivel(idDelNivel: string): AvisosDelNivel {
     const avisos = this.piezas.avisos;
     return {
       alCumplirObjetivo: (objetivo) => {
@@ -222,6 +229,11 @@ export class JuegoEnCurso {
         avisos.alTerminarCinematica(id);
         avisos.alGuardar(this.leerPartida());
       },
+      alCambiarElEstado: (cambios, estado) => {
+        avisos.alCambiarElEstado({ nivel: idDelNivel, cambios, variables: estado.variables });
+      },
+      alEmpezarMinijuego: (nombre) => avisos.alEmpezarMinijuego(nombre),
+      alTerminarMinijuego: (nombre) => avisos.alTerminarMinijuego(nombre),
     };
   }
 

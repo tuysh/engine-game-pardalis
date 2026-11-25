@@ -62,7 +62,11 @@ export async function armarNivel(
   const reparto = await montarNivel(pedido, escenario);
 
   const estadoInicial = crearEstadoDeNivel(nivel.contenido.estado, pedido.variablesGuardadas);
-  const estado = new EstadoEnJuego(estadoInicial, (objetivo) => avisos.alCumplirObjetivo(objetivo));
+  const estado: EstadoEnJuego = new EstadoEnJuego(
+    estadoInicial,
+    (objetivo) => avisos.alCumplirObjetivo(objetivo),
+    (cambios) => avisos.alCambiarElEstado(cambios, estado.actual),
+  );
   const centroDelLugar = { x: nivel.mundo.anchoEnMetros / 2, y: nivel.mundo.profundidadEnMetros / 2 };
   const base: BaseDelNivel = { pedido, puertos, avisos, reparto, estado, centroDelLugar };
 
@@ -110,6 +114,8 @@ function crearPiezasDeEscena(base: BaseDelNivel): PiezasDeEscena {
     minijuegos: pedido.minijuegos,
     direccionDeAsset: (clave) => buscarDireccionDeAsset(clave, nivel.assets, pedido.ubicacion),
     alVerPalabra: (palabra) => avisos.alVerPalabra(palabra),
+    alEmpezarMinijuego: (nombre) => avisos.alEmpezarMinijuego(nombre),
+    alTerminarMinijuego: (nombre) => avisos.alTerminarMinijuego(nombre),
   };
 }
 

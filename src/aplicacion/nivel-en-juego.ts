@@ -77,6 +77,12 @@ export interface AvisosDelNivel {
   alEmpezarCinematica(id: string): void;
   /** Terminó una cinemática: completa, saltada o con error. */
   alTerminarCinematica(id: string): void;
+  /** Alguna variable cambió de valor. `cambios` trae solo las que cambiaron; `estado` es el estado ya cambiado. */
+  alCambiarElEstado(cambios: VariablesDeEstado, estado: EstadoDeNivel): void;
+  /** Se abrió un minijuego. El dato es el nombre con el que el host lo registró. */
+  alEmpezarMinijuego(nombre: string): void;
+  /** El minijuego se cerró: terminó, falló o se interrumpió. */
+  alTerminarMinijuego(nombre: string): void;
 }
 
 /** Un nivel que se está jugando. */

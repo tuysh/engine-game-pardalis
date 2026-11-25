@@ -125,6 +125,7 @@ no ponerla (salvo `nivel`, que es obligatoria).
 | `pausar()` / `reanudar()` | Congela y reanuda juego, audio y video. |
 | `proyeccion` | Propiedad booleana; se puede cambiar sin reiniciar. |
 | `nivel` | Id del nivel actual (solo lectura). |
+| `estado` | El estado del nivel actual, solo para leer: `estado.obtener('dinero')` y `estado.cumple('tengo maiz')`. Es el mismo lector que reciben los minijuegos. Mientras se carga un nivel, `obtener` entrega `undefined` y `cumple`, `false`. |
 | `destruir()` | Libera todo: WebGL, audio, video, temporizadores y oyentes. Se puede llamar más de una vez. |
 
 ### Eventos
@@ -136,11 +137,20 @@ no ponerla (salvo `nivel`, que es obligatoria).
 | `palabra` | `{ en, es }` | Se mostró una tarjeta de vocabulario. |
 | `nivel` | `{ id, anterior }` | Se terminó de cargar otro nivel. `anterior` es el id del que se dejó. |
 | `cinematica` | `{ id, fase }` | `fase` es `'inicio'` o `'fin'`. Sirve para ocultar la interfaz del host. |
+| `minijuego` | `{ nombre, fase }` | Se abrió (`'inicio'`) o se cerró (`'fin'`) un minijuego. El minijuego se dibuja dentro del elemento del juego, así que queda debajo de lo que el host tenga encima: con este evento lo esconde. |
+| `estado` | `{ nivel, cambios, variables }` | Cambió alguna variable del nivel: el dinero después de pagar, un objetivo, lo que hizo un `pon` o concedió un minijuego. `cambios` trae solo lo que cambió, con su valor nuevo; `variables`, todas. |
 | `salida` | `destino` | El jugador salió hacia un destino que **no** es un nivel registrado: el host decide. |
 | `error` | `ErrorDeEscenario` | Falla después de arrancar (por ejemplo, un nivel siguiente que no carga). |
 
 Cuando `sale` o la salida del mapa nombran un nivel de `niveles`, el motor lo carga solo y emite `nivel`.
 Cualquier otro destino (`"Selector"`, `"Creditos"`) llega al host por `salida`.
+
+El evento `estado` no se emite al empezar un nivel, solo cuando algo cambia: para pintar por primera vez
+(el monedero, la lista) se lee `juego.estado` al crear el juego y en cada evento `nivel`.
+
+El evento `palabra` solo se emite cuando la tarjeta **se mostró**. Las líneas de una cinemática que se salta
+no se muestran, así que sus palabras no se avisan: el «cuaderno de palabras» del host solo guarda lo que la
+niña o el niño sí vio.
 
 Si una función que escucha un evento lanza un error, el motor lo muestra en la consola y sigue:
 un descuido del host no deja una cinemática o un diálogo a medias.

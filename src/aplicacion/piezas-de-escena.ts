@@ -34,4 +34,7 @@ export interface PiezasDeEscena {
   readonly direccionDeAsset: (clave: string) => string | undefined;
   /** Se llama cada vez que una línea muestra una tarjeta de vocabulario. */
   readonly alVerPalabra: (palabra: PalabraDeVocabulario) => void;
+  /** Se llaman al abrirse y al cerrarse el espacio de un minijuego, con el nombre del minijuego. */
+  readonly alEmpezarMinijuego: (nombre: string) => void;
+  readonly alTerminarMinijuego: (nombre: string) => void;
 }

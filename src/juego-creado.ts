@@ -8,6 +8,9 @@ import type { InterfazDelNavegador } from './adaptadores/dom/interfaz-del-navega
 import type { RelojDelNavegador } from './adaptadores/dom/reloj-del-navegador.ts';
 import type { VideoDelNavegador } from './adaptadores/dom/video-del-navegador.ts';
 import type { JuegoEnCurso } from './aplicacion/juego-en-curso.ts';
+import { cumpleCondicion, leerCondicionDeTexto } from './dominio/condicion.ts';
+import { valorDe } from './dominio/estado.ts';
+import type { LectorDeEstado } from './dominio/estado.ts';
 import type { Partida } from './dominio/partida.ts';
 import type { EmisorDeEventos } from './emisor-de-eventos.ts';
 import type { EventosDeJuego, Juego, NombreDeEvento } from './juego.ts';
@@ -46,6 +49,22 @@ export class JuegoCreado implements Juego {
 
   get nivel(): string {
     return this.piezas.juegoEnCurso.idDelNivel;
+  }
+
+  get estado(): LectorDeEstado {
+    const juegoEnCurso = this.piezas.juegoEnCurso;
+    return {
+      obtener(nombre) {
+        const estado = juegoEnCurso.leerEstado();
+        if (estado === undefined) return undefined;
+        return valorDe(estado, nombre);
+      },
+      cumple(condicion) {
+        const estado = juegoEnCurso.leerEstado();
+        if (estado === undefined) return false;
+        return cumpleCondicion(leerCondicionDeTexto(condicion), estado);
+      },
+    };
   }
 
   get proyeccion(): boolean {

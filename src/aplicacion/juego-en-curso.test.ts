@@ -15,6 +15,7 @@ import type { Partida } from '../dominio/partida.ts';
 import { JuegoEnCurso } from './juego-en-curso.ts';
 import { leerNivelPorJugar } from './leer-nivel-por-jugar.ts';
 import type { FuenteDeNiveles } from './leer-nivel-por-jugar.ts';
+import type { CambioDeEstadoDelNivel } from './piezas-del-juego-en-curso.ts';
 
 const IMAGEN_DE_TOMMY: Asset = { tipo: 'imagen', archivo: 'img/spr_tommy.svg', anchoEnPixeles: 90, altoEnPixeles: 160 };
 
@@ -107,8 +108,38 @@ const CASA_CON_SALIDA_ROTA: Nivel = {
   },
 };
 
+/** Un mercado sin jugador: su cinemática de entrada consigue una flor, que es una variable de la aventura. */
+const MERCADO: Nivel = {
+  ...CASA,
+  contenido: {
+    ...CASA.contenido,
+    meta: { ...CASA.contenido.meta, id: 'mercado' },
+    estado: { objetivos: [], variables: ['saludo'], compartidas: ['flor'], lista: {} },
+    cinematicas: {
+      intro: {
+        inicio: { tipo: 'alEntrar' },
+        condicion: leerCondicionDeTexto('no vista.intro'),
+        saltable: true,
+        guion: { tipo: 'pasos', pasos: [{ tipo: 'pon', valores: { flor: true, saludo: true } }] },
+      },
+    },
+  },
+};
+
+/** Un comedor que declara la flor como variable de la aventura, para preguntar por ella. */
+const COMEDOR: Nivel = {
+  ...BARRIO,
+  contenido: {
+    ...BARRIO.contenido,
+    meta: { ...BARRIO.contenido.meta, id: 'comedor' },
+    estado: { objetivos: [], variables: [], compartidas: ['flor'], lista: {} },
+  },
+};
+
 /** Los niveles que «existen» en estas pruebas, por la dirección de su `nivel.json`. */
 const NIVELES_POR_DIRECCION: Record<string, Nivel> = {
+  '/niveles/mercado/nivel.json': MERCADO,
+  '/niveles/comedor/nivel.json': COMEDOR,
   '/niveles/casa/nivel.json': CASA,
   '/niveles/casa-con-salida-rota/nivel.json': CASA_CON_SALIDA_ROTA,
   '/niveles/barrio/nivel.json': BARRIO,
@@ -132,6 +163,7 @@ async function empezarEn(nivel: string, partidaInicial?: Partida) {
   const avisos: string[] = [];
   const partidasPorGuardar: Partida[] = [];
   const fallas: ErrorDeEscenario[] = [];
+  const cambiosDeEstado: CambioDeEstadoDelNivel[] = [];
 
   const juego = new JuegoEnCurso({
     fuente: FUENTE,
@@ -156,13 +188,16 @@ async function empezarEn(nivel: string, partidaInicial?: Partida) {
       alCambiarDeNivel: (id, anterior) => avisos.push(`nivel ${id} (antes ${anterior})`),
       alEmpezarCinematica: (id) => avisos.push(`inicio ${id}`),
       alTerminarCinematica: (id) => avisos.push(`fin ${id}`),
+      alCambiarElEstado: (cambio) => cambiosDeEstado.push(cambio),
+      alEmpezarMinijuego: () => {},
+      alTerminarMinijuego: () => {},
       alSalir: (destino) => avisos.push(`salida ${destino}`),
       alFallar: (error) => fallas.push(error),
     },
     partidaInicial,
   });
   await juego.jugar(await leerNivelPorJugar(nivel, FUENTE));
-  return { juego, escenario, interfaz, reloj, avisos, partidasPorGuardar, fallas };
+  return { juego, escenario, interfaz, reloj, avisos, partidasPorGuardar, fallas, cambiosDeEstado };
 }
 
 test('al empezar se juega el nivel pedido, y la partida lo nombra', async () => {
@@ -329,4 +364,44 @@ test('al terminar el juego, el nivel deja de dibujarse y ya no se puede cargar o
   );
   // La última partida se conserva completa, por si el host la pide después de destruir el juego.
   expect(juego.leerPartida()).toEqual(partida);
+});
+
+test('cada cambio del estado se avisa con el nivel, lo que cambió y todas las variables', async () => {
+  const { reloj, cambiosDeEstado } = await empezarEn('/niveles/mercado/nivel.json');
+
+  await reloj.avanzar(0.1);
+
+  expect(cambiosDeEstado).toEqual([
+    { nivel: 'mercado', cambios: { flor: true, saludo: true }, variables: { flor: true, saludo: true } },
+    {
+      nivel: 'mercado',
+      cambios: { 'vista.intro': true },
+      variables: { flor: true, saludo: true, 'vista.intro': true },
+    },
+  ]);
+});
+
+test('una variable compartida pasa al nivel siguiente que la declara, y las demás se quedan en su nivel', async () => {
+  const { juego, reloj } = await empezarEn('/niveles/mercado/nivel.json');
+  await reloj.avanzar(0.1);
+
+  await juego.cargar('/niveles/comedor/nivel.json');
+
+  expect(juego.leerEstado()?.variables).toEqual({ flor: true });
+  expect(juego.leerPartida()).toEqual({
+    v: 1,
+    nivel: 'comedor',
+    niveles: { mercado: { estado: { saludo: true, 'vista.intro': true } }, comedor: { estado: {} } },
+    compartidas: { flor: true },
+  });
+});
+
+test('el estado del nivel en juego se puede leer en cualquier momento', async () => {
+  const partida: Partida = { v: 1, nivel: 'barrio', niveles: { barrio: { estado: { globo: 'rosa' } } } };
+  const { juego } = await empezarEn('barrio', partida);
+
+  expect(juego.leerEstado()?.variables).toEqual({ globo: 'rosa' });
+
+  juego.terminar();
+  expect(juego.leerEstado()).toBeUndefined();
 });
