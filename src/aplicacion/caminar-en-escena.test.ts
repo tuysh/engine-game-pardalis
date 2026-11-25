@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test';
+import { crearMapaDeCaminos } from '../dominio/rejilla-de-caminos.ts';
 import { AudioDeMemoria } from '../adaptadores/memoria/audio-de-memoria.ts';
 import { EscenarioDeMemoria } from '../adaptadores/memoria/escenario-de-memoria.ts';
 import { InterfazDeMemoria } from '../adaptadores/memoria/interfaz-de-memoria.ts';
@@ -39,6 +40,7 @@ async function crearEscena() {
       cinematicas: {},
       comentarios: {},
     },
+    caminos: crearMapaDeCaminos({ pisos: [], obstaculos: [] }),
     puntos: { frente: { x: 9, y: 2 } },
     centroDelLugar: { x: 5, y: 2 },
     idiomaBase: 'es',
@@ -120,4 +122,29 @@ test('si quien camina no está en el escenario, termina de inmediato', async () 
   await caminarEnEscena({ personaje: 'mama', punto: 'frente' }, SIN_INTERRUMPIR, piezas);
 
   expect(piezas.reparto.estaEnEscena('mama')).toBe(false);
+});
+
+test('si quien camina y su punto están sobre el piso, rodea el decorado en vez de atravesarlo', async () => {
+  const { piezas, reloj, reparto } = await crearEscena();
+  // Una calle de 10 × 4 con un puesto entre Doña Tortu (5, 2)… movida a (1, 1), y el punto "frente" (9, 2).
+  const calleConPuesto = {
+    pisos: [[{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 4 }, { x: 0, y: 4 }]],
+    obstaculos: [{ x: 4, y: 0, ancho: 2, alto: 3 }],
+  };
+  reparto.mover('tortu', { x: 1, y: 1 });
+  const piezasConPiso = { ...piezas, caminos: crearMapaDeCaminos(calleConPuesto) };
+  let atravesoElPuesto = false;
+
+  const caminata = caminarEnEscena({ personaje: 'tortu', punto: 'frente' }, SIN_INTERRUMPIR, piezasConPiso);
+  for (let cuadro = 0; cuadro < 400; cuadro++) {
+    await reloj.avanzar(0.02);
+    const posicion = reparto.posicionDe('tortu') ?? { x: 0, y: 0 };
+    if (posicion.x > 4 && posicion.x < 6 && posicion.y < 3) {
+      atravesoElPuesto = true;
+    }
+  }
+  await caminata;
+
+  expect(reparto.posicionDe('tortu')).toEqual({ x: 9, y: 2 });
+  expect(atravesoElPuesto).toBe(false);
 });

@@ -331,6 +331,9 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   solo mientras dura la línea; al terminar, cada quien vuelve al dibujo que tenía. Con `piensa`, el globo es
   una nube. En código son opciones de `escena.dice` con los mismos nombres. Al saltar una cinemática la línea
   se omite, así que nadie cambia de dibujo.
+- **Caminos:** al cargar el nivel se corta el piso en una rejilla (celdas de un cuarto de metro, sin las huellas
+  del decorado `parado`). Con ella, el jugador al tocar un lugar y los pasos `camina` rodean lo que estorba.
+  Un `camina` va en línea recta solo si quien camina o su punto están fuera del piso.
 - **`aparece`** con alguien que ya está en el escenario solo lo cambia de lugar. Quien entra con `aparece`
   puede tener diálogo en `npcs` aunque no esté en el mapa. **`desaparece`** no acepta al personaje del jugador.
 - **Con el botón de inicio** (`iniciarCon: 'boton'`) el tiempo no pasa hasta que lo tocan: la cinemática de
@@ -502,8 +505,9 @@ La interfaz en DOM da texto nítido y accesible. Vive dentro de un *shadow root*
 
 El jugador se mueve de dos formas, que conviven:
 
-- **Tocar o hacer clic** en un lugar del piso: su personaje camina hasta ahí. Tocar a un personaje o a un objeto
-  interactivo lo lleva junto a él y empieza su diálogo.
+- **Tocar o hacer clic** en un lugar del piso: su personaje camina hasta ahí, rodeando el decorado. Si el lugar
+  no se puede alcanzar, llega lo más cerca que se pueda. Tocar a un personaje o a un objeto interactivo lo lleva
+  junto a él y empieza su diálogo.
 - **Teclado:** mantener oprimida `W` `A` `S` `D` o una flecha lo hace caminar hacia ese lado. El teclado manda
   sobre el lugar tocado. Durante un diálogo o un minijuego no mueve al jugador.
 

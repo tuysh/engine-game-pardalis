@@ -248,11 +248,23 @@ Gana **la primera rama cuya condición se cumple**. Una rama sin `cuando` siempr
 | Efecto | `{ "efecto": "magia" }` | Partículas y sonido. Disponibles: `magia`, `confeti`. |
 | Estado | `{ "pon": { "globo": "rosa" } }` | Asigna objetivos o variables. Con números también suma y resta: `{ "pon": { "dinero": { "resta": 10 }, "estrellas": { "suma": 1 } } }`. |
 | Minijuego | `{ "juego": "Tortilleria", "config": { "palabras": ["hot"] } }` | Abre el minijuego que registró el host y, al volver, ejecuta `alVolver`. |
-| Caminar | `{ "camina": "frente_tortilleria", "quien": "tortu" }` | Camina hasta un `punto` del mapa. Sin `quien`, camina el jugador. |
+| Caminar | `{ "camina": "frente_tortilleria", "quien": "tortu" }` | Camina hasta un `punto` del mapa. Sin `quien`, camina el jugador. Sigue el piso y rodea el decorado; ver «Por dónde camina». |
 | Secuencia | `{ "secuencia": "aun_no_item" }` | Ejecuta una secuencia de `secuencias`. Los ciclos entre secuencias son error. |
 | Condicional | `{ "cuando": "globo", "dice": [ ...pasos ] }` | Ejecuta sus pasos solo si se cumple la condición. |
 
 Los textos admiten `{faltan}` (objetivos pendientes, en español) y `{dinero}`. Otro nombre entre llaves es error.
+
+#### Por dónde camina
+
+- Si **quien camina y el punto están sobre el piso**, la caminata sigue el piso y rodea el decorado que
+  bloquea (la clase `parado`): no hace falta cuidar que entre dos puntos no haya un puesto.
+- Si **alguno de los dos está fuera del piso** (alguien que entra desde fuera del escenario, un punto detrás
+  de un telón) o no hay paso entre ellos, va **en línea recta, también a través del decorado**.
+  Así se puede escribir una entrada desde fuera; pero un punto mal puesto se nota: revísalo con las guías
+  del modo depuración.
+
+El jugador hace lo mismo al tocar un lugar o a alguien: rodea lo que estorbe, y si toca un lugar al que no se
+puede llegar (encima de un puesto), camina hasta lo más cerca que se pueda.
 
 #### Caras y pensamientos
 

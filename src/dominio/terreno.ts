@@ -37,8 +37,8 @@ export function esCaminable(punto: Punto, terreno: Terreno): boolean {
  * El punto del piso más cercano al que se pide. Sirve cuando el jugador toca fuera del piso:
  * su personaje camina hasta la orilla más cercana. Si el punto ya está sobre el piso, se devuelve igual.
  *
- * Limitación conocida: no saca el punto de un obstáculo. Quien camina hacia un obstáculo
- * se detiene al chocar con él.
+ * No saca el punto de un obstáculo: de eso se encarga la búsqueda de caminos, que lleva a quien camina
+ * al lugar pisable más cercano.
  */
 export function ajustarAlPiso(punto: Punto, terreno: Terreno): Punto {
   const yaEstaSobreElPiso = terreno.pisos.some((piso) => puntoDentroDePoligono(punto, piso));

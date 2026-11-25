@@ -3,8 +3,9 @@
 // Si el camino recto está libre, avanza recto. Si choca con el borde del piso o con un obstáculo,
 // intenta deslizarse solo de lado o solo de fondo, para rodear esquinas sin quedarse pegado.
 //
-// Limitación conocida: no busca caminos. Ante un obstáculo grande que tapa el paso, quien camina
-// se atora y se detiene. Si hace falta, usar búsqueda de caminos sobre el piso.
+// Aquí no se buscan caminos: quien quiere rodear un obstáculo grande pide antes el camino
+// (buscar-camino.ts) y luego avanza con estas funciones de un punto del camino al siguiente.
+// Con el teclado no hay camino que buscar: ante un obstáculo que tapa el paso, quien camina se detiene.
 
 import { distanciaEntre } from './geometria.ts';
 import type { Punto } from './geometria.ts';
@@ -72,7 +73,7 @@ export function avanzarEnDireccion(posicion: Punto, direccion: Punto, distanciaE
 
 /**
  * El punto que queda al acercarse en línea recta hasta `distanciaEnMetros` hacia el destino, sin pasarse de él.
- * No mira el terreno: sirve tal cual para las caminatas de un diálogo, que van directo a su punto.
+ * No mira el terreno: lo usan las caminatas de un diálogo, que ya traen su camino resuelto.
  */
 export function acercarse(posicion: Punto, destino: Punto, distanciaEnMetros: number): Punto {
   const distanciaAlDestino = distanciaEntre(posicion, destino);

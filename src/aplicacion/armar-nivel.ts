@@ -4,6 +4,8 @@
 import { crearEstadoDeNivel } from '../dominio/estado.ts';
 import type { Punto } from '../dominio/geometria.ts';
 import type { Nivel } from '../dominio/nivel.ts';
+import { crearMapaDeCaminos } from '../dominio/rejilla-de-caminos.ts';
+import type { MapaDeCaminos } from '../dominio/rejilla-de-caminos.ts';
 import { crearTerreno } from '../dominio/terreno.ts';
 import { completarTexto } from '../dominio/texto-con-variables.ts';
 import { CamaraDeEscena } from './camara-de-escena.ts';
@@ -43,6 +45,8 @@ export interface NivelArmado {
 
 /** Lo que casi todas las piezas de un nivel necesitan para crearse. */
 interface BaseDelNivel {
+  /** El terreno del nivel y su rejilla: con ellos el jugador y los pasos `camina` rodean lo que estorba. */
+  readonly caminos: MapaDeCaminos;
   readonly pedido: PedidoDeJuego;
   readonly puertos: PuertosParaJugar;
   readonly avisos: AvisosDelNivel;
@@ -68,10 +72,12 @@ export async function armarNivel(
     (cambios) => avisos.alCambiarElEstado(cambios, estado.actual),
   );
   const centroDelLugar = { x: nivel.mundo.anchoEnMetros / 2, y: nivel.mundo.profundidadEnMetros / 2 };
-  const base: BaseDelNivel = { pedido, puertos, avisos, reparto, estado, centroDelLugar };
+  // La rejilla se calcula una sola vez por nivel: el piso y el decorado no cambian mientras se juega.
+  const caminos = crearMapaDeCaminos(crearTerreno(nivel.mundo));
+  const base: BaseDelNivel = { caminos, pedido, puertos, avisos, reparto, estado, centroDelLugar };
 
   const escena = crearPiezasDeEscena(base);
-  const exploracion = crearExploracion(nivel, reparto);
+  const exploracion = crearExploracion(nivel, reparto, caminos);
   const comentarios = crearComentarios(base, escena);
   const camara = crearCamara(base);
   const escenas = crearEscenas(base, { escena, camara, comentarios, exploracion });
@@ -103,6 +109,7 @@ function crearPiezasDeEscena(base: BaseDelNivel): PiezasDeEscena {
   return {
     contenido: nivel.contenido,
     puntos: nivel.mundo.puntos,
+    caminos: base.caminos,
     centroDelLugar: base.centroDelLugar,
     idiomaBase: pedido.idiomaBase,
     escenario: puertos.escenario,
@@ -122,13 +129,13 @@ function crearPiezasDeEscena(base: BaseDelNivel): PiezasDeEscena {
 }
 
 /** El control libre del jugador, o `undefined` si el nivel no tiene jugador. */
-function crearExploracion(nivel: Nivel, reparto: Reparto): Exploracion | undefined {
+function crearExploracion(nivel: Nivel, reparto: Reparto, caminos: MapaDeCaminos): Exploracion | undefined {
   const jugador = nivel.contenido.jugador;
   if (jugador === undefined) return undefined;
 
   return new Exploracion({
     reparto,
-    terreno: crearTerreno(nivel.mundo),
+    caminos,
     idDelJugador: jugador.personaje,
     velocidadEnMetrosPorSegundo: jugador.velocidadEnMetrosPorSegundo,
   });

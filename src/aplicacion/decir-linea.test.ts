@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test';
+import { crearMapaDeCaminos } from '../dominio/rejilla-de-caminos.ts';
 import { AudioDeMemoria } from '../adaptadores/memoria/audio-de-memoria.ts';
 import { EscenarioDeMemoria } from '../adaptadores/memoria/escenario-de-memoria.ts';
 import { InterfazDeMemoria } from '../adaptadores/memoria/interfaz-de-memoria.ts';
@@ -49,6 +50,7 @@ async function crearEscena() {
 
   const piezas: PiezasDeEscena = {
     contenido: CONTENIDO,
+    caminos: crearMapaDeCaminos({ pisos: [], obstaculos: [] }),
     puntos: {},
     centroDelLugar: { x: 5, y: 2 },
     idiomaBase: 'es',

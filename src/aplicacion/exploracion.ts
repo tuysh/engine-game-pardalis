@@ -1,5 +1,6 @@
 // El control libre del jugador. Hay dos formas de moverlo:
-//   - tocar (o hacer clic en) un lugar del piso: su personaje camina hasta ahí;
+//   - tocar (o hacer clic en) un lugar del piso: su personaje camina hasta ahí, rodeando lo que estorbe
+//     (dominio/buscar-camino.ts). Si el lugar no se puede alcanzar, llega lo más cerca que se pueda;
 //   - mantener oprimida una dirección en el teclado: camina hacia ese lado mientras se oprime.
 //
 // Manda la orden más reciente. Oprimir una dirección hace olvidar el lugar que se había tocado; y al revés,
@@ -7,9 +8,11 @@
 // hasta que el jugador la suelte y oprima otra vez.
 
 import { avanzarEnDireccion, avanzarHacia } from '../dominio/caminar.ts';
+import type { Avance } from '../dominio/caminar.ts';
 import type { Punto } from '../dominio/geometria.ts';
+import { buscarCamino } from '../dominio/buscar-camino.ts';
+import type { MapaDeCaminos } from '../dominio/rejilla-de-caminos.ts';
 import { ajustarAlPiso } from '../dominio/terreno.ts';
-import type { Terreno } from '../dominio/terreno.ts';
 import type { Reparto } from './reparto.ts';
 
 const SIN_DIRECCION: Punto = { x: 0, y: 0 };
@@ -17,7 +20,8 @@ const SIN_DIRECCION: Punto = { x: 0, y: 0 };
 /** Lo que una exploración necesita para funcionar. */
 export interface PiezasDeExploracion {
   readonly reparto: Reparto;
-  readonly terreno: Terreno;
+  /** El terreno del nivel y su rejilla, para buscar por dónde caminar. */
+  readonly caminos: MapaDeCaminos;
   /** Id del personaje que controla el jugador. Ya debe estar en el reparto. */
   readonly idDelJugador: string;
   readonly velocidadEnMetrosPorSegundo: number;
@@ -25,8 +29,8 @@ export interface PiezasDeExploracion {
 
 export class Exploracion {
   private readonly piezas: PiezasDeExploracion;
-  /** A dónde va caminando. `undefined` = está quieto. */
-  private destino: Punto | undefined;
+  /** Los puntos por los que le falta pasar, en orden; el último es a donde va. Vacía = está quieto. */
+  private ruta: readonly Punto[] = [];
   /** Qué hacer cuando termine la caminata actual. */
   private alTerminarDeCaminar: (() => void) | undefined;
   /**
@@ -46,23 +50,27 @@ export class Exploracion {
   }
 
   get estaCaminando(): boolean {
-    return this.destino !== undefined;
+    return this.ruta.length > 0;
   }
 
   /**
-   * Manda al jugador a un punto. Si el punto está fuera del piso, va a la orilla más cercana.
+   * Manda al jugador a un punto, rodeando lo que estorbe. Si el punto está fuera del piso, va a la orilla
+   * más cercana; si no se puede alcanzar (está dentro de un obstáculo), llega lo más cerca que se pueda.
    * `alTerminar` se llama cuando deja de caminar: porque llegó o porque algo le tapó el paso.
    * No se llama si antes se le manda a otro lugar o se le detiene.
    */
   irA(punto: Punto, alTerminar?: () => void): void {
-    this.destino = ajustarAlPiso(punto, this.piezas.terreno);
+    const destino = ajustarAlPiso(punto, this.piezas.caminos.terreno);
+    const camino = buscarCamino(this.posicion, destino, this.piezas.caminos);
+    // Sin camino que buscar (el jugador quedó fuera de la rejilla), va derecho, como antes de tener caminos.
+    this.ruta = camino === undefined ? [destino] : camino.puntos;
     this.alTerminarDeCaminar = alTerminar;
     this.laDireccionOprimidaEsAnteriorALaOrden = true;
   }
 
   /** Deja al jugador quieto donde está. */
   detener(): void {
-    this.destino = undefined;
+    this.ruta = [];
     this.alTerminarDeCaminar = undefined;
   }
 
@@ -83,27 +91,36 @@ export class Exploracion {
       const distanciaEnMetros = this.piezas.velocidadEnMetrosPorSegundo * segundos;
       const haciaDonde = avanzarEnDireccion(this.posicion, direccionDelTeclado, distanciaEnMetros);
       this.darUnPaso(haciaDonde, segundos);
-    } else if (this.destino !== undefined) {
-      this.darUnPaso(this.destino, segundos);
+    } else if (this.ruta.length > 0) {
+      this.seguirLaRuta(segundos);
     }
   }
 
-  private darUnPaso(destino: Punto, segundos: number): void {
+  /** Da un paso hacia el siguiente punto de la ruta. Al pasar por él, sigue con el que viene. */
+  private seguirLaRuta(segundos: number): void {
+    const siguientePunto = this.ruta[0]!; // quien llama ya comprobó que la ruta no está vacía
+    const avance = this.darUnPaso(siguientePunto, segundos);
+
+    if (avance.llego) {
+      this.ruta = this.ruta.slice(1);
+    }
+    const terminoDeCaminar = this.ruta.length === 0 || avance.seAtoro;
+    if (!terminoDeCaminar) return;
+
+    const alTerminar = this.alTerminarDeCaminar;
+    this.ruta = [];
+    this.alTerminarDeCaminar = undefined;
+    if (alTerminar !== undefined) {
+      alTerminar();
+    }
+  }
+
+  private darUnPaso(destino: Punto, segundos: number): Avance {
     const distanciaEnMetros = this.piezas.velocidadEnMetrosPorSegundo * segundos;
-    const avance = avanzarHacia(this.posicion, destino, distanciaEnMetros, this.piezas.terreno);
+    const avance = avanzarHacia(this.posicion, destino, distanciaEnMetros, this.piezas.caminos.terreno);
 
     this.piezas.reparto.mirarHacia(this.piezas.idDelJugador, avance.posicion);
     this.piezas.reparto.mover(this.piezas.idDelJugador, avance.posicion);
-
-    // Solo una caminata hacia un lugar tocado «termina»; con el teclado se camina mientras se oprima.
-    const caminaHaciaUnLugarTocado = this.destino !== undefined;
-    if (caminaHaciaUnLugarTocado && (avance.llego || avance.seAtoro)) {
-      const alTerminar = this.alTerminarDeCaminar;
-      this.destino = undefined;
-      this.alTerminarDeCaminar = undefined;
-      if (alTerminar !== undefined) {
-        alTerminar();
-      }
-    }
+    return avance;
   }
 }

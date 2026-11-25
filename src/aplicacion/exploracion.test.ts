@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
 import { EscenarioDeMemoria } from '../adaptadores/memoria/escenario-de-memoria.ts';
+import { crearMapaDeCaminos } from '../dominio/rejilla-de-caminos.ts';
 import type { Terreno } from '../dominio/terreno.ts';
 import type { ImagenDeEscena } from '../puertos/escenario.ts';
 import { Exploracion } from './exploracion.ts';
@@ -27,7 +28,7 @@ async function crearExploracion(): Promise<{ escenario: EscenarioDeMemoria; expl
   await reparto.agregar({ id: 'tommy', imagen: IMAGEN, posicion: { x: 2, y: 3 }, mira: 'derecha', sePuedeTocar: false });
   const exploracion = new Exploracion({
     reparto,
-    terreno: TERRENO,
+    caminos: crearMapaDeCaminos(TERRENO),
     idDelJugador: 'tommy',
     velocidadEnMetrosPorSegundo: 2,
   });
@@ -84,18 +85,40 @@ test('un destino fuera del piso se cambia por la orilla más cercana', async () 
   expect(exploracion.posicion.y).toBeGreaterThan(3.9);
 });
 
-test('si algo le tapa el paso, se detiene en vez de quedarse empujando', async () => {
+test('si algo le tapa el paso, lo rodea y llega', async () => {
   const { exploracion } = await crearExploracion();
+  let pasoPorLaCaja = false;
 
   exploracion.irA({ x: 2, y: 2 });
   exploracion.avanzar(1);
-  exploracion.irA({ x: 8, y: 2 }); // de frente contra la caja
-  for (let cuadro = 0; cuadro < 200; cuadro++) {
+  exploracion.irA({ x: 8, y: 2 }); // la caja queda justo en medio
+  for (let cuadro = 0; cuadro < 400; cuadro++) {
     exploracion.avanzar(0.02);
+    const { x, y } = exploracion.posicion;
+    if (x > 4.5 && x < 5.5 && y > 1.5 && y < 2.5) {
+      pasoPorLaCaja = true;
+    }
   }
 
   expect(exploracion.estaCaminando).toBe(false);
-  expect(exploracion.posicion.x).toBeLessThan(4.5);
+  expect(exploracion.posicion).toEqual({ x: 8, y: 2 });
+  expect(pasoPorLaCaja).toBe(false);
+});
+
+test('si se le manda a un lugar tapado por un obstáculo, llega lo más cerca que puede y avisa', async () => {
+  const { exploracion } = await crearExploracion();
+  let avisos = 0;
+
+  exploracion.irA({ x: 5, y: 2 }, () => avisos++); // el centro de la caja
+  for (let cuadro = 0; cuadro < 400; cuadro++) {
+    exploracion.avanzar(0.02);
+  }
+
+  expect(avisos).toBe(1);
+  expect(exploracion.estaCaminando).toBe(false);
+  // Quedó pegado a la caja, sin meterse en ella.
+  expect(Math.abs(exploracion.posicion.x - 5)).toBeLessThan(1);
+  expect(Math.abs(exploracion.posicion.y - 2)).toBeLessThan(1);
 });
 
 test('detener lo deja quieto donde está', async () => {
