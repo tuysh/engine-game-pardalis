@@ -46,6 +46,11 @@ export interface AjustesDelMundo {
   readonly pixelesPorMetro: number;
   /** Cómo sigue la cámara al jugador. */
   readonly camara: AjustesDeCamara;
+  /**
+   * Color de lo que se ve donde no hay piso ni telones, escrito como `#rrggbb`.
+   * Un exterior lo usa de cielo; un interior, del color de sus paredes o de la penumbra.
+   */
+  readonly colorDeFondo: string;
   readonly sonidos: SonidosDelMundo;
   /** Planos de cámara con nombre, para los pasos `camara`. */
   readonly planos: Readonly<Record<string, Plano>>;
@@ -65,9 +70,13 @@ export interface SonidosDelMundo {
 
 export const VELOCIDAD_DEL_JUGADOR_POR_DEFECTO = 2.4; // metros por segundo: el paso de alguien que camina sin prisa
 
+/** El fondo de un nivel que no dice otro: un cielo claro. */
+export const COLOR_DE_FONDO_POR_DEFECTO = '#bfe6f5';
+
 export const AJUSTES_DEL_MUNDO_POR_DEFECTO: AjustesDelMundo = {
   pixelesPorMetro: 100,
   camara: { distanciaEnMetros: 8, alturaEnMetros: 4, giroEnGrados: 0 },
+  colorDeFondo: COLOR_DE_FONDO_POR_DEFECTO,
   sonidos: {},
   planos: {},
 };

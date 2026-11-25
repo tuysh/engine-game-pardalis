@@ -16,11 +16,9 @@ import type {
 import { direccionDeArchivoDeAssets } from './direccion-de-asset.ts';
 import type { UbicacionDeAssets } from './direccion-de-asset.ts';
 
-/** Color de lo que queda vacío alrededor del escenario: un cielo claro. */
-const COLOR_DE_FONDO = '#bfe6f5';
-
 export function prepararEscenografia(nivel: Nivel, ubicacion: UbicacionDeAssets): Escenografia {
   const mundo = nivel.mundo;
+  const colorDeFondo = nivel.contenido.mundo.colorDeFondo;
 
   const telones: TelonDeEscena[] = [];
   for (const telon of mundo.telones) {
@@ -44,10 +42,10 @@ export function prepararEscenografia(nivel: Nivel, ubicacion: UbicacionDeAssets)
   }
 
   if (mundo.suelo === undefined) {
-    return { colorDeFondo: COLOR_DE_FONDO, telones, decorado };
+    return { colorDeFondo, telones, decorado };
   }
   const suelo = { imagen: crearImagenDeEscena(mundo.suelo.asset, nivel, ubicacion), esquina: mundo.suelo.esquina };
-  return { colorDeFondo: COLOR_DE_FONDO, suelo, telones, decorado };
+  return { colorDeFondo, suelo, telones, decorado };
 }
 
 /** Los personajes que están en el escenario al empezar: los NPCs del mapa y, si el nivel tiene, el jugador. */

@@ -25,6 +25,7 @@ const CONTENIDO: Contenido = {
   mundo: {
     pixelesPorMetro: 100,
     camara: { distanciaEnMetros: 8, alturaEnMetros: 4, giroEnGrados: 0 },
+    colorDeFondo: '#bfe6f5',
     sonidos: {},
     planos: { plano_puesto: { mira: 'puesto', distanciaEnMetros: 5, alturaEnMetros: 2.5, giroEnGrados: 20 } },
   },

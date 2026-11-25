@@ -69,13 +69,32 @@ const esquemaDePlano = z
     }),
   );
 
-const esquemaDeMundo: z.ZodType<AjustesDelMundo> = z.strictObject({
-  pixelesPorMetro: z.number().positive().default(AJUSTES_DEL_MUNDO_POR_DEFECTO.pixelesPorMetro),
-  // `prefault({})`: si falta la sección, se lee como si viniera vacía y entran sus valores por defecto.
-  camara: esquemaDeCamara.prefault({}),
-  sonidos: z.strictObject({ musica: z.string().min(1).optional() }).prefault({}),
-  planos: z.record(z.string(), esquemaDePlano).default({}),
+// Un color escrito como en CSS, con sus seis cifras: "#" y tres pares de rojo, verde y azul.
+// Acepta "#2b1a0c" y "#BFE6F5"; no acepta "#fff", "rojo" ni "rgb(0, 0, 0)".
+const COLOR_CON_SEIS_CIFRAS = /^#[0-9a-fA-F]{6}$/;
+
+const esquemaDeColor = z.string().regex(COLOR_CON_SEIS_CIFRAS, {
+  error: 'se espera un color escrito como "#rrggbb", por ejemplo "#bfe6f5"',
 });
+
+const esquemaDeMundo = z
+  .strictObject({
+    pixelesPorMetro: z.number().positive().default(AJUSTES_DEL_MUNDO_POR_DEFECTO.pixelesPorMetro),
+    // `prefault({})`: si falta la sección, se lee como si viniera vacía y entran sus valores por defecto.
+    camara: esquemaDeCamara.prefault({}),
+    fondo: esquemaDeColor.default(AJUSTES_DEL_MUNDO_POR_DEFECTO.colorDeFondo),
+    sonidos: z.strictObject({ musica: z.string().min(1).optional() }).prefault({}),
+    planos: z.record(z.string(), esquemaDePlano).default({}),
+  })
+  .transform(
+    (json): AjustesDelMundo => ({
+      pixelesPorMetro: json.pixelesPorMetro,
+      camara: json.camara,
+      colorDeFondo: json.fondo,
+      sonidos: json.sonidos,
+      planos: json.planos,
+    }),
+  );
 
 const esquemaDeEstado = z.strictObject({
   objetivos: z.array(z.string().min(1)).default([]),

@@ -104,6 +104,7 @@ async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
 test('al empezar, monta la escenografía con la dirección y el tamaño en metros de cada imagen', async () => {
   const { escenario } = await empezar(NIVEL);
 
+  expect(escenario.escenografia?.colorDeFondo).toBe('#bfe6f5');
   expect(escenario.escenografia?.suelo).toEqual({
     esquina: { x: 0, y: 0 },
     imagen: {

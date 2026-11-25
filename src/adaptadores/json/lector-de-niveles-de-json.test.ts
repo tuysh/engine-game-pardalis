@@ -31,6 +31,7 @@ test('un contenido con solo "meta" se lee con todas las demás secciones vacías
     mundo: {
       pixelesPorMetro: 100,
       camara: { distanciaEnMetros: 8, alturaEnMetros: 4, giroEnGrados: 0 },
+      colorDeFondo: '#bfe6f5',
       sonidos: {},
       planos: {},
     },
@@ -57,6 +58,7 @@ test('el jugador y el mundo se leen con sus unidades, y lo que falta toma su val
   expect(lectura.valor.mundo).toEqual({
     pixelesPorMetro: 64,
     camara: { distanciaEnMetros: 8, alturaEnMetros: 4, giroEnGrados: 20 },
+    colorDeFondo: '#bfe6f5',
     sonidos: { musica: 'mus_barrio' },
     planos: {},
   });
@@ -370,4 +372,13 @@ test('un plano de cámara se lee con sus medidas en metros y grados', () => {
   expect(lectura.valor.mundo.planos).toEqual({
     plano_sala: { mira: 'sillon', distanciaEnMetros: 6, alturaEnMetros: 2.5, giroEnGrados: 20 },
   });
+});
+
+test('el fondo del mundo se lee como color, y uno mal escrito es un error que dice cómo va', () => {
+  const lectura = new LectorDeNivelesDeJson().leerContenido({ meta: META, mundo: { fondo: '#2b1a0c' } });
+  if (lectura.tipo !== 'leido') throw new Error(`no se pudo leer: ${lectura.errores.join('; ')}`);
+  expect(lectura.valor.mundo.colorDeFondo).toBe('#2b1a0c');
+
+  const errores = erroresDe({ meta: META, mundo: { fondo: 'cafe' } });
+  expect(errores).toEqual(['mundo.fondo: se espera un color escrito como "#rrggbb", por ejemplo "#bfe6f5"']);
 });

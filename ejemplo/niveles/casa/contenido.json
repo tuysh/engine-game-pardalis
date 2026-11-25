@@ -9,6 +9,7 @@
   },
   "mundo": {
     "camara": { "distancia": 9, "altura": 3.6, "giro": 0 },
+    "fondo": "#3b2a20",
     "planos": {
       "plano_tele": { "mira": "frente_tele", "distancia": 5.5, "altura": 2.2, "giro": 18 },
       "plano_sala": { "mira": "centro_sala", "distancia": 8, "altura": 3.2, "giro": 0 },

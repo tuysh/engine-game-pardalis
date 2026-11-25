@@ -28,6 +28,7 @@ const CONTENIDO: Contenido = {
   mundo: {
     pixelesPorMetro: 100,
     camara: CAMARA_DEL_NIVEL,
+    colorDeFondo: '#bfe6f5',
     sonidos: {},
     planos: {
       plano_puesto: { mira: 'puesto', ...AJUSTES_DEL_PUESTO },

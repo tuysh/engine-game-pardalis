@@ -113,6 +113,7 @@ La clase de un objeto se escribe en el campo **Clase** de Tiled. No se usan tile
   "mundo": {
     "pixelesPorMetro": 100,
     "camara": { "distancia": 8, "altura": 4, "giro": 0 },
+    "fondo": "#bfe6f5",
     "sonidos": { "musica": "mus_barrio" },
     "planos": { "plano_puesto": { "mira": "tortu", "distancia": 5, "altura": 2.5, "giro": 20 } }
   },
@@ -154,8 +155,8 @@ Solo `meta` es obligatoria. **Una clave que el motor no conoce es un error**: as
 | `mundo.camara.distancia` | 8 | Metros entre la cámara y lo que sigue. |
 | `mundo.camara.altura` | 4 | Metros de la cámara sobre el piso. |
 | `mundo.camara.giro` | 0 | Grados que la cámara gira alrededor de lo que sigue. 0 = de frente. |
+| `mundo.fondo` | `"#bfe6f5"` (cielo claro) | Color de lo que se ve donde no hay piso ni telones, escrito `#rrggbb`. En un interior, ponle el color de las paredes o uno oscuro para que no se asome cielo; en un exterior, el color del cielo de tus telones (un atardecer, la noche). |
 | `mundo.sonidos.musica` | — | Clave de la música de fondo, que se repite mientras se juega. Si falta el archivo, hay advertencia y el nivel se juega sin música. |
-
 | `mundo.planos` | — | Planos de cámara con nombre, para los pasos `camara`. Ver abajo. |
 
 La cámara sigue al jugador; en un nivel sin jugador mira al centro del lugar.
@@ -550,4 +551,4 @@ Para quien trae niveles de la versión anterior (no hay conversión automática)
 | `zonaComentario` con `cooldown`; `enfoqueCamara`; `puntoInteraccion` | `zona` con `grupo` y `espera`; los otros dos no existen. |
 | Todo NPC del mapa necesitaba diálogo | El diálogo es opcional. |
 | `velocidadX`/`velocidadY` en píxeles; cámara `follow`/`rails`/`pan` | `jugador.velocidad` en metros por segundo; `mundo.camara` con `distancia`, `altura` y `giro`. |
-| `jugador.animaciones`, `radioAviso`, `mundo.fondo`… | No existen en la 3.0. Un personaje se anima con un `sprite` que sea animación y con el paso `anima`. |
+| `jugador.animaciones`, `radioAviso`… | No existen en la 3.0. Un personaje se anima con un `sprite` que sea animación y con el paso `anima`. |

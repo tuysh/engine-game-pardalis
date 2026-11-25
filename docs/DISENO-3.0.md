@@ -444,6 +444,8 @@ Un personaje de 160 px de alto mide 1.6 m en el escenario.
 
 - Cámara en perspectiva que sigue al jugador con un ángulo fijo configurable en `mundo.camara`, con los mismos
   campos que un plano: `{ "distancia": 8, "altura": 4, "giro": 0 }` (metros y grados; esos son los valores por defecto).
+- El color que se ve donde no hay piso ni telones es `mundo.fondo` (`"#rrggbb"`; por defecto un cielo claro,
+  `"#bfe6f5"`). Así un interior no deja ver cielo y un exterior puede ser de tarde o de noche.
 - Los **planos** para cinemáticas viven en `mundo.planos`:
 
 ```jsonc
