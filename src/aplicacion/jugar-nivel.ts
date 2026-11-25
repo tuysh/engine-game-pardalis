@@ -140,6 +140,10 @@ function avanzarUnCuadro(armado: NivelArmado, puertos: PuertosParaJugar, segundo
     salida.vigilar(exploracion.posicion);
     cercania.actualizar(exploracion.posicion, !escenas.hayUnaEnCurso);
   }
+  // Quien acompaña al jugador lo sigue solo mientras explora: en una escena lo mueven los pasos.
+  if (armado.acompanante !== undefined && !escenas.hayUnaEnCurso) {
+    armado.acompanante.avanzar(segundos);
+  }
   armado.camara.actualizar(segundos);
   puertos.escenario.dibujar(segundos);
 

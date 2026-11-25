@@ -564,6 +564,7 @@ test('la escena que recibe el código del host solo trae sus pasos, `estado` y `
   await reloj.avanzar(0.1);
 
   expect(loQueTrae).toEqual([
+    'acompana',
     'anima',
     'aparece',
     'camara',

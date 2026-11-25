@@ -61,6 +61,17 @@ function revisarJugador(revision: Revision): void {
   if (!Object.hasOwn(revision.contenido.meta.personajes, jugador.personaje)) {
     revision.diagnostico.errores.push(`jugador.personaje "${jugador.personaje}" no existe en meta.personajes`);
   }
+
+  const acompanante = jugador.acompanante;
+  if (acompanante === undefined) return;
+  if (!Object.hasOwn(revision.contenido.meta.personajes, acompanante)) {
+    revision.diagnostico.errores.push(`jugador.acompanante "${acompanante}" no existe en meta.personajes`);
+  }
+  if (acompanante === jugador.personaje) {
+    revision.diagnostico.errores.push(
+      `jugador.acompanante "${acompanante}" es el mismo personaje del jugador: no puede acompañarse a sí mismo`,
+    );
+  }
 }
 
 /** Revisa las condiciones de las ramas de un diálogo y avisa de las ramas a las que nunca se llega. */

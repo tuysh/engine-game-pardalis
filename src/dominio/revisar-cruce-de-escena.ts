@@ -27,6 +27,10 @@ export function revisarCruceDeEscena(contenido: Contenido, mundo: Mundo, diagnos
     diagnostico,
   };
 
+  const acompanante = contenido.jugador?.acompanante;
+  if (acompanante !== undefined) {
+    revisarQueEsteEnEscena(acompanante, 'jugador.acompanante', cruce);
+  }
   revisarPlanos(cruce);
   revisarZonasDeCinematicas(cruce);
   recorrerPasos(contenido, {
@@ -114,6 +118,12 @@ function revisarPaso(paso: Paso, ruta: string, cruce: CruceDeEscena): void {
     case 'anima':
     case 'desaparece':
       revisarQueEsteEnEscena(paso.personaje, ruta, cruce);
+      break;
+
+    case 'acompana':
+      if (paso.personaje !== undefined) {
+        revisarQueEsteEnEscena(paso.personaje, ruta, cruce);
+      }
       break;
 
     case 'linea':

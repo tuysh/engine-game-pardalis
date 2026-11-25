@@ -13,4 +13,6 @@ export interface PiezasDeDireccion {
   readonly video: Video;
   /** Pide que el nivel termine hacia un destino en cuanto acabe la escena en curso. */
   readonly pedirSalida: (destino: string) => void;
+  /** Cambia quién acompaña al jugador mientras explora. Con `undefined`, ya nadie lo acompaña. */
+  readonly cambiarAcompanante: (personaje: string | undefined) => void;
 }

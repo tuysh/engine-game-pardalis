@@ -85,6 +85,9 @@ export interface AccionesDeDireccion {
 
   /** Pide que el nivel termine hacia un destino en cuanto acabe la escena en curso. */
   pedirSalida(destino: string): void;
+
+  /** Cambia quién acompaña al jugador mientras explora. Con `undefined`, ya nadie lo acompaña. */
+  cambiarAcompanante(personaje: string | undefined): void;
 }
 
 /** Todas las acciones que el ejecutor de pasos puede pedir. */

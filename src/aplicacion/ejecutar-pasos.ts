@@ -73,6 +73,7 @@ async function ejecutarPaso(paso: Paso, ejecucion: EjecucionDePasos): Promise<vo
     case 'fundido':
     case 'video':
     case 'sale':
+    case 'acompana':
       await ejecutarPasoDeEscena(paso, ejecucion);
       break;
   }

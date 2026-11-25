@@ -32,6 +32,8 @@
 //   { "fundido": "abrir", "duracion": 1 }          { tipo: 'fundido', sentido: 'abrir', duracionEnSegundos: 1 }
 //   { "video": "intro_tele" }                      { tipo: 'video', clavePorIdioma: { es: 'intro_tele', en: 'intro_tele' } }
 //   { "sale": "barrio" }                           { tipo: 'sale', destino: 'barrio' }
+//   { "acompana": "bobby" }                        { tipo: 'acompana', personaje: 'bobby' }
+//   { "acompana": null }                           { tipo: 'acompana', personaje: undefined }
 //
 // Los mensajes de error siempre usan los nombres del contenido, que son los que conoce quien lo escribe.
 
@@ -232,6 +234,16 @@ export interface PasoDeSalida {
   readonly destino: string;
 }
 
+/**
+ * Dice quién acompaña al jugador desde ahora: lo sigue a corta distancia mientras explora.
+ * Sirve para historias donde el acompañante llega o se va a media aventura.
+ */
+export interface PasoDeAcompanante {
+  readonly tipo: 'acompana';
+  /** Id del personaje que acompaña. `undefined` = desde ahora nadie acompaña al jugador. */
+  readonly personaje?: string;
+}
+
 export type Paso =
   | PasoDeLinea
   | PasoDeEleccion
@@ -252,7 +264,8 @@ export type Paso =
   | PasoDeSonido
   | PasoDeFundido
   | PasoDeVideo
-  | PasoDeSalida;
+  | PasoDeSalida
+  | PasoDeAcompanante;
 
 /** Lo que se escribe en un paso `camara` para que la cámara vuelva a seguir al jugador. */
 export const CAMARA_AL_JUGADOR = 'jugador';

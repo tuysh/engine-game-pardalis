@@ -310,3 +310,38 @@ test('quien reacciona a una línea debe ser un personaje', () => {
     'npcs.tortu.dialogo[0].dice[0].reacciona: el personaje "tomy" no existe en meta.personajes',
   ]);
 });
+
+test('el acompañante del jugador debe ser otro personaje que exista', () => {
+  const conAcompananteQueNoExiste: Contenido = {
+    ...CONTENIDO_CORRECTO,
+    jugador: { personaje: 'tommy', velocidadEnMetrosPorSegundo: 2.4, acompanante: 'bobby' },
+  };
+  const acompanadoDeSiMismo: Contenido = {
+    ...CONTENIDO_CORRECTO,
+    jugador: { personaje: 'tommy', velocidadEnMetrosPorSegundo: 2.4, acompanante: 'tommy' },
+  };
+  const primerDiagnostico = crearDiagnostico();
+  const segundoDiagnostico = crearDiagnostico();
+
+  revisarEnlaces(conAcompananteQueNoExiste, {}, primerDiagnostico);
+  revisarEnlaces(acompanadoDeSiMismo, {}, segundoDiagnostico);
+
+  expect(primerDiagnostico.errores).toEqual(['jugador.acompanante "bobby" no existe en meta.personajes']);
+  expect(segundoDiagnostico.errores).toEqual([
+    'jugador.acompanante "tommy" es el mismo personaje del jugador: no puede acompañarse a sí mismo',
+  ]);
+});
+
+test('el paso "acompana" necesita un nivel con jugador y a otro personaje', () => {
+  const diagnostico = revisarPasosDeTortu([
+    { tipo: 'acompana', personaje: 'tortu' },
+    { tipo: 'acompana' },
+    { tipo: 'acompana', personaje: 'tommy' },
+    { tipo: 'acompana', personaje: 'pancho' },
+  ]);
+
+  expect(diagnostico.errores).toEqual([
+    'npcs.tortu.dialogo[0].dice[2]: "acompana": "tommy" es el personaje del jugador: no puede acompañarse a sí mismo',
+    'npcs.tortu.dialogo[0].dice[3]: el personaje "pancho" no existe en meta.personajes',
+  ]);
+});

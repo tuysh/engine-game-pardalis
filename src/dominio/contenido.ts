@@ -30,6 +30,11 @@ export interface Jugador {
   /** Id del personaje (clave de `meta.personajes`). */
   readonly personaje: string;
   readonly velocidadEnMetrosPorSegundo: number;
+  /**
+   * Id del personaje que sigue al jugador mientras explora (el primo que va con él al mercado).
+   * `undefined` = nadie lo acompaña al empezar. Un paso `acompana` puede cambiarlo después.
+   */
+  readonly acompanante?: string;
 }
 
 /** Desde dónde mira la cámara a lo que sigue. Son los mismos campos que un plano de cinemática. */

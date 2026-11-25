@@ -59,6 +59,7 @@ function crearAccionesFalsas(bitacora: string[]): AccionesDePaso {
     dejarFundido() {},
     async reproducirVideo() {},
     pedirSalida() {},
+    cambiarAcompanante() {},
   };
 }
 

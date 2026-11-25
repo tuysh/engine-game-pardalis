@@ -190,7 +190,7 @@ test('un paso que no se reconoce lista las claves posibles', () => {
   expect(errores).toEqual([
     'secuencias.saludo[0]: no se reconoce el paso: debe ser un objeto con una de estas claves: ' +
       '"cuando", "elige", "juego", "camina", "secuencia", "efecto", "pon", "juntos", "espera", "camara", "mira", ' +
-      '"anima", "aparece", "desaparece", "musica", "sonido", "fundido", "video", "sale", "dice"',
+      '"anima", "aparece", "desaparece", "musica", "sonido", "fundido", "video", "sale", "acompana", "dice"',
   ]);
 });
 
@@ -407,5 +407,19 @@ test('una línea puede traer la pose de quien habla, las reacciones de quienes e
       reacciones: { tommy: 'tommy_feliz' },
       esPensamiento: true,
     },
+  ]);
+});
+
+test('el jugador puede traer acompañante, y el paso "acompana" lo cambia o lo quita con null', () => {
+  const lectura = new LectorDeNivelesDeJson().leerContenido({
+    meta: META,
+    jugador: { personaje: 'tortu', acompanante: 'bobby' },
+  });
+  if (lectura.tipo !== 'leido') throw new Error(`no se pudo leer: ${lectura.errores.join('; ')}`);
+  expect(lectura.valor.jugador?.acompanante).toBe('bobby');
+
+  expect(leerPasos([{ acompana: 'bobby' }, { acompana: null }])).toEqual([
+    { tipo: 'acompana', personaje: 'bobby' },
+    { tipo: 'acompana', personaje: undefined },
   ]);
 });

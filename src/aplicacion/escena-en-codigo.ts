@@ -195,6 +195,18 @@ export class EscenaEnCodigo implements EscenaDeCinematica {
     await this.#ejecutar({ tipo: 'secuencia', nombre });
   };
 
+  readonly acompana = (personaje: string | null): void => {
+    const llamada = `acompana(${JSON.stringify(personaje)})`;
+    const jugador = this.#pedido.ejecucion.contenido.jugador;
+    if (jugador === undefined) {
+      this.#fallar(llamada, 'el nivel no tiene jugador a quien acompañar');
+    }
+    if (personaje !== null) {
+      this.#exigirPersonaje(personaje, llamada);
+    }
+    this.#pedido.ejecucion.acciones.cambiarAcompanante(personaje ?? undefined);
+  };
+
   readonly sale = (destino: string): void => {
     this.#pedido.ejecucion.acciones.pedirSalida(destino);
   };

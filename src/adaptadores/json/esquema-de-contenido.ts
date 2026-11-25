@@ -34,8 +34,15 @@ const esquemaDeJugador = z
   .strictObject({
     personaje: z.string().min(1),
     velocidad: z.number().positive().default(VELOCIDAD_DEL_JUGADOR_POR_DEFECTO),
+    acompanante: z.string().min(1).optional(),
   })
-  .transform((json): Jugador => ({ personaje: json.personaje, velocidadEnMetrosPorSegundo: json.velocidad }));
+  .transform(
+    (json): Jugador => ({
+      personaje: json.personaje,
+      velocidadEnMetrosPorSegundo: json.velocidad,
+      acompanante: json.acompanante,
+    }),
+  );
 
 const CAMARA_POR_DEFECTO = AJUSTES_DEL_MUNDO_POR_DEFECTO.camara;
 

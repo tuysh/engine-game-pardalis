@@ -5,9 +5,11 @@
 // ver ejecucion-de-pasos.ts):
 //   - los que solo se ven o se oyen (una línea, un efecto, una espera, un sonido, un video) se omiten;
 //   - los que tardan y dejan algo cambiado (caminar, mover la cámara, fundir, animar) dejan su resultado final;
-//   - los que ocurren de una vez (voltear, aparecer, cambiar la música, pedir salir) ocurren igual.
+//   - los que ocurren de una vez (voltear, aparecer, cambiar la música, pedir salir, cambiar de acompañante)
+//     ocurren igual.
 
 import type {
+  PasoDeAcompanante,
   PasoDeAnimacion,
   PasoDeAparicion,
   PasoDeCamara,
@@ -30,7 +32,13 @@ import { esperarOCancelar } from './esperar-o-cancelar.ts';
 
 type PasoQueSoloSeVe = PasoDeLinea | PasoDeEfecto | PasoDeEspera | PasoDeSonido | PasoDeVideo;
 type PasoQueTarda = PasoDeCaminata | PasoDeCamara | PasoDeFundido | PasoDeAnimacion;
-type PasoDeUnaVez = PasoDeMirada | PasoDeAparicion | PasoDeDesaparicion | PasoDeMusica | PasoDeSalida;
+type PasoDeUnaVez =
+  | PasoDeMirada
+  | PasoDeAparicion
+  | PasoDeDesaparicion
+  | PasoDeMusica
+  | PasoDeSalida
+  | PasoDeAcompanante;
 
 /** Los pasos que este archivo sabe ejecutar: los que no llevan otros pasos dentro ni cambian el estado. */
 export type PasoDeEscena = PasoQueSoloSeVe | PasoQueTarda | PasoDeUnaVez;
@@ -57,6 +65,7 @@ export async function ejecutarPasoDeEscena(paso: PasoDeEscena, ejecucion: Ejecuc
     case 'desaparece':
     case 'musica':
     case 'sale':
+    case 'acompana':
       await ejecutarPasoDeUnaVez(paso, ejecucion);
       break;
   }
@@ -163,6 +172,9 @@ async function ejecutarPasoDeUnaVez(paso: PasoDeUnaVez, ejecucion: EjecucionDePa
       break;
     case 'sale':
       acciones.pedirSalida(paso.destino);
+      break;
+    case 'acompana':
+      acciones.cambiarAcompanante(paso.personaje);
       break;
   }
 }

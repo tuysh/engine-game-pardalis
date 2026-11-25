@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import type {
   Paso,
+  PasoDeAcompanante,
   PasoDeAnimacion,
   PasoDeAparicion,
   PasoDeCamara,
@@ -82,6 +83,11 @@ const esquemaDeSalida = z
   .strictObject({ sale: nombre })
   .transform((json): PasoDeSalida => ({ tipo: 'sale', destino: json.sale }));
 
+// `null` quiere decir «ya nadie acompaña al jugador».
+const esquemaDeAcompanante = z
+  .strictObject({ acompana: z.union([nombre, z.null()]) })
+  .transform((json): PasoDeAcompanante => ({ tipo: 'acompana', personaje: json.acompana ?? undefined }));
+
 export const FORMAS_DE_PASOS_DE_ESCENA: readonly FormaDePaso[] = [
   { clave: 'espera', esquema: esquemaDeEspera },
   { clave: 'camara', esquema: esquemaDeCamara },
@@ -94,4 +100,5 @@ export const FORMAS_DE_PASOS_DE_ESCENA: readonly FormaDePaso[] = [
   { clave: 'fundido', esquema: esquemaDeFundido },
   { clave: 'video', esquema: esquemaDeVideo },
   { clave: 'sale', esquema: esquemaDeSalida },
+  { clave: 'acompana', esquema: esquemaDeAcompanante },
 ];

@@ -112,6 +112,7 @@ function recorrerPaso(paso: Paso, ruta: string, visitante: VisitanteDePasos): vo
     case 'fundido':
     case 'video':
     case 'sale':
+    case 'acompana':
       break; // estos pasos no llevan otros pasos dentro
   }
 }

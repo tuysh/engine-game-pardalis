@@ -109,7 +109,7 @@ La clase de un objeto se escribe en el campo **Clase** de Tiled. No se usan tile
 ```jsonc
 {
   "meta": { "id": "barrio", "titulo": "El barrio", "personajes": { ... } },
-  "jugador": { "personaje": "tommy" },    // opcional: un nivel sin jugador no tiene control libre
+  "jugador": { "personaje": "tommy", "acompanante": "bobby" },   // opcional: un nivel sin jugador no tiene control libre
   "mundo": {
     "pixelesPorMetro": 100,
     "camara": { "distancia": 8, "altura": 4, "giro": 0 },
@@ -151,6 +151,7 @@ Solo `meta` es obligatoria. **Una clave que el motor no conoce es un error**: as
 | --- | --- | --- |
 | `jugador.personaje` | — | Id en `meta.personajes` (obligatorio si hay `jugador`). |
 | `jugador.velocidad` | 2.4 | Metros por segundo al caminar. |
+| `jugador.acompanante` | — | Id del personaje que **sigue al jugador** mientras explora. Ver «Acompañante». |
 | `mundo.pixelesPorMetro` | 100 | Cuántos píxeles del mapa y de las imágenes son un metro del escenario. |
 | `mundo.camara.distancia` | 8 | Metros entre la cámara y lo que sigue. |
 | `mundo.camara.altura` | 4 | Metros de la cámara sobre el piso. |
@@ -160,6 +161,27 @@ Solo `meta` es obligatoria. **Una clave que el motor no conoce es un error**: as
 | `mundo.planos` | — | Planos de cámara con nombre, para los pasos `camara`. Ver abajo. |
 
 La cámara sigue al jugador; en un nivel sin jugador mira al centro del lugar.
+
+#### Acompañante
+
+```json
+"jugador": { "personaje": "pardi", "acompanante": "bobby" }
+```
+
+El acompañante es un personaje que va con el jugador: lo sigue a un paso de distancia mientras explora.
+
+- Camina por el piso rodeando el decorado, igual que el jugador, y voltea hacia donde camina.
+- Cuando el jugador se detiene, se queda cerca, del lado por el que venía: no se encima ni se le adelanta.
+- **Durante un diálogo o una cinemática deja de seguir:** ahí lo mueven los pasos `camina`, `mira` y `anima`
+  como a cualquier personaje. Al terminar la escena vuelve a seguir desde donde quedó.
+- Debe estar en el escenario: ser un NPC del mapa o entrar con un paso `aparece` (empieza a seguir en cuanto
+  aparece). Si tiene diálogo en `npcs`, tocarlo lo abre como siempre.
+- El paso `{ "acompana": "bobby" }` lo cambia a media aventura y `{ "acompana": null }` lo quita, para historias
+  donde el acompañante llega o se va.
+- Como siempre está cerca, los `comentarios` de las zonas los puede decir él.
+
+Al volver a un nivel ya visitado, el acompañante es otra vez el de `jugador.acompanante`: la partida todavía
+no recuerda un cambio hecho con el paso `acompana`.
 
 #### Planos de cámara
 
@@ -303,6 +325,7 @@ Mueven la cámara y a los personajes. Nacieron para las cinemáticas, pero sirve
 | Fundido | `{ "fundido": "cerrar", "duracion": 1 }` | `cerrar` oscurece la pantalla hasta negro; `abrir` la aclara partiendo de negro. Sin `duracion` es de golpe. |
 | Video | `{ "video": "intro_tele" }` | Reproduce un video a pantalla completa. Con voces, uno por idioma: `{ "video": { "es": "intro_es", "en": "intro_en" } }`. |
 | Salir | `{ "sale": "barrio" }` | Pide terminar el nivel hacia un destino. Ver abajo. |
+| Acompañar | `{ "acompana": "bobby" }` | Desde ahora ese personaje sigue al jugador mientras explora. Con `{ "acompana": null }`, ya nadie lo sigue. |
 
 **Animar.** Hay dos formas:
 

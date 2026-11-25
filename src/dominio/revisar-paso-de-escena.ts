@@ -23,6 +23,10 @@ export function revisarPasoDeEscena(paso: Paso, ruta: string, revision: Revision
       revisarDestinoDeCamara(paso, ruta, revision);
       break;
 
+    case 'acompana':
+      revisarAcompanante(paso.personaje, ruta, revision);
+      break;
+
     default:
       break; // los demás pasos no son de escena, o no nombran nada del contenido
   }
@@ -41,6 +45,22 @@ function revisarQueNoSeaElJugador(personaje: string, ruta: string, revision: Rev
     revision.diagnostico.errores.push(
       `${ruta}: "desaparece": "${personaje}" no se puede usar: es el personaje del jugador y debe seguir en el escenario`,
     );
+  }
+}
+
+/** Quien acompaña al jugador es un personaje que no es el propio jugador, en un nivel que tiene jugador. */
+function revisarAcompanante(personaje: string | undefined, ruta: string, revision: Revision): void {
+  const jugador = revision.contenido.jugador;
+  if (jugador === undefined) {
+    revision.diagnostico.errores.push(`${ruta}: "acompana" no se puede usar: el nivel no tiene jugador a quien acompañar`);
+    return;
+  }
+  // Sin personaje (`"acompana": null`) el paso solo dice que ya nadie acompaña: no hay nada más que revisar.
+  if (personaje === undefined) return;
+
+  revisarPersonaje(personaje, ruta, revision);
+  if (personaje === jugador.personaje) {
+    revision.diagnostico.errores.push(`${ruta}: "acompana": "${personaje}" es el personaje del jugador: no puede acompañarse a sí mismo`);
   }
 }
 

@@ -93,6 +93,9 @@ function crearAccionesFalsas(bitacora: string[], respuestas: Respuestas = {}): A
     pedirSalida(destino) {
       bitacora.push(`sale: ${destino}`);
     },
+    cambiarAcompanante(personaje) {
+      bitacora.push(`acompaña: ${personaje ?? 'nadie'}`);
+    },
   };
 }
 
@@ -372,6 +375,8 @@ test('los pasos de escena piden su acción, en orden', async () => {
     { tipo: 'video', clavePorIdioma: { es: 'intro_es', en: 'intro_en' } },
     { tipo: 'desaparece', personaje: 'tortu' },
     { tipo: 'sale', destino: 'barrio' },
+    { tipo: 'acompana', personaje: 'tortu' },
+    { tipo: 'acompana' },
   ];
 
   await ejecutarPasos(pasos, {
@@ -393,6 +398,8 @@ test('los pasos de escena piden su acción, en orden', async () => {
     'video: intro_es',
     'tortu desaparece',
     'sale: barrio',
+    'acompaña: tortu',
+    'acompaña: nadie',
   ]);
 });
 

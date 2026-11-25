@@ -8,6 +8,7 @@ import { crearMapaDeCaminos } from '../dominio/rejilla-de-caminos.ts';
 import type { MapaDeCaminos } from '../dominio/rejilla-de-caminos.ts';
 import { crearTerreno } from '../dominio/terreno.ts';
 import { completarTexto } from '../dominio/texto-con-variables.ts';
+import { Acompanante } from './acompanante.ts';
 import { CamaraDeEscena } from './camara-de-escena.ts';
 import { Cercania } from './cercania.ts';
 import { ComentariosDeZona } from './comentarios-de-zona.ts';
@@ -34,6 +35,8 @@ export interface NivelArmado {
   readonly centroDelLugar: Punto;
   /** El control libre del jugador. `undefined` en un nivel sin jugador. */
   readonly exploracion: Exploracion | undefined;
+  /** Quien sigue al jugador mientras explora. `undefined` en un nivel sin jugador. */
+  readonly acompanante: Acompanante | undefined;
   readonly camara: CamaraDeEscena;
   /** Los diálogos y las cinemáticas. */
   readonly escenas: EscenasDelNivel;
@@ -78,9 +81,10 @@ export async function armarNivel(
 
   const escena = crearPiezasDeEscena(base);
   const exploracion = crearExploracion(nivel, reparto, caminos);
+  const acompanante = crearAcompanante(nivel, reparto, caminos);
   const comentarios = crearComentarios(base, escena);
   const camara = crearCamara(base);
-  const escenas = crearEscenas(base, { escena, camara, comentarios, exploracion });
+  const escenas = crearEscenas(base, { escena, camara, comentarios, exploracion, acompanante });
 
   return {
     nivel,
@@ -88,6 +92,7 @@ export async function armarNivel(
     estado,
     centroDelLugar,
     exploracion,
+    acompanante,
     camara,
     escenas,
     comentarios,
@@ -141,6 +146,20 @@ function crearExploracion(nivel: Nivel, reparto: Reparto, caminos: MapaDeCaminos
   });
 }
 
+/** Quien sigue al jugador mientras explora, o `undefined` si el nivel no tiene jugador. */
+function crearAcompanante(nivel: Nivel, reparto: Reparto, caminos: MapaDeCaminos): Acompanante | undefined {
+  const jugador = nivel.contenido.jugador;
+  if (jugador === undefined) return undefined;
+
+  return new Acompanante({
+    reparto,
+    caminos,
+    idDelJugador: jugador.personaje,
+    velocidadEnMetrosPorSegundo: jugador.velocidadEnMetrosPorSegundo,
+    idDelAcompananteInicial: jugador.acompanante,
+  });
+}
+
 /** Los comentarios que el jugador dice al entrar a una zona: se dicen como una línea que no detiene el juego. */
 function crearComentarios(base: BaseDelNivel, escena: PiezasDeEscena): ComentariosDeZona {
   const nivel = base.pedido.nivel;
@@ -162,6 +181,7 @@ interface PiezasParaLasEscenas {
   readonly camara: CamaraDeEscena;
   readonly comentarios: ComentariosDeZona;
   readonly exploracion: Exploracion | undefined;
+  readonly acompanante: Acompanante | undefined;
 }
 
 /** Los diálogos y las cinemáticas del nivel. */
@@ -176,12 +196,22 @@ function crearEscenas(base: BaseDelNivel, piezas: PiezasParaLasEscenas): Escenas
     video: puertos.video,
     cinematicasEnCodigo: pedido.cinematicasEnCodigo ?? {},
     avisos: base.avisos,
+    cambiarAcompanante: (personaje) => {
+      // La validación garantiza que el paso `acompana` solo se usa en un nivel con jugador.
+      if (piezas.acompanante !== undefined) {
+        piezas.acompanante.cambiar(personaje);
+      }
+    },
     alEmpezarUnaEscena: () => {
       // Un comentario nunca se encima con una escena: al empezar una, el comentario se calla.
       piezas.comentarios.callar();
       // Y el jugador no sigue caminando hacia el lugar que había tocado.
       if (piezas.exploracion !== undefined) {
         piezas.exploracion.detener();
+      }
+      // Ni su acompañante: durante la escena lo mueven los pasos, no el seguir al jugador.
+      if (piezas.acompanante !== undefined) {
+        piezas.acompanante.detener();
       }
     },
   });

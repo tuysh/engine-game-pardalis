@@ -30,6 +30,8 @@ export interface PiezasDeLasEscenas {
   /** Las cinemáticas escritas en código que registró el host, por nombre. */
   readonly cinematicasEnCodigo: Readonly<Record<string, CinematicaEnCodigo>>;
   readonly avisos: AvisosDelNivel;
+  /** Cambia quién acompaña al jugador mientras explora (el paso `acompana`). */
+  readonly cambiarAcompanante: (personaje: string | undefined) => void;
   /** Se llama justo antes de que empiece un diálogo o una cinemática. */
   readonly alEmpezarUnaEscena: () => void;
 }
@@ -55,6 +57,7 @@ export class EscenasDelNivel {
       pedirSalida: (destino) => {
         this.destinoPedido = destino;
       },
+      cambiarAcompanante: piezas.cambiarAcompanante,
     });
     this.conversacion = new Conversacion({
       contenido: escena.contenido,

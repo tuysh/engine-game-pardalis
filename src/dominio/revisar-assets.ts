@@ -89,6 +89,7 @@ function revisarAssetsDePaso(paso: Paso, ruta: string, revision: RevisionDeAsset
     case 'desaparece':
     case 'fundido':
     case 'sale':
+    case 'acompana':
       break; // estos pasos no nombran assets
   }
 }

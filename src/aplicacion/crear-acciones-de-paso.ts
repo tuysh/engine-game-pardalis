@@ -82,5 +82,8 @@ function crearAccionesDeDireccion(piezas: PiezasDeDireccion): AccionesDeDireccio
     pedirSalida(destino) {
       piezas.pedirSalida(destino);
     },
+    cambiarAcompanante(personaje) {
+      piezas.cambiarAcompanante(personaje);
+    },
   };
 }

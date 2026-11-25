@@ -254,6 +254,7 @@ Al terminar, el motor marca `vista.<id>` en el estado.
 | `{ "fundido": "abrir", "duracion": 1 }` | `escena.fundido('abrir', { duracion })` | `abrir` o `cerrar` a negro. |
 | `{ "video": "clave" }` | `escena.video('clave')` | Video a pantalla completa; con voces, `{ es, en }` en las dos formas. Ver §7.4. |
 | `{ "sale": "barrio" }` | `escena.sale('barrio')` | Termina el nivel hacia un destino. |
+| `{ "acompana": "bobby" }` | `escena.acompana('bobby')` | Desde ahora ese personaje sigue al jugador mientras explora; con `null`, nadie. |
 
 Los pasos que ya existían siguen igual: `dice`, `camina`, `efecto`, `pon`, `secuencia`, `cuando`.
 Dentro de una cinemática **no** se permiten `elige` ni `juego` (el validador lo marca como error).
@@ -331,6 +332,10 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   solo mientras dura la línea; al terminar, cada quien vuelve al dibujo que tenía. Con `piensa`, el globo es
   una nube. En código son opciones de `escena.dice` con los mismos nombres. Al saltar una cinemática la línea
   se omite, así que nadie cambia de dibujo.
+- **Acompañante:** `jugador.acompanante` nombra a un personaje que sigue al jugador mientras explora, por el
+  piso y rodeando el decorado. Empieza a caminar cuando el jugador se aleja metro y medio y se detiene a
+  menos de un metro. Durante un diálogo o una cinemática no sigue: lo mueven los pasos. El paso `acompana`
+  lo cambia o lo quita; ese cambio todavía no se guarda en la partida.
 - **Caminos:** al cargar el nivel se corta el piso en una rejilla (celdas de un cuarto de metro, sin las huellas
   del decorado `parado`). Con ella, el jugador al tocar un lugar y los pasos `camina` rodean lo que estorba.
   Un `camina` va en línea recta solo si quien camina o su punto están fuera del piso.

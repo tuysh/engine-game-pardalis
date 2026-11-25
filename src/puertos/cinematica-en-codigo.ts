@@ -90,6 +90,11 @@ export interface EscenaDeCinematica {
   dice(personaje: string, texto: string, opciones?: OpcionesDeLinea): Promise<void>;
   /** Un personaje camina hasta un punto del mapa. */
   camina(personaje: string, punto: string): Promise<void>;
+  /**
+   * Dice quién acompaña al jugador desde ahora: lo sigue mientras explora. Con `null`, ya nadie lo acompaña.
+   * Igual que el paso `acompana` de un nivel.
+   */
+  acompana(personaje: string | null): void;
   /** Un efecto visual con sonido: `'magia'` o `'confeti'`. */
   efecto(nombre: string): Promise<void>;
   /** Ejecuta una secuencia de `secuencias` del nivel, por su nombre. */
