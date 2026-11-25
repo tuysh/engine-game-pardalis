@@ -33,7 +33,7 @@
   "scripts": {
     "check": "tsc --noEmit && echo 'No type errors'",
     "construir": "rm -rf dist && tsc --project tsconfig.construir.json",
-    "prepack": "bun run construir"
+    "prepare": "bun run construir"
   },
   "dependencies": {
     "three": "^0.187.0",

@@ -36,6 +36,34 @@ Las cinemáticas se saltan con el botón de abajo a la derecha. Para entrar dire
 libre con la que se crean los planos de cámara ([`docs/NIVELES.md`](docs/NIVELES.md)).
 Las voces del ejemplo no están grabadas, así que se oye la voz sintetizada del navegador.
 
+## Instalar desde otro proyecto
+
+El paquete todavía no está publicado en npm, así que se instala **desde GitHub**. Lo que se usa es la carpeta
+`dist/`, que no está en el repositorio: se construye sola al instalar (el script `prepare`).
+
+Con **npm**, **pnpm** o **yarn** no hay que hacer nada más (hace falta tener [Bun](https://bun.sh) instalado,
+porque la construcción lo usa):
+
+```bash
+npm install github:tuysh/engine-game-pardalis
+```
+
+Con **Bun** hacen falta dos cosas en el `package.json` del proyecto que lo usa, porque Bun no corre los scripts
+de una dependencia sin permiso ni instala lo que esa dependencia necesita para construirse:
+
+```json
+{
+  "dependencies": { "@pardalis/escenario-engine": "github:tuysh/engine-game-pardalis" },
+  "trustedDependencies": ["@pardalis/escenario-engine"],
+  "devDependencies": { "typescript": "^7.0.2", "@types/bun": "^1.4.4", "@types/three": "^0.187.0" }
+}
+```
+
+Después de `bun install` ya funcionan `import { crearEscenario } from '@pardalis/escenario-engine'` y
+`bunx escenario-engine validar ...`. Si `dist/` no aparece, `bun pm untrusted` dice si el script quedó bloqueado.
+
+Conviene fijar un commit (`github:tuysh/engine-game-pardalis#<commit>`) para que el motor no cambie solo.
+
 ## Uso
 
 ```js
