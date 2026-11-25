@@ -35,6 +35,8 @@ try {
   juego.on('palabra', (palabra) => console.log('palabra vista:', palabra.en, '=', palabra.es));
   juego.on('guardar', (partida) => console.log('conviene guardar:', JSON.stringify(partida)));
   juego.on('cinematica', (cinematica) => console.log('cinemática:', cinematica.id, cinematica.fase));
+  juego.on('minijuego', (minijuego) => console.log('minijuego:', minijuego.nombre, minijuego.fase));
+  juego.on('estado', (estado) => console.log('cambió el estado:', JSON.stringify(estado.cambios)));
   juego.on('nivel', (cambio) => console.log('nivel:', cambio.id, '(antes:', cambio.anterior + ')'));
   juego.on('salida', (destino) => console.log('el jugador salió hacia:', destino));
   juego.on('error', (error) => console.error('el juego avisó de un error:', error.problemas));
