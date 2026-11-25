@@ -8,15 +8,28 @@
 //   "no tengo limones"                     negación; "no" va delante de cualquier condición
 //   "objetivosCompletos"                   ya se cumplieron todos los objetivos del nivel
 //   "charlas.tortu"                        ya se habló con "tortu" (el motor lo marca solo)
+//   "dinero >= 10"                         el número de "dinero" es 10 o más; también >, <, <= y =
 //   ["a", "b"]                             se cumplen "a" Y "b"
 //   { "alguno": ["a", "b"] }               se cumple "a" O "b"
 
-import { estanCompletosLosObjetivos, tieneValor } from './estado.ts';
+import { estanCompletosLosObjetivos, numeroDe, tieneValor } from './estado.ts';
 import type { EstadoDeNivel } from './estado.ts';
+
+/** Cómo se compara el número de una variable con otro número. Se escribe igual que en el nivel. */
+export type OperadorDeComparacion = '>=' | '<=' | '>' | '<' | '=';
+
+/** Compara el número de una variable con un número fijo. Ejemplo: `dinero >= 10`. */
+export interface CondicionDeComparacion {
+  readonly tipo: 'comparacion';
+  readonly nombre: string;
+  readonly operador: OperadorDeComparacion;
+  readonly numero: number;
+}
 
 /** Una condición ya leída, lista para evaluarse. */
 export type Condicion =
   | { readonly tipo: 'variable'; readonly nombre: string }
+  | CondicionDeComparacion
   | { readonly tipo: 'objetivosCompletos' }
   | { readonly tipo: 'no'; readonly condicion: Condicion }
   | { readonly tipo: 'todas'; readonly condiciones: readonly Condicion[] }
@@ -29,6 +42,11 @@ const TODOS_LOS_OBJETIVOS = 'objetivosCompletos';
 // Uno o más espacios, tabuladores o saltos de línea seguidos.
 // Ejemplo: en "tengo   tortillas" encuentra los tres espacios juntos.
 const ESPACIOS_SEGUIDOS = /\s+/g;
+
+// Una comparación: el nombre de una variable, un operador y un número (con signo y decimales opcionales).
+// En "dinero >= 10" captura "dinero", ">=" y "10"; en "estrellas<3", "estrellas", "<" y "3".
+// Los operadores de dos signos van primero para que ">=" no se lea como ">" seguido de "=10".
+const EXPRESION_DE_COMPARACION = /^(.+?)\s*(>=|<=|>|<|=)\s*(-?\d+(?:\.\d+)?)$/;
 
 /**
  * Convierte el texto de una condición en una `Condicion`.
@@ -46,10 +64,21 @@ export function leerCondicionDeTexto(texto: string): Condicion {
   if (textoLimpio === TODOS_LOS_OBJETIVOS) {
     return { tipo: 'objetivosCompletos' };
   }
+  let sinTengo = textoLimpio;
   if (textoLimpio.startsWith(PREFIJO_TENGO)) {
-    return { tipo: 'variable', nombre: textoLimpio.slice(PREFIJO_TENGO.length) };
+    sinTengo = textoLimpio.slice(PREFIJO_TENGO.length);
   }
-  return { tipo: 'variable', nombre: textoLimpio };
+
+  const partes = EXPRESION_DE_COMPARACION.exec(sinTengo);
+  if (partes === null) {
+    return { tipo: 'variable', nombre: sinTengo };
+  }
+  return {
+    tipo: 'comparacion',
+    nombre: partes[1]!, // los grupos 1, 2 y 3 siempre existen cuando la expresión coincide
+    operador: partes[2] as OperadorDeComparacion, // la expresión solo acepta esos cinco operadores
+    numero: Number(partes[3]),
+  };
 }
 
 /** Dice si la condición se cumple en ese estado. */
@@ -57,6 +86,8 @@ export function cumpleCondicion(condicion: Condicion, estado: EstadoDeNivel): bo
   switch (condicion.tipo) {
     case 'variable':
       return tieneValor(estado, condicion.nombre);
+    case 'comparacion':
+      return cumpleComparacion(condicion, estado);
     case 'objetivosCompletos':
       return estanCompletosLosObjetivos(estado);
     case 'no':
@@ -68,10 +99,28 @@ export function cumpleCondicion(condicion: Condicion, estado: EstadoDeNivel): bo
   }
 }
 
+/** Una variable sin valor, o con un valor que no es un número, cuenta como 0. */
+function cumpleComparacion(condicion: CondicionDeComparacion, estado: EstadoDeNivel): boolean {
+  const numeroDeLaVariable = numeroDe(estado, condicion.nombre);
+  switch (condicion.operador) {
+    case '>=':
+      return numeroDeLaVariable >= condicion.numero;
+    case '<=':
+      return numeroDeLaVariable <= condicion.numero;
+    case '>':
+      return numeroDeLaVariable > condicion.numero;
+    case '<':
+      return numeroDeLaVariable < condicion.numero;
+    case '=':
+      return numeroDeLaVariable === condicion.numero;
+  }
+}
+
 /** Los nombres de las variables que menciona una condición. Sirve para revisar que estén declaradas. */
 export function variablesQueUsa(condicion: Condicion): string[] {
   switch (condicion.tipo) {
     case 'variable':
+    case 'comparacion':
       return [condicion.nombre];
     case 'objetivosCompletos':
       return [];

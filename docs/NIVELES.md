@@ -219,7 +219,7 @@ Gana **la primera rama cuya condición se cumple**. Una rama sin `cuando` siempr
 | Línea | `{ "dice": "tortu", "texto": "¡Hola!", "audio": "vo_hola" }` | Globo sobre quien habla. Termina con un toque o al acabar el audio. Opcional: `trad`, y `en` + `es` (siempre juntos) para una **tarjeta de vocabulario**. |
 | Opción | `{ "elige": "¿Cuál quieres?", "opciones": [ { "imagen": "img_rosa", "audio": "vo_rosa", "secuencia": [...] } ] }` | Espera la elección. Cada opción: `texto`, `trad`, `imagen`, `audio`, `cuando`, y `secuencia` (pasos o nombre de secuencia). Una opción sin `imagen` da advertencia. |
 | Efecto | `{ "efecto": "magia" }` | Partículas y sonido. Disponibles: `magia`, `confeti`. |
-| Estado | `{ "pon": { "globo": "rosa" } }` | Asigna objetivos o variables. |
+| Estado | `{ "pon": { "globo": "rosa" } }` | Asigna objetivos o variables. Con números también suma y resta: `{ "pon": { "dinero": { "resta": 10 }, "estrellas": { "suma": 1 } } }`. |
 | Minijuego | `{ "juego": "Tortilleria", "config": { "palabras": ["hot"] } }` | Abre el minijuego que registró el host y, al volver, ejecuta `alVolver`. |
 | Caminar | `{ "camina": "frente_tortilleria", "quien": "tortu" }` | Camina hasta un `punto` del mapa. Sin `quien`, camina el jugador. |
 | Secuencia | `{ "secuencia": "aun_no_item" }` | Ejecuta una secuencia de `secuencias`. Los ciclos entre secuencias son error. |
@@ -275,8 +275,22 @@ termina con `sale`: ahí la pantalla puede quedarse en negro mientras carga el n
 | `"objetivosCompletos"` | todos los objetivos están cumplidos |
 | `"charlas.tortu"` | ya se habló con `tortu` |
 | `"vista.intro"` | ya se vio la cinemática `intro` |
+| `"dinero >= 10"` | el número de `dinero` es 10 o más. Los signos son `>=`, `<=`, `>`, `<` y `=`, y a la derecha va siempre un número |
 | `["a", "b"]` | se cumplen `a` **y** `b` |
 | `{ "alguno": ["a", "b"] }` | se cumple `a` **o** `b` |
+
+**Números.** Una suma o una resta parten del número que la variable tenga en ese momento, y en una comparación
+una variable que todavía no tiene valor cuenta como `0`. Así se cobra sin escribir código:
+
+```json
+{ "cuando": "dinero >= 10", "dice": [
+  { "pon": { "dinero": { "resta": 10 }, "helado": true } },
+  { "dice": "axo", "texto": "¡Aquí tienes tu helado!" }
+] },
+{ "cuando": "dinero < 10", "dice": [
+  { "dice": "axo", "texto": "Te falta un poquito. ¡Vuelve luego!" }
+] }
+```
 
 ### `alVolver` (después de un minijuego)
 
@@ -287,6 +301,7 @@ termina con `sale`: ahí la pantalla puede quedarse en negro mientras carga el n
 Si el minijuego terminó con éxito → `siLogrado`; si no (o si falló con un error) → `siNo`.
 `siNo` debe ser amable («¡Otro día lo intentamos!»), nunca un «perdiste».
 Lo que el minijuego concede (`otorgar`) se aplica al estado antes de ejecutar cualquiera de los dos.
+`otorgar` acepta las mismas sumas y restas que `pon`: `{ "dinero": { "resta": 15 } }`.
 
 ### `comentarios`
 

@@ -169,3 +169,14 @@ test('un minijuego que el host no registró cuenta como sin éxito y no abre nad
   expect(resultado).toEqual({ exito: false });
   expect(interfaz.hayEspacioDeMinijuego).toBe(false);
 });
+
+test('lo que otorga un minijuego puede ser una suma o una resta, y una cuenta mal escrita se descarta', async () => {
+  // El host podría devolver cualquier cosa; por eso el minijuego falso no respeta el tipo.
+  const resultadoDelHost = { exito: true, otorgar: { dinero: { resta: 15 }, estrellas: { suma: 1 }, raro: { doble: 2 } } };
+  const Cobro: Minijuego = async () => resultadoDelHost as unknown as ResultadoDeMinijuego;
+  const { piezas } = crearEscena({ Cobro });
+
+  const resultado = await jugarMinijuego({ nombre: 'Cobro', config: undefined }, SIN_INTERRUMPIR, piezas);
+
+  expect(resultado).toEqual({ exito: true, otorgar: { dinero: { resta: 15 }, estrellas: { suma: 1 } } });
+});

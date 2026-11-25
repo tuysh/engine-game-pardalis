@@ -16,7 +16,14 @@ export type {
   PalabraMostrada,
 } from './juego.ts';
 
-export type { LectorDeEstado, ValorDeEstado, VariablesDeEstado } from './dominio/estado.ts';
+export type {
+  CambioDeVariable,
+  CambiosDeEstado,
+  LectorDeEstado,
+  OperacionConNumero,
+  ValorDeEstado,
+  VariablesDeEstado,
+} from './dominio/estado.ts';
 export type { Idioma } from './dominio/idioma.ts';
 export type { Partida, PartidaDeNivel } from './dominio/partida.ts';
 

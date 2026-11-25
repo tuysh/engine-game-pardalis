@@ -2,7 +2,7 @@
 // Un minijuego es una función que escribe el host: recibe un elemento del DOM a pantalla completa,
 // dibuja lo que quiera dentro y devuelve una promesa con el resultado.
 
-import type { LectorDeEstado, ValorDeEstado } from '../dominio/estado.ts';
+import type { CambiosDeEstado, LectorDeEstado } from '../dominio/estado.ts';
 import type { Idioma } from '../dominio/idioma.ts';
 
 /** El audio del motor, visto desde un minijuego. */
@@ -43,8 +43,12 @@ export interface ContextoDeMinijuego {
 export interface ResultadoDeMinijuego {
   /** `false` nunca es un castigo: solo lleva al diálogo amable `siNo`. */
   readonly exito: boolean;
-  /** Variables del estado que el minijuego concede. Ejemplo: `{ tortillas: true }`. */
-  readonly otorgar?: Readonly<Record<string, ValorDeEstado>>;
+  /**
+   * Variables del estado que el minijuego concede. Ejemplo: `{ tortillas: true }`.
+   * Para cobrar o premiar con números conviene `{ dinero: { resta: 15 } }` o `{ estrellas: { suma: 1 } }`:
+   * así el minijuego no tiene que leer el total, y el motor hace la cuenta con el valor de ese momento.
+   */
+  readonly otorgar?: CambiosDeEstado;
 }
 
 /**

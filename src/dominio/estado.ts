@@ -10,6 +10,18 @@ export type ValorDeEstado = boolean | number | string;
 /** Las variables de un nivel, por nombre. Ejemplo: `{ tortillas: true, 'charlas.tortu': true }`. */
 export type VariablesDeEstado = Readonly<Record<string, ValorDeEstado>>;
 
+/**
+ * Sumarle o restarle a una variable numérica, en vez de darle un valor fijo.
+ * Ejemplo: `{ resta: 10 }` para pagar 10 pesos, `{ suma: 1 }` para ganar una estrella.
+ */
+export type OperacionConNumero = { readonly suma: number } | { readonly resta: number };
+
+/** Lo que un paso `pon` o un minijuego le puede hacer a una variable: darle un valor fijo, o sumarle o restarle. */
+export type CambioDeVariable = ValorDeEstado | OperacionConNumero;
+
+/** Cambios a varias variables, por nombre. Ejemplo: `{ helado: true, dinero: { resta: 10 } }`. */
+export type CambiosDeEstado = Readonly<Record<string, CambioDeVariable>>;
+
 /** Nombre de la variable que guarda el dinero del jugador. Existe solo si el nivel declara `estado.dinero`. */
 export const NOMBRE_DEL_DINERO = 'dinero';
 
@@ -60,11 +72,44 @@ export function conCambios(estado: EstadoDeNivel, cambios: VariablesDeEstado): E
   return { declaracion: estado.declaracion, variables };
 }
 
+/**
+ * Calcula el valor con el que queda cada variable: un valor fijo se queda igual, y una suma o una resta
+ * parten del número que la variable tiene en ese estado. El resultado ya se puede pasar a `conCambios`.
+ */
+export function calcularCambios(estado: EstadoDeNivel, cambios: CambiosDeEstado): VariablesDeEstado {
+  const variables: Record<string, ValorDeEstado> = {};
+  for (const nombre of Object.keys(cambios)) {
+    if (nombre === '__proto__') continue;
+    const cambio = cambios[nombre]!; // `nombre` viene de `Object.keys(cambios)`, así que existe
+
+    variables[nombre] = calcularCambio(numeroDe(estado, nombre), cambio);
+  }
+  return variables;
+}
+
+/** El valor con el que queda una variable cuyo número era `numeroActual`. */
+function calcularCambio(numeroActual: number, cambio: CambioDeVariable): ValorDeEstado {
+  if (typeof cambio !== 'object') return cambio;
+
+  // Una operación trae `suma` o trae `resta`; al verla así se puede preguntar por las dos.
+  const operacion: { readonly suma?: number; readonly resta?: number } = cambio;
+  if (operacion.suma !== undefined) return numeroActual + operacion.suma;
+  if (operacion.resta !== undefined) return numeroActual - operacion.resta;
+  return numeroActual;
+}
+
 /** Valor de una variable, o `undefined` si nunca se le dio valor. */
 export function valorDe(estado: EstadoDeNivel, nombre: string): ValorDeEstado | undefined {
   // `hasOwn` y no `variables[nombre]`: un nombre como "constructor" existe en todo objeto de JavaScript.
   if (!Object.hasOwn(estado.variables, nombre)) return undefined;
   return estado.variables[nombre];
+}
+
+/** El número que guarda una variable. Una variable sin valor, o con un valor que no es un número, cuenta como 0. */
+export function numeroDe(estado: EstadoDeNivel, nombre: string): number {
+  const valor = valorDe(estado, nombre);
+  if (typeof valor !== 'number') return 0;
+  return valor;
 }
 
 /** Dice si una variable tiene un valor verdadero (ni `false`, ni `0`, ni texto vacío). */

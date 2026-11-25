@@ -8,6 +8,7 @@
 //   { "elige": "¿Cuál?", "opciones": [...] }       { tipo: 'elige', pregunta: '¿Cuál?', opciones: [...] }
 //   { "efecto": "magia" }                          { tipo: 'efecto', nombre: 'magia' }
 //   { "pon": { "globo": "rosa" } }                 { tipo: 'pon', valores: { globo: 'rosa' } }
+//   { "pon": { "dinero": { "resta": 10 } } }       { tipo: 'pon', valores: { dinero: { resta: 10 } } }
 //   { "juego": "Tortilleria", "config": {...} }    { tipo: 'juego', nombre: 'Tortilleria', config: {...} }
 //   { "camina": "frente", "quien": "tortu" }       { tipo: 'camina', punto: 'frente', personaje: 'tortu' }
 //   { "secuencia": "aun_no_item" }                 { tipo: 'secuencia', nombre: 'aun_no_item' }
@@ -32,7 +33,7 @@
 // Los mensajes de error siempre usan los nombres del contenido, que son los que conoce quien lo escribe.
 
 import type { Condicion } from './condicion.ts';
-import type { VariablesDeEstado } from './estado.ts';
+import type { CambiosDeEstado } from './estado.ts';
 import type { Idioma } from './idioma.ts';
 
 /** Una palabra de vocabulario: la tarjeta que se muestra junto a una línea. */
@@ -91,10 +92,10 @@ export interface PasoDeEfecto {
   readonly nombre: string;
 }
 
-/** Cambia variables del estado. */
+/** Cambia variables del estado: les da un valor fijo, o le suma o le resta a su número. */
 export interface PasoDeEstado {
   readonly tipo: 'pon';
-  readonly valores: VariablesDeEstado;
+  readonly valores: CambiosDeEstado;
 }
 
 /** Abre un minijuego del host y espera su resultado. */

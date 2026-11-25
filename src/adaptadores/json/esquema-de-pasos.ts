@@ -23,9 +23,17 @@ import { FORMAS_DE_PASOS_DE_ESCENA } from './esquema-de-pasos-de-escena.ts';
 import type { FormaDePaso } from './esquema-de-pasos-de-escena.ts';
 import { leerConEsquema } from './leer-con-esquema.ts';
 
-const esquemaDeValor = z.union([z.string(), z.number(), z.boolean()], {
-  error: 'se espera un texto, un número, true o false',
-});
+// Lo que un `pon` le hace a una variable: un valor fijo, o una suma o una resta a su número.
+const esquemaDeCambio = z.union(
+  [
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.strictObject({ suma: z.number() }),
+    z.strictObject({ resta: z.number() }),
+  ],
+  { error: 'se espera un texto, un número, true, false, { "suma": número } o { "resta": número }' },
+);
 
 export const esquemaDeLinea: z.ZodType<PasoDeLinea> = z
   .strictObject({
@@ -105,7 +113,7 @@ const esquemaDeEfecto = z
   .transform((json): PasoDeEfecto => ({ tipo: 'efecto', nombre: json.efecto }));
 
 const esquemaDeEstado = z
-  .strictObject({ pon: z.record(z.string(), esquemaDeValor) })
+  .strictObject({ pon: z.record(z.string(), esquemaDeCambio) })
   .transform((json): PasoDeEstado => ({ tipo: 'pon', valores: json.pon }));
 
 const esquemaDeMinijuego = z

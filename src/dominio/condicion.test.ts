@@ -91,3 +91,35 @@ test('las variables que usa una condición incluyen las de sus partes y no "obje
 
   expect(variablesQueUsa(condicion)).toEqual(['limones', 'globo', 'charlas.tortu']);
 });
+
+test('una comparación se lee con su variable, su signo y su número, con o sin espacios y con "tengo"', () => {
+  const esperada: Condicion = { tipo: 'comparacion', nombre: 'dinero', operador: '>=', numero: 10 };
+
+  expect(leerCondicionDeTexto('dinero >= 10')).toEqual(esperada);
+  expect(leerCondicionDeTexto('dinero>=10')).toEqual(esperada);
+  expect(leerCondicionDeTexto('tengo dinero >= 10')).toEqual(esperada);
+  expect(leerCondicionDeTexto('estrellas = 3')).toEqual({ tipo: 'comparacion', nombre: 'estrellas', operador: '=', numero: 3 });
+  expect(leerCondicionDeTexto('no dinero < 2.5')).toEqual({
+    tipo: 'no',
+    condicion: { tipo: 'comparacion', nombre: 'dinero', operador: '<', numero: 2.5 },
+  });
+});
+
+test('una comparación se cumple según el número de la variable', () => {
+  const conDiezPesos = conCambios(ESTADO_INICIAL, { dinero: 10 });
+
+  expect(cumpleCondicion(leerCondicionDeTexto('dinero >= 10'), conDiezPesos)).toBe(true);
+  expect(cumpleCondicion(leerCondicionDeTexto('dinero > 10'), conDiezPesos)).toBe(false);
+  expect(cumpleCondicion(leerCondicionDeTexto('dinero <= 10'), conDiezPesos)).toBe(true);
+  expect(cumpleCondicion(leerCondicionDeTexto('dinero < 10'), conDiezPesos)).toBe(false);
+  expect(cumpleCondicion(leerCondicionDeTexto('dinero = 10'), conDiezPesos)).toBe(true);
+});
+
+test('en una comparación, una variable sin valor cuenta como cero', () => {
+  expect(cumpleCondicion(leerCondicionDeTexto('estrellas < 1'), ESTADO_INICIAL)).toBe(true);
+  expect(cumpleCondicion(leerCondicionDeTexto('estrellas >= 1'), ESTADO_INICIAL)).toBe(false);
+});
+
+test('una comparación usa la variable que nombra', () => {
+  expect(variablesQueUsa(leerCondicionDeTexto('dinero >= 10'))).toEqual(['dinero']);
+});

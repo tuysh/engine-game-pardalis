@@ -162,6 +162,25 @@ test('"pon" cambia el estado', async () => {
   expect(valorDe(estado.actual, 'globo')).toBe('rosa');
 });
 
+test('"pon" puede sumar y restar al número que la variable tiene en ese momento', async () => {
+  const estado = crearEstado();
+  const pasos: Paso[] = [
+    { tipo: 'pon', valores: { dinero: 100 } },
+    { tipo: 'pon', valores: { dinero: { resta: 10 }, estrellas: { suma: 1 } } },
+    { tipo: 'pon', valores: { estrellas: { suma: 1 } } },
+  ];
+
+  await ejecutarPasos(pasos, {
+    contenido: CONTENIDO,
+    estado,
+    acciones: crearAccionesFalsas([]),
+    senal: new AbortController().signal,
+  });
+
+  expect(valorDe(estado.actual, 'dinero')).toBe(90);
+  expect(valorDe(estado.actual, 'estrellas')).toBe(2);
+});
+
 test('un condicional solo ejecuta sus pasos si su condición se cumple', async () => {
   const bitacora: string[] = [];
   const pasos: Paso[] = [

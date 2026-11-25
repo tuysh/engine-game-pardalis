@@ -12,6 +12,10 @@ import type { Contenido } from './contenido.ts';
 import { NOMBRE_DEL_DINERO } from './estado.ts';
 import type { Revision } from './revision.ts';
 
+// Algún signo de comparación. Lo encuentra en "dinero >= precio" y en "dinero=mucho"; no en "charlas.tortu".
+// Un nombre de variable con uno de estos signos es una comparación mal escrita (sin número a la derecha).
+const SIGNOS_DE_COMPARACION = /[<>=]/;
+
 /** Reúne los nombres de todas las variables que el contenido puede usar. */
 export function reunirVariablesDeclaradas(contenido: Contenido): Set<string> {
   const declaradas = new Set<string>();
@@ -63,6 +67,9 @@ function explicarPorQueNoEstaDeclarada(nombre: string): string {
   if (nombre.startsWith(PREFIJO_DE_VISTAS)) {
     const id = nombre.slice(PREFIJO_DE_VISTAS.length);
     return `no existe la cinemática "${id}"`;
+  }
+  if (SIGNOS_DE_COMPARACION.test(nombre)) {
+    return 'una comparación lleva el nombre de una variable, un signo (>=, <=, >, < o =) y un número, como "dinero >= 10"';
   }
   return 'no está en estado.objetivos ni en estado.variables';
 }

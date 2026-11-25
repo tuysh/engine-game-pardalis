@@ -201,7 +201,9 @@ export function Tortilleria({ elemento, config, estado, audio, assets, senal }) 
 | `senal` | `AbortSignal`: se dispara si el host destruye el juego. El minijuego debe limpiar lo suyo. |
 
 Resultado: `{ exito: boolean, otorgar?: Record<string, valor> }`. Si la función lanza un error se trata como
-`{ exito: false }` y sigue el diálogo amable `siNo`.
+`{ exito: false }` y sigue el diálogo amable `siNo`. En `otorgar`, un valor puede ser también `{ suma: n }` o
+`{ resta: n }`: el motor hace la cuenta con el número que la variable tenga en ese momento, así el minijuego
+no tiene que leer el total y devolverlo.
 
 El motor coloca `elemento` a pantalla completa con un marco propio, así que el minijuego puede ponerle cualquier
 estilo sin perder su lugar. Un ejemplo completo está en [`ejemplo/tortilleria.ts`](../ejemplo/tortilleria.ts).
@@ -333,6 +335,8 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   se puede volver, la partida sigue nombrando el destino, para intentarlo de nuevo al abrir el juego.
 - **Si el nivel siguiente no logra empezar** (por ejemplo, no cargó una imagen), se vuelve a jugar el anterior
   con su estado guardado y el host recibe el evento `error`.
+- **Números en el contenido:** `pon` suma y resta (`{ "dinero": { "resta": 10 } }`) y las condiciones comparan
+  con un número (`"dinero >= 10"`). Una variable sin valor, o con un valor que no es un número, cuenta como 0.
 - **Cada nivel tiene su propio estado.** Un nivel no puede preguntar por las variables de otro.
 - **Todavía no se hace:** que el nivel termine de cargar por detrás mientras se ve un video (§7.4).
 

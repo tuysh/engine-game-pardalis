@@ -1,9 +1,11 @@
 import { expect, test } from 'bun:test';
 import {
+  calcularCambios,
   conCambios,
   crearEstadoDeNivel,
   estanCompletosLosObjetivos,
   objetivosQueFaltan,
+  numeroDe,
   objetivosRecienCumplidos,
   tieneValor,
   valorDe,
@@ -102,4 +104,19 @@ test('ignora la clave __proto__ al copiar variables que vienen de afuera', () =>
   expect(valorDe(estado, 'globo')).toBe('rosa');
   expect(valorDe(estado, 'tortillas')).toBeUndefined();
   expect(Object.keys(estado.variables)).toEqual(['globo']);
+});
+
+test('una suma o una resta parten del número que la variable tiene en ese momento', () => {
+  const conCienPesos = crearEstadoDeNivel({ ...DECLARACION, dinero: 100 });
+
+  const cambios = calcularCambios(conCienPesos, { dinero: { resta: 15 }, globo: 'rosa' });
+
+  expect(cambios).toEqual({ dinero: 85, globo: 'rosa' });
+});
+
+test('sumarle a una variable sin valor, o con un valor que no es un número, parte de cero', () => {
+  const conGlobo = conCambios(crearEstadoDeNivel(DECLARACION), { globo: 'rosa' });
+
+  expect(calcularCambios(conGlobo, { estrellas: { suma: 1 }, globo: { suma: 2 } })).toEqual({ estrellas: 1, globo: 2 });
+  expect(numeroDe(conGlobo, 'globo')).toBe(0);
 });

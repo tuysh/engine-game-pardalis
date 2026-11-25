@@ -277,3 +277,26 @@ test('no se puede sacar del escenario al personaje del jugador', () => {
       'es el personaje del jugador y debe seguir en el escenario',
   ]);
 });
+
+test('la variable de una comparación y la de una suma deben estar declaradas', () => {
+  const diagnostico = revisarPasosDeTortu([
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('dinero >= 10'), pasos: [] },
+    { tipo: 'pon', valores: { estrellas: { suma: 1 } } },
+  ]);
+
+  expect(diagnostico.errores).toEqual([
+    'condición "dinero" usada en npcs.tortu.dialogo[0].dice[0]: no está en estado.objetivos ni en estado.variables',
+    '"pon" de "estrellas" en npcs.tortu.dialogo[0].dice[1]: no está en estado.objetivos ni en estado.variables',
+  ]);
+});
+
+test('una comparación sin número a la derecha explica cómo se escribe', () => {
+  const diagnostico = revisarPasosDeTortu([
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('globo >= mucho'), pasos: [] },
+  ]);
+
+  expect(diagnostico.errores).toEqual([
+    'condición "globo >= mucho" usada en npcs.tortu.dialogo[0].dice[0]: una comparación lleva el nombre de ' +
+      'una variable, un signo (>=, <=, >, < o =) y un número, como "dinero >= 10"',
+  ]);
+});

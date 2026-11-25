@@ -9,7 +9,7 @@
 import { cumpleCondicion, leerCondicionDeTexto } from '../dominio/condicion.ts';
 import { esObjetoPlano } from '../dominio/es-objeto-plano.ts';
 import { valorDe } from '../dominio/estado.ts';
-import type { ValorDeEstado } from '../dominio/estado.ts';
+import type { CambioDeVariable } from '../dominio/estado.ts';
 import type { ContextoDeMinijuego, Minijuego, ResultadoDeMinijuego } from '../puertos/minijuego.ts';
 import { esperarOCancelar } from './esperar-o-cancelar.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
@@ -119,7 +119,7 @@ function crearContexto(
 
 /**
  * Deja el resultado con la forma esperada: `exito` verdadero o falso,
- * y en `otorgar` solo valores que el estado puede guardar.
+ * y en `otorgar` solo valores que el estado puede guardar, o sumas y restas a un número.
  */
 function limpiarResultado(resultado: unknown): ResultadoDeMinijuego {
   if (!esObjetoPlano(resultado)) return SIN_EXITO;
@@ -127,14 +127,29 @@ function limpiarResultado(resultado: unknown): ResultadoDeMinijuego {
   const exito = resultado.exito === true;
   if (!esObjetoPlano(resultado.otorgar)) return { exito };
 
-  const otorgar: Record<string, ValorDeEstado> = {};
+  const otorgar: Record<string, CambioDeVariable> = {};
   for (const nombre of Object.keys(resultado.otorgar)) {
     if (nombre === '__proto__') continue;
-    const valor = resultado.otorgar[nombre];
-    const esNumeroUsable = typeof valor === 'number' && Number.isFinite(valor);
-    if (typeof valor === 'boolean' || typeof valor === 'string' || esNumeroUsable) {
-      otorgar[nombre] = valor;
+    const cambio = leerCambio(resultado.otorgar[nombre]);
+    if (cambio !== undefined) {
+      otorgar[nombre] = cambio;
     }
   }
   return { exito, otorgar };
+}
+
+/** Lo que un minijuego concede a una variable, ya revisado. `undefined` = no se entiende y se descarta. */
+function leerCambio(valor: unknown): CambioDeVariable | undefined {
+  if (typeof valor === 'boolean' || typeof valor === 'string') return valor;
+  if (esNumeroUsable(valor)) return valor;
+  if (!esObjetoPlano(valor)) return undefined;
+
+  // `{ suma: 1 }` o `{ resta: 15 }`: una cuenta sobre el número que la variable tenga en ese momento.
+  if (esNumeroUsable(valor.suma)) return { suma: valor.suma };
+  if (esNumeroUsable(valor.resta)) return { resta: valor.resta };
+  return undefined;
+}
+
+function esNumeroUsable(valor: unknown): valor is number {
+  return typeof valor === 'number' && Number.isFinite(valor);
 }

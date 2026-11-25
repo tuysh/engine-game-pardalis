@@ -382,3 +382,13 @@ test('el fondo del mundo se lee como color, y uno mal escrito es un error que di
   const errores = erroresDe({ meta: META, mundo: { fondo: 'cafe' } });
   expect(errores).toEqual(['mundo.fondo: se espera un color escrito como "#rrggbb", por ejemplo "#bfe6f5"']);
 });
+
+test('"pon" acepta sumar y restar, y cualquier otra forma dice qué se espera', () => {
+  const pasos = leerPasos([{ pon: { dinero: { resta: 10 }, estrellas: { suma: 1 } } }]);
+  expect(pasos).toEqual([{ tipo: 'pon', valores: { dinero: { resta: 10 }, estrellas: { suma: 1 } } }]);
+
+  const errores = erroresDe({ meta: META, secuencias: { pago: [{ pon: { dinero: { quita: 10 } } }] } });
+  expect(errores).toEqual([
+    'secuencias.pago[0].pon.dinero: se espera un texto, un número, true, false, { "suma": número } o { "resta": número }',
+  ]);
+});

@@ -3,8 +3,8 @@
 // El estado del dominio (`EstadoDeNivel`) nunca cambia: cada cambio produce uno nuevo.
 // Esta clase es quien recuerda cuál es el actual.
 
-import { conCambios, objetivosRecienCumplidos } from '../dominio/estado.ts';
-import type { EstadoDeNivel, VariablesDeEstado } from '../dominio/estado.ts';
+import { calcularCambios, conCambios, objetivosRecienCumplidos } from '../dominio/estado.ts';
+import type { CambiosDeEstado, EstadoDeNivel } from '../dominio/estado.ts';
 
 export class EstadoEnJuego {
   private estadoActual: EstadoDeNivel;
@@ -21,10 +21,10 @@ export class EstadoEnJuego {
     return this.estadoActual;
   }
 
-  /** Cambia variables. Ejemplo: `aplicar({ tortillas: true })`. */
-  aplicar(cambios: VariablesDeEstado): void {
+  /** Cambia variables. Ejemplo: `aplicar({ tortillas: true, dinero: { resta: 10 } })`. */
+  aplicar(cambios: CambiosDeEstado): void {
     const estadoAnterior = this.estadoActual;
-    this.estadoActual = conCambios(estadoAnterior, cambios);
+    this.estadoActual = conCambios(estadoAnterior, calcularCambios(estadoAnterior, cambios));
 
     for (const objetivo of objetivosRecienCumplidos(estadoAnterior, this.estadoActual)) {
       this.alCumplirObjetivo(objetivo);

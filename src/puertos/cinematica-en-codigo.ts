@@ -7,7 +7,7 @@
 // Si un método nombra algo que no existe (un personaje, un punto del mapa, un plano), lanza un error
 // que dice qué llamada fue; la cinemática termina ahí y el juego sigue.
 
-import type { LectorDeEstado, ValorDeEstado } from '../dominio/estado.ts';
+import type { CambioDeVariable, LectorDeEstado } from '../dominio/estado.ts';
 import type { Idioma } from '../dominio/idioma.ts';
 
 /** Opción común de los pasos que pueden durar. */
@@ -42,7 +42,7 @@ export type VideoPorIdioma = Readonly<Record<Idioma, string>>;
 
 /** El estado del nivel, visto desde una cinemática: se puede leer y cambiar. */
 export interface EstadoParaCinematica extends LectorDeEstado {
-  pon(nombre: string, valor: ValorDeEstado): void;
+  pon(nombre: string, valor: CambioDeVariable): void;
 }
 
 /**
