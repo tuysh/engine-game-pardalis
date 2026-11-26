@@ -103,7 +103,7 @@ export async function armarNivel(
       alSalir: (destino) => avisos.alSalir(destino),
     }),
     flecha: new FlechaDeSalida({ nivel, estado, escenario, interfaz }),
-    cercania: new Cercania({ nivel, reparto, escenario, interfaz }),
+    cercania: new Cercania({ nivel, reparto, escenario, interfaz, acompanante }),
   };
 }
 

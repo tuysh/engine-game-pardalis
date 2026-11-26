@@ -95,8 +95,8 @@ function atenderAlJugador(
   puertos: PuertosParaJugar,
   camaraLibre: CamaraLibre | undefined,
 ): () => void {
-  const { nivel, reparto, exploracion, salida, cercania } = armado;
-  const piezasParaToques = { nivel, reparto, conversacion: armado.escenas.conversacion, salida, exploracion };
+  const { nivel, reparto, exploracion, salida, cercania, acompanante } = armado;
+  const piezasParaToques = { nivel, reparto, conversacion: armado.escenas.conversacion, salida, exploracion, acompanante };
 
   const dejarDeAtenderToques = puertos.escenario.alTocar((toque) => {
     // Con la cámara libre activa, un toque no es para el juego: fija a qué mira el plano que se encuadra.

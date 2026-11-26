@@ -19,6 +19,8 @@ export interface PiezasDeCercania {
   readonly reparto: Reparto;
   readonly escenario: Escenario;
   readonly interfaz: Interfaz;
+  /** Quien acompaña al jugador, si alguien lo acompaña: cede su lugar a cualquier otra cosa que esté a la mano. */
+  readonly acompanante?: { readonly id: string | undefined };
 }
 
 export class Cercania {
@@ -31,7 +33,7 @@ export class Cercania {
 
   /** Lo que el jugador tiene a la mano desde esa posición, o `undefined` si no hay nada cerca. */
   buscar(posicionDelJugador: Punto): Interactuable | undefined {
-    return buscarInteractuableCercano(posicionDelJugador, this.reunirInteractuables());
+    return buscarInteractuableCercano(posicionDelJugador, this.reunirInteractuables(), this.piezas.acompanante?.id);
   }
 
   /**
