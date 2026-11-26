@@ -1,9 +1,10 @@
 // Averigua qué tocó el jugador: lanza una línea imaginaria desde la cámara por el punto tocado
 // y ve con qué choca primero. Si no choca con nada que se pueda tocar, busca dónde cruza el piso.
+// Si lo primero es un personaje, también anota lo que estaba detrás de él: la aplicación decide a cuál le toca.
 
 import { Plane, Raycaster, Vector2, Vector3 } from 'three';
 import type { Camera, Object3D } from 'three';
-import type { Toque } from '../../puertos/escenario.ts';
+import type { Toque, ToqueAAlgo } from '../../puertos/escenario.ts';
 
 /** Un lugar de la pantalla dentro del lienzo, en puntos de CSS desde su esquina superior izquierda. */
 export interface LugarEnElLienzo {
@@ -37,11 +38,27 @@ export function buscarToque(
   const choques = lanzador.intersectObjects([...tocables.keys()], false);
   const primerChoque = choques[0];
   if (primerChoque !== undefined) {
-    return tocables.get(primerChoque.object);
+    const loPrimero = tocables.get(primerChoque.object);
+    if (loPrimero?.tipo !== 'personaje') return loPrimero;
+    const detras = loQueEstabaDetras(loPrimero.id, choques.slice(1).map((choque) => tocables.get(choque.object)));
+    return detras === undefined ? loPrimero : { ...loPrimero, detras };
   }
 
   const cruceConElPiso = lanzador.ray.intersectPlane(PLANO_DEL_PISO, new Vector3());
   if (cruceConElPiso === null) return undefined;
   // En el plano del lugar, la profundidad `y` es la `z` del espacio 3D.
   return { tipo: 'piso', punto: { x: cruceConElPiso.x, y: cruceConElPiso.z } };
+}
+
+/**
+ * Lo primero que se tocó detrás de un personaje y no es él mismo (un personaje puede tener varias piezas).
+ * El piso no está en la lista: solo personajes y objetos del decorado.
+ */
+function loQueEstabaDetras(idDelDeEnfrente: string, toquesDeAtras: readonly (Toque | undefined)[]): ToqueAAlgo | undefined {
+  for (const toque of toquesDeAtras) {
+    if (toque === undefined || toque.tipo === 'piso') continue;
+    if (toque.tipo === 'personaje' && toque.id === idDelDeEnfrente) continue;
+    return { tipo: toque.tipo, id: toque.id };
+  }
+  return undefined;
 }

@@ -22,3 +22,19 @@ test('lo que está a más de 1.8 metros no está a la mano', () => {
 test('sin nada con qué interactuar, no encuentra nada', () => {
   expect(buscarInteractuableCercano({ x: 0, y: 0 }, [])).toBeUndefined();
 });
+
+const PRIMO: Interactuable = { tipo: 'personaje', id: 'bobby', punto: { x: 4.5, y: 2 } };
+
+test('el acompañante cede: aunque esté más cerca, gana otra cosa que esté a la mano', () => {
+  expect(buscarInteractuableCercano({ x: 4, y: 2 }, [PRIMO, TORTU], 'bobby')).toEqual(TORTU);
+});
+
+test('el acompañante cuenta si no hay nada más a la mano', () => {
+  expect(buscarInteractuableCercano({ x: 4, y: 2 }, [PRIMO], 'bobby')).toEqual(PRIMO);
+  // Tortu está a más de 1.8 metros: no está a la mano, así que queda el primo.
+  expect(buscarInteractuableCercano({ x: 2.9, y: 2 }, [PRIMO, TORTU], 'bobby')).toEqual(PRIMO);
+});
+
+test('sin acompañante, gana el más cercano como siempre', () => {
+  expect(buscarInteractuableCercano({ x: 4, y: 2 }, [PRIMO, TORTU])).toEqual(PRIMO);
+});

@@ -176,6 +176,9 @@ El acompañante es un personaje que va con el jugador: lo sigue a un paso de dis
   como a cualquier personaje. Al terminar la escena vuelve a seguir desde donde quedó.
 - Debe estar en el escenario: ser un NPC del mapa o entrar con un paso `aparece` (empieza a seguir en cuanto
   aparece). Si tiene diálogo en `npcs`, tocarlo lo abre como siempre.
+- **Cede el paso:** como camina pegado al jugador, muchas veces queda delante de lo que el jugador quiere tocar.
+  Si se toca al acompañante y detrás de él hay otro personaje u objeto que se pueda tocar, el toque es para ese.
+  Igual con la tecla de hablar y el aviso de «a la mano»: el acompañante solo cuenta si no hay nada más cerca.
 - El paso `{ "acompana": "bobby" }` lo cambia a media aventura y `{ "acompana": null }` lo quita, para historias
   donde el acompañante llega o se va.
 - Como siempre está cerca, los `comentarios` de las zonas los puede decir él.

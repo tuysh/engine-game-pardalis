@@ -3,6 +3,10 @@
 //   - un personaje: camina hasta quedar junto a él y le habla;
 //   - un objeto interactivo del decorado: camina hasta quedar frente a él y lo usa.
 //
+// El acompañante cede el toque: como camina junto al jugador, muchas veces queda entre la cámara y lo que el
+// jugador quiere tocar. Si se toca al acompañante y detrás de él hay otro personaje u objeto, el toque es para
+// ese. Tocarlo a él solo (con el piso detrás) sigue siendo hablar con él.
+//
 // Mientras hay un diálogo en curso, los toques al escenario no hacen nada.
 
 import type { Punto } from '../dominio/geometria.ts';
@@ -21,11 +25,14 @@ export interface PiezasParaAtenderToques {
   readonly salida: SalidaDelNivel;
   /** El control del jugador. `undefined` en un nivel sin jugador. */
   readonly exploracion: Exploracion | undefined;
+  /** Quien acompaña al jugador, si alguien lo acompaña. Lo que importa es su `id`, que puede cambiar a media aventura. */
+  readonly acompanante?: { readonly id: string | undefined };
 }
 
-export function atenderToque(toque: Toque, piezas: PiezasParaAtenderToques): void {
+export function atenderToque(toqueRecibido: Toque, piezas: PiezasParaAtenderToques): void {
   if (piezas.conversacion.hayDialogoEnCurso) return;
 
+  const toque = elegirLoQueSeQuisoTocar(toqueRecibido, piezas.acompanante?.id);
   switch (toque.tipo) {
     case 'piso':
       atenderToqueAlPiso(toque.punto, piezas);
@@ -37,6 +44,13 @@ export function atenderToque(toque: Toque, piezas: PiezasParaAtenderToques): voi
       atenderToqueADecorado(toque.id, piezas);
       break;
   }
+}
+
+/** Si se tocó al acompañante y detrás había otra cosa tocable, el toque es para esa otra cosa. */
+export function elegirLoQueSeQuisoTocar(toque: Toque, idDelAcompanante: string | undefined): Toque {
+  if (toque.tipo !== 'personaje' || toque.detras === undefined) return toque;
+  if (toque.id !== idDelAcompanante) return toque;
+  return toque.detras;
 }
 
 function atenderToqueAlPiso(punto: Punto, piezas: PiezasParaAtenderToques): void {

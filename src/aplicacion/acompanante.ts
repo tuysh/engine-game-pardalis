@@ -43,6 +43,11 @@ export class Acompanante {
     this.idDelAcompanante = piezas.idDelAcompananteInicial;
   }
 
+  /** Quién acompaña al jugador ahora. `undefined` = nadie. */
+  get id(): string | undefined {
+    return this.idDelAcompanante;
+  }
+
   /** Cambia quién acompaña al jugador. Con `undefined`, ya nadie lo acompaña. */
   cambiar(idDelAcompanante: string | undefined): void {
     this.idDelAcompanante = idDelAcompanante;

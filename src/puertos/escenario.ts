@@ -69,10 +69,23 @@ export interface LugarEnPantalla {
   readonly y: number;
 }
 
+/** Un personaje o un objeto del decorado que se puede tocar (lo que no es el piso). */
+export type ToqueAAlgo =
+  | { readonly tipo: 'personaje'; readonly id: string }
+  | { readonly tipo: 'decorado'; readonly id: string };
+
 /** Lo que el jugador tocó. */
 export type Toque =
   | { readonly tipo: 'piso'; readonly punto: Punto }
-  | { readonly tipo: 'personaje'; readonly id: string }
+  | {
+      readonly tipo: 'personaje';
+      readonly id: string;
+      /**
+       * El personaje u objeto tocable que estaba justo detrás, tapado por este (el piso no cuenta).
+       * Sirve para que el acompañante no le gane el toque a lo que el jugador quería tocar.
+       */
+      readonly detras?: ToqueAAlgo;
+    }
   | { readonly tipo: 'decorado'; readonly id: string };
 
 export interface Escenario {
