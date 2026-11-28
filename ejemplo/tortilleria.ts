@@ -8,15 +8,21 @@
 //
 // Doña Tortu acompaña desde un lado: parpadea con `assets.animar` y mueve la boca (`cambiar`) mientras dice
 // cada palabra. Sus cuadros y su ritmo están en `niveles/barrio/assets.config.json`.
+//
+// El vapor que sube del comal se mueve con `enCadaCuadro`, el reloj del juego: si el host pausa el juego (o la
+// página deja de verse), el vapor se queda quieto, igual que la pausa antes de terminar.
 
 import type { Minijuego } from '../src/index.ts';
 
 const TORTILLAS_POR_VOLTEAR = 3;
-const PAUSA_ANTES_DE_TERMINAR_EN_MILISEGUNDOS = 900;
+const PAUSA_ANTES_DE_TERMINAR_EN_SEGUNDOS = 0.9;
+/** Cuánto sube el vapor antes de empezar otra vez desde el comal, y qué tan rápido. */
+const ALTURA_DEL_VAPOR_EN_PUNTOS = 90;
+const VELOCIDAD_DEL_VAPOR_EN_PUNTOS_POR_SEGUNDO = 45;
 const COLOR_DE_TORTILLA_CRUDA = '#f6e3b0';
 const COLOR_DE_TORTILLA_LISTA = '#d9a253';
 
-export const Tortilleria: Minijuego = ({ elemento, config, audio, assets, senal }) => {
+export const Tortilleria: Minijuego = ({ elemento, config, audio, assets, senal, enCadaCuadro }) => {
   return new Promise((terminar) => {
     const palabras = leerPalabras(config);
     let tortillasVolteadas = 0;
@@ -77,7 +83,17 @@ export const Tortilleria: Minijuego = ({ elemento, config, audio, assets, senal 
       'position:absolute; top:16px; right:16px; width:64px; height:64px; border-radius:50%; border:4px solid #2b2b2b; background:#fffdf5; font-size:32px; cursor:pointer;';
     salir.addEventListener('click', () => terminar({ exito: false }), { signal: senal });
 
-    elemento.append(tortu, comal, salir);
+    // El vapor: un óvalo blanco que sube y se desvanece, una y otra vez. No se toca ni se lee: es decorado.
+    const vapor = document.createElement('div');
+    vapor.style.cssText = 'width:60px; height:30px; border-radius:50%; background:#fffdf5; pointer-events:none;';
+    let alturaDelVapor = 0;
+    enCadaCuadro((segundos) => {
+      alturaDelVapor = (alturaDelVapor + VELOCIDAD_DEL_VAPOR_EN_PUNTOS_POR_SEGUNDO * segundos) % ALTURA_DEL_VAPOR_EN_PUNTOS;
+      vapor.style.transform = `translateY(${-alturaDelVapor}px)`;
+      vapor.style.opacity = String(1 - alturaDelVapor / ALTURA_DEL_VAPOR_EN_PUNTOS);
+    });
+
+    elemento.append(tortu, vapor, comal, salir);
 
     // Cuántas frases se han empezado: solo la última devuelve a Doña Tortu a su pose quieta.
     let frasesEmpezadas = 0;
@@ -98,12 +114,15 @@ export const Tortilleria: Minijuego = ({ elemento, config, audio, assets, senal 
     }
 
     function terminarConExito(): void {
-      // Una pausa corta para que se vea la última tortilla volteada antes de volver al nivel.
-      const temporizador = setTimeout(() => {
+      // Una pausa corta para que se vea la última tortilla volteada antes de volver al nivel. Se cuenta con el
+      // reloj del juego: con el juego en pausa, la pausa también espera. Al cerrarse el minijuego, se deja sola.
+      let segundosQueFaltan = PAUSA_ANTES_DE_TERMINAR_EN_SEGUNDOS;
+      const dejarDeContar = enCadaCuadro((segundos) => {
+        segundosQueFaltan -= segundos;
+        if (segundosQueFaltan > 0) return;
+        dejarDeContar();
         terminar({ exito: true, otorgar: { tortillas: true } });
-      }, PAUSA_ANTES_DE_TERMINAR_EN_MILISEGUNDOS);
-      // Si el motor cierra el minijuego antes (por ejemplo, al destruir el juego), el temporizador se cancela.
-      senal.addEventListener('abort', () => clearTimeout(temporizador), { once: true });
+      });
     }
   });
 };
