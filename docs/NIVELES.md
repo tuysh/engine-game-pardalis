@@ -282,6 +282,23 @@ en `estado.compartidas`:
 Gana **la primera rama cuya condición se cumple**. Una rama sin `cuando` siempre se cumple: debe ir al final
 (si no, las siguientes son inalcanzables y hay advertencia).
 
+### Señal de lo pendiente (`senal`)
+
+Un NPC o un interactivo puede llevar una estrellita amarilla que brinca encima de él, para que quien todavía no
+lee sepa **a dónde ir**:
+
+```json
+"npcs": {
+  "igu": { "senal": { "visibleCuando": "no tengo verduras" }, "dialogo": [ ... ] }
+}
+```
+
+- Se ve mientras se cumple `visibleCuando` (sin él, siempre). Sus variables deben estar declaradas.
+- Solo se ve mientras el jugador explora: en un diálogo o una cinemática se quita.
+- No se ve sobre lo que el jugador ya tiene a la mano: ahí ya está el aviso de que puede hablar.
+- Sobre un interactivo escondido por su `visibleCuando` del mapa, tampoco.
+- Puede haber varias a la vez; para que guíen, conviene que sean pocas (lo que falta del mandado).
+
 ### Pasos
 
 | Paso | Ejemplo | Qué hace |

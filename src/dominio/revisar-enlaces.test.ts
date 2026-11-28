@@ -345,3 +345,19 @@ test('el paso "acompana" necesita un nivel con jugador y a otro personaje', () =
     'npcs.tortu.dialogo[0].dice[3]: el personaje "pancho" no existe en meta.personajes',
   ]);
 });
+
+test('la condición de la señal de lo pendiente de un NPC también se revisa', () => {
+  const contenido: Contenido = {
+    ...CONTENIDO_CORRECTO,
+    npcs: {
+      tortu: { dialogo: [], senal: { visibleCuando: leerCondicionDeTexto('no tengo verduras') } },
+    },
+  };
+  const diagnostico = crearDiagnostico();
+
+  revisarEnlaces(contenido, {}, diagnostico);
+
+  expect(diagnostico.errores).toEqual([
+    'condición "verduras" usada en npcs.tortu.senal.visibleCuando: no está en estado.objetivos, ni en estado.variables, ni en estado.compartidas',
+  ]);
+});

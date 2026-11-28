@@ -15,6 +15,7 @@ import { ESTILOS_DE_LA_INTERFAZ } from './estilos-de-la-interfaz.ts';
 import { altoDeLaFranjaEnCss, proporcionDeLaFranja } from './franjas-de-cine.ts';
 import { GloboDeDialogo } from './globo-de-dialogo.ts';
 import { SenalEnPantalla } from './senal-en-pantalla.ts';
+import { SenalesDePendientes } from './senales-de-pendientes.ts';
 import { TarjetasDeOpciones } from './tarjetas-de-opciones.ts';
 
 /** Cuánto crece todo en el modo proyección, para que se lea desde el fondo del salón. */
@@ -41,6 +42,7 @@ export class InterfazDelNavegador implements Interfaz {
   private readonly opciones = new TarjetasDeOpciones();
   private readonly flecha = new SenalEnPantalla('flecha');
   private readonly aviso = new SenalEnPantalla('aviso');
+  private readonly senalesDePendientes = new SenalesDePendientes();
   private readonly capaDeToque = crearOculto('div', 'capa-de-toque');
   private readonly fundido = crearOculto('div', 'fundido');
   private readonly destello = crearOculto('div', 'destello');
@@ -71,6 +73,7 @@ export class InterfazDelNavegador implements Interfaz {
     raiz.append(
       estilos,
       this.flecha.elemento,
+      this.senalesDePendientes.elemento,
       this.aviso.elemento,
       this.fundido,
       this.destello,
@@ -148,6 +151,10 @@ export class InterfazDelNavegador implements Interfaz {
 
   ocultarFlecha(): void {
     this.flecha.ocultar();
+  }
+
+  ponerSenalesDePendientes(lugares: readonly LugarEnPantalla[]): void {
+    this.senalesDePendientes.poner(lugares);
   }
 
   mostrarAviso(): void {

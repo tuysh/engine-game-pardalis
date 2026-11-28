@@ -65,6 +65,13 @@ export interface Interfaz {
   ocultarFlecha(): void;
 
   /**
+   * Pone una señal que sube y baja sobre cada uno de esos lugares de la pantalla: lo que todavía está pendiente
+   * (`senal` de un NPC o interactivo). Reemplaza las que hubiera; con una lista vacía, ya no hay ninguna.
+   * Se llama en cada cuadro, así que debe ser barato llamarla con los mismos lugares.
+   */
+  ponerSenalesDePendientes(lugares: readonly LugarEnPantalla[]): void;
+
+  /**
    * Muestra una señal pequeña sobre el personaje u objeto que el jugador tiene a la mano,
    * para que sepa que puede hablarle o usarlo. Si ya estaba, no cambia nada.
    */

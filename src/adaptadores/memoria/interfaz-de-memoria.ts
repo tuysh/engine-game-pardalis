@@ -25,6 +25,8 @@ export class InterfazDeMemoria implements Interfaz {
   hayFlecha = false;
   textoDeLaFlecha: string | undefined;
   lugarDeLaFlecha: LugarEnPantalla | undefined;
+  /** Dónde están las señales de lo pendiente ahora. Vacía = no hay ninguna. */
+  lugaresDeLasSenales: readonly LugarEnPantalla[] = [];
   /** `true` mientras se muestra la señal de que hay algo a la mano. */
   hayAviso = false;
   lugarDelAviso: LugarEnPantalla | undefined;
@@ -98,6 +100,10 @@ export class InterfazDeMemoria implements Interfaz {
 
   ocultarFlecha(): void {
     this.hayFlecha = false;
+  }
+
+  ponerSenalesDePendientes(lugares: readonly LugarEnPantalla[]): void {
+    this.lugaresDeLasSenales = lugares;
   }
 
   mostrarAviso(): void {

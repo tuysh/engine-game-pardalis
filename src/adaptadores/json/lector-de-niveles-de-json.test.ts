@@ -448,3 +448,20 @@ test('un paso "efecto" puede nombrar el sonido que lo acompaña', () => {
     { tipo: 'efecto', nombre: 'magia' },
   ]);
 });
+
+test('un NPC puede llevar "senal" con su visibleCuando; otra clave dentro de "senal" es error', () => {
+  const lector = new LectorDeNivelesDeJson();
+  const lectura = lector.leerContenido({
+    meta: META,
+    npcs: { tortu: { dialogo: [], senal: { visibleCuando: 'no tengo tortillas' } } },
+  });
+  if (lectura.tipo !== 'leido') throw new Error(`no se pudo leer: ${lectura.errores.join('; ')}`);
+  expect(lectura.valor.npcs['tortu']?.senal).toEqual({
+    visibleCuando: { tipo: 'no', condicion: { tipo: 'variable', nombre: 'tortillas' } },
+  });
+
+  const conError = lector.leerContenido({ meta: META, npcs: { tortu: { dialogo: [], senal: { cuando: 'x' } } } });
+  expect(conError.tipo).toBe('invalido');
+  if (conError.tipo !== 'invalido') return;
+  expect(conError.errores).toEqual(['npcs.tortu.senal: Llave desconocida: "cuando"']);
+});

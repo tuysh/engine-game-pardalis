@@ -93,6 +93,9 @@ function revisarRamas(interlocutor: Interlocutor, ruta: string, revision: Revisi
     }
     revisarCondicion(rama.condicion, rutaDeLaRama, revision);
   }
+  if (interlocutor.senal !== undefined) {
+    revisarCondicion(interlocutor.senal.visibleCuando, `${ruta}.senal.visibleCuando`, revision);
+  }
 }
 
 function revisarSalida(revision: Revision): void {

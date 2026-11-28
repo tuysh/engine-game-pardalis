@@ -167,6 +167,24 @@ export const ESTILOS_DE_LA_INTERFAZ = `
   animation: subir-y-bajar 0.7s ease-in-out infinite alternate;
 }
 
+/* Las señales de lo pendiente: una estrellita amarilla que brinca sobre quien todavía tiene algo para el jugador. */
+.senal-de-pendiente {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.senal-de-pendiente svg {
+  display: block;
+  width: calc(40px * var(--escala));
+  height: calc(40px * var(--escala));
+  fill: #ffd23f;
+  stroke: var(--tinta);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  animation: subir-y-bajar 0.6s ease-in-out infinite alternate;
+}
+
 /* El fundido a negro: una cortina que el motor va oscureciendo o aclarando. */
 .fundido {
   position: absolute;
@@ -341,7 +359,8 @@ export const ESTILOS_DE_LA_INTERFAZ = `
     transition: none;
   }
   .flecha svg,
-  .aviso svg {
+  .aviso svg,
+  .senal-de-pendiente svg {
     animation: none;
   }
   /* Con menos movimiento, el flash es más suave: un golpe de blanco total puede molestar. */

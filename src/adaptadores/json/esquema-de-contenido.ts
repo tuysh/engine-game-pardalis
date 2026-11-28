@@ -18,6 +18,7 @@ import type {
   Plano,
   Rama,
   Salida,
+  SenalDePendiente,
 } from '../../dominio/contenido.ts';
 import { esquemaDeCinematicas } from './esquema-de-cinematicas.ts';
 import { esquemaDeCondicion } from './esquema-de-condicion.ts';
@@ -126,9 +127,14 @@ const esquemaDeAlVolver: z.ZodType<AlVolver> = z.strictObject({
   siNo: esquemaDePasosOSecuencia,
 });
 
+const esquemaDeSenalDePendiente: z.ZodType<SenalDePendiente> = z.strictObject({
+  visibleCuando: esquemaDeCondicion.optional(),
+});
+
 const esquemaDeInterlocutor: z.ZodType<Interlocutor> = z.strictObject({
   dialogo: z.array(esquemaDeRama),
   alVolver: esquemaDeAlVolver.optional(),
+  senal: esquemaDeSenalDePendiente.optional(),
 });
 
 const esquemaDeFlecha: z.ZodType<FlechaDeSalida> = z.strictObject({

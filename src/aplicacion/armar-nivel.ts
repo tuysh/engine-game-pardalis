@@ -25,6 +25,7 @@ import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { crearImagenDeEscena } from './preparar-escena.ts';
 import type { Reparto } from './reparto.ts';
 import { SalidaDelNivel } from './salida-del-nivel.ts';
+import { SenalesDePendientes } from './senales-de-pendientes.ts';
 import { VisibilidadDelDecorado } from './visibilidad-del-decorado.ts';
 
 /** Un nivel con todas sus piezas ya creadas y conectadas entre sí, listo para ponerse en marcha. */
@@ -47,6 +48,8 @@ export interface NivelArmado {
   readonly cercania: Cercania;
   /** Esconde y muestra el decorado que lleva `visibleCuando`. */
   readonly visibilidad: VisibilidadDelDecorado;
+  /** Las estrellitas sobre lo que todavía está pendiente (`senal` de un NPC o interactivo). */
+  readonly senales: SenalesDePendientes;
 }
 
 /** Lo que casi todas las piezas de un nivel necesitan para crearse. */
@@ -111,6 +114,7 @@ export async function armarNivel(
     flecha: new FlechaDeSalida({ nivel, estado, escenario, interfaz }),
     cercania: new Cercania({ nivel, reparto, escenario, interfaz, acompanante, estado }),
     visibilidad,
+    senales: new SenalesDePendientes({ nivel, estado, reparto, escenario, interfaz }),
   };
 }
 

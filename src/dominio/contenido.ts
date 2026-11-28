@@ -116,10 +116,21 @@ export interface AlVolver {
   readonly siNo: PasosOSecuencia;
 }
 
+/**
+ * Una señal que sube y baja encima de un NPC o un objeto interactivo, para que se sepa sin leer que ahí hay algo
+ * pendiente («aquí compras las verduras»).
+ */
+export interface SenalDePendiente {
+  /** La señal solo se ve mientras esto se cumple. `undefined` = siempre. */
+  readonly visibleCuando?: Condicion;
+}
+
 /** Algo con lo que se puede hablar: un NPC o un objeto interactivo del decorado. */
 export interface Interlocutor {
   readonly dialogo: readonly Rama[];
   readonly alVolver?: AlVolver;
+  /** Si existe, una señal encima dice que aquí hay algo pendiente. */
+  readonly senal?: SenalDePendiente;
 }
 
 /** La flecha que señala la salida. */

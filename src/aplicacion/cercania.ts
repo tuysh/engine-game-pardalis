@@ -11,10 +11,8 @@ import type { Nivel } from '../dominio/nivel.ts';
 import type { Escenario, LugarEnPantalla } from '../puertos/escenario.ts';
 import type { Interfaz } from '../puertos/interfaz.ts';
 import type { EstadoEnJuego } from './estado-en-juego.ts';
+import { calcularAlturaDelDecorado } from './altura-del-decorado.ts';
 import type { Reparto } from './reparto.ts';
-
-/** A qué altura va el aviso sobre un objeto pintado en el piso, que no tiene altura propia. */
-const ALTURA_DEL_AVISO_SOBRE_EL_PISO_EN_METROS = 0.5;
 
 export interface PiezasDeCercania {
   readonly nivel: Nivel;
@@ -30,6 +28,8 @@ export interface PiezasDeCercania {
 export class Cercania {
   private readonly piezas: PiezasDeCercania;
   private estaElAvisoEnPantalla = false;
+  /** Lo que tenía a la mano en el último cuadro, con el aviso encima. `undefined` = nada. */
+  private cercanoConAviso: Interactuable | undefined;
 
   constructor(piezas: PiezasDeCercania) {
     this.piezas = piezas;
@@ -59,6 +59,7 @@ export class Cercania {
       this.ocultar();
       return;
     }
+    this.cercanoConAviso = cercano;
     if (!this.estaElAvisoEnPantalla) {
       this.piezas.interfaz.mostrarAviso();
       this.estaElAvisoEnPantalla = true;
@@ -66,7 +67,13 @@ export class Cercania {
     this.piezas.interfaz.apuntarAviso(lugar);
   }
 
+  /** Lo que tiene el aviso encima ahora: personaje u objeto, por su id. `undefined` = el aviso no se ve. */
+  get loQueTieneElAviso(): Interactuable | undefined {
+    return this.cercanoConAviso;
+  }
+
   ocultar(): void {
+    this.cercanoConAviso = undefined;
     if (this.estaElAvisoEnPantalla) {
       this.piezas.interfaz.ocultarAviso();
       this.estaElAvisoEnPantalla = false;
@@ -104,19 +111,7 @@ export class Cercania {
     }
     const objeto = this.piezas.nivel.mundo.decorado.find((candidato) => candidato.id === interactuable.id);
     if (objeto === undefined) return undefined;
-    return this.piezas.escenario.lugarEnPantallaDelPunto(interactuable.punto, this.calcularAlturaDe(objeto));
-  }
-
-  /** Hasta dónde llega el dibujo de un objeto, en metros sobre el piso. */
-  private calcularAlturaDe(objeto: Decorado): number {
-    if (objeto.clase === 'plano') return ALTURA_DEL_AVISO_SOBRE_EL_PISO_EN_METROS;
-
-    const asset = this.piezas.nivel.assets[objeto.asset]!.asset; // la validación garantiza que la imagen existe
-    let altoDelDibujoEnMetros = 0;
-    if (asset.tipo === 'imagen' || asset.tipo === 'animacion') {
-      altoDelDibujoEnMetros = asset.altoEnPixeles / this.piezas.nivel.contenido.mundo.pixelesPorMetro;
-    }
-    if (objeto.clase === 'colgado') return objeto.alturaEnMetros + altoDelDibujoEnMetros;
-    return altoDelDibujoEnMetros;
+    const altura = calcularAlturaDelDecorado(objeto, this.piezas.nivel);
+    return this.piezas.escenario.lugarEnPantallaDelPunto(interactuable.punto, altura);
   }
 }
