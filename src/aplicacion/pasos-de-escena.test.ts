@@ -184,6 +184,24 @@ test('"anima" con el id de un objeto del decorado le cambia el dibujo y luego le
   expect(escenario.escenografia?.decorado[0]?.id).toBeUndefined();
 });
 
+test('al saltar la escena, el objeto del decorado queda con el dibujo que se repite y el destello se omite', async () => {
+  const { escenario, interfaz, reloj } = await empezarConPasos([
+    { tipo: 'espera', esperaEnSegundos: 5 },
+    { tipo: 'efecto', nombre: 'destello' },
+    { tipo: 'anima', personaje: 'mesa_familia', clave: 'tommy_saluda', repite: false },
+    { tipo: 'anima', personaje: 'mesa_familia', clave: 'spr_mama', repite: true },
+  ]);
+
+  interfaz.simularToqueEnSaltar();
+  await reloj.avanzar(0.1);
+
+  expect(interfaz.opacidadMaximaDelDestello).toBe(0);
+  expect(escenario.dibujosDelDecorado.get(0)).toEqual({
+    imagen: expect.objectContaining({ direcciones: ['/niveles/casa/img/spr_mama.svg'] }),
+    repite: true,
+  });
+});
+
 test('"aparece" mete al personaje en su punto y "desaparece" lo saca', async () => {
   const { escenario, reloj } = await empezarConPasos([
     { tipo: 'aparece', personaje: 'abuela', punto: 'puerta' },
