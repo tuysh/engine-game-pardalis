@@ -1,8 +1,10 @@
 // Las opciones de un paso `elige`: la pregunta arriba y una tarjeta grande por opción, con su imagen,
-// su texto y el número de la tecla que la elige.
+// su texto y el número de la tecla que la elige. El texto y su traducción llevan su idioma en `lang`, para que
+// un lector de pantalla pronuncie «water» en inglés.
 
 import type { OpcionPorMostrar } from '../../puertos/interfaz.ts';
-import { crearConTexto, crearOculto } from './elementos.ts';
+import { otroIdioma } from '../../dominio/idioma.ts';
+import { crearConTexto, crearEnIdioma, crearOculto } from './elementos.ts';
 
 export class TarjetasDeOpciones {
   readonly elemento: HTMLElement;
@@ -59,10 +61,10 @@ function crearTarjeta(opcion: OpcionPorMostrar, posicion: number): HTMLElement {
     tarjeta.append(imagen);
   }
   if (opcion.texto !== undefined) {
-    tarjeta.append(crearConTexto('span', 'texto', opcion.texto));
+    tarjeta.append(crearEnIdioma('span', 'texto', opcion.texto, opcion.idioma));
   }
   if (opcion.traduccion !== undefined) {
-    tarjeta.append(crearConTexto('span', 'traduccion', opcion.traduccion));
+    tarjeta.append(crearEnIdioma('span', 'traduccion', opcion.traduccion, otroIdioma(opcion.idioma)));
   }
   return tarjeta;
 }

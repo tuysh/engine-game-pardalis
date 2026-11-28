@@ -390,7 +390,7 @@ test('al entrar a una zona con grupo, el jugador comenta sin dejar de poder cami
   escenario.simularToque({ tipo: 'piso', punto: { x: 4, y: 3 } });
   await reloj.avanzar(0.6);
 
-  expect(interfaz.globo).toEqual({ texto: 'Wow!', traduccion: '¡Qué colorido!', palabra: undefined });
+  expect(interfaz.globo).toEqual({ texto: 'Wow!', idioma: 'en', traduccion: '¡Qué colorido!', palabra: undefined });
   // El globo de un comentario no atrapa toques: el jugador puede seguir caminando.
   expect(interfaz.hayQuienEscuchaToques).toBe(false);
 });

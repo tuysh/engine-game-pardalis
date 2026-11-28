@@ -32,7 +32,8 @@ export async function elegirOpcion(
     if (opcion.imagen !== undefined) {
       direccionDeLaImagen = piezas.direccionDeAsset(opcion.imagen);
     }
-    tarjetas.push({ texto: opcion.texto, traduccion: opcion.traduccion, direccionDeLaImagen });
+    // El texto de la opción se lee en voz alta en el idioma del sitio; su traducción va en el otro.
+    tarjetas.push({ texto: opcion.texto, idioma: piezas.idiomaBase, traduccion: opcion.traduccion, direccionDeLaImagen });
   }
   piezas.interfaz.mostrarOpciones(pregunta, tarjetas);
 

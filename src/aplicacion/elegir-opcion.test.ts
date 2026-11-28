@@ -79,8 +79,9 @@ test('muestra la pregunta y una tarjeta por opción, con la dirección de su ima
   expect(interfaz.opciones).toEqual({
     pregunta: '¿Cuál quieres?',
     opciones: [
-      { texto: 'El rosa', traduccion: undefined, direccionDeLaImagen: '/assets/img_rosa' },
-      { texto: 'El azul', traduccion: undefined, direccionDeLaImagen: '/assets/img_azul' },
+      // El texto de una opción está en el idioma del sitio, que es como se lee en voz alta.
+      { texto: 'El rosa', idioma: 'es', traduccion: undefined, direccionDeLaImagen: '/assets/img_rosa' },
+      { texto: 'El azul', idioma: 'es', traduccion: undefined, direccionDeLaImagen: '/assets/img_azul' },
     ],
   });
 });

@@ -1,10 +1,14 @@
 // El globo de diálogo: una placa con el texto, la traducción opcional debajo y, si la línea
 // enseña una palabra, su tarjeta de vocabulario arriba. Su piquito apunta a quien habla.
 // Si el personaje piensa en vez de decir, el globo es una nube y el piquito son burbujitas.
+//
+// Cada texto lleva su idioma en el atributo `lang`: así un lector de pantalla dice «Lettuce?» en inglés y su
+// traducción en español, aunque la página esté en un solo idioma.
 
 import type { LugarEnPantalla } from '../../puertos/escenario.ts';
 import type { GloboPorMostrar } from '../../puertos/interfaz.ts';
-import { crearConTexto, crearOculto } from './elementos.ts';
+import { otroIdioma } from '../../dominio/idioma.ts';
+import { crearConTexto, crearEnIdioma, crearOculto } from './elementos.ts';
 
 /** Separación entre el globo y la cabeza de quien habla, y entre el globo y la orilla del juego. */
 const SEPARACION_DEL_GLOBO_EN_PUNTOS = 18;
@@ -43,12 +47,14 @@ export class GloboDeDialogo {
     // Un pensamiento se dibuja como nube con burbujitas: se distingue de lo que se dice sin leer nada.
     this.elemento.classList.toggle('pensamiento', globo.esPensamiento === true);
     if (globo.palabra !== undefined) {
-      const palabraEnLosDosIdiomas = `${globo.palabra.en} · ${globo.palabra.es}`;
-      this.elemento.append(crearConTexto('div', 'tarjeta-de-palabra', palabraEnLosDosIdiomas));
+      // «lettuce · lechuga»: cada palabra con su idioma.
+      const tarjeta = crearConTexto('div', 'tarjeta-de-palabra', '');
+      tarjeta.append(crearEnIdioma('span', '', globo.palabra.en, 'en'), ' · ', crearEnIdioma('span', '', globo.palabra.es, 'es'));
+      this.elemento.append(tarjeta);
     }
-    this.elemento.append(crearConTexto('div', 'texto', globo.texto));
+    this.elemento.append(crearEnIdioma('div', 'texto', globo.texto, globo.idioma));
     if (globo.traduccion !== undefined) {
-      this.elemento.append(crearConTexto('div', 'traduccion', globo.traduccion));
+      this.elemento.append(crearEnIdioma('div', 'traduccion', globo.traduccion, otroIdioma(globo.idioma)));
     }
     this.elemento.hidden = false;
 

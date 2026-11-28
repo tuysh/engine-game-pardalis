@@ -90,7 +90,7 @@ test('muestra el globo sobre quien habla y dice el texto con su voz grabada', as
 
   void decirLinea({ paso: HOLA, textoCompleto: '¡Hola!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
 
-  expect(interfaz.globo).toEqual({ texto: '¡Hola!', traduccion: undefined, palabra: undefined });
+  expect(interfaz.globo).toEqual({ texto: '¡Hola!', idioma: 'es', traduccion: undefined, palabra: undefined });
   expect(interfaz.lugarDelGlobo).toEqual({ x: 5, y: 2 });
   expect(audio.frasesDichas).toEqual([{ texto: '¡Hola!', idioma: 'es', direccionDeLaVoz: '/voz/vo_tortu_hola.mp3' }]);
 });

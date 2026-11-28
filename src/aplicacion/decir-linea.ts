@@ -53,6 +53,7 @@ export async function decirLinea(porDecir: LineaPorDecir, senal: AbortSignal, pi
 
   const quitarGlobo = piezas.interfaz.mostrarGlobo({
     texto: textoCompleto,
+    idioma: personaje.idioma,
     traduccion,
     palabra: linea.palabra,
     esPensamiento: linea.esPensamiento,

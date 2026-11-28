@@ -201,6 +201,8 @@ personaje suene distinto, `voz` le cambia el tono y la velocidad (es opcional, y
 - `tono`: de `0.5` (más grave) a `2` (más agudo). `velocidad`: de `0.5` (más despacio) a `2` (más rápido).
   En los dos, `1` es la voz normal, y es lo que vale si no se escribe.
 - La traducción (`trad`) de una línea se dice con la voz normal, no con la del personaje.
+- En el globo, el texto lleva el idioma de quien habla y su traducción el del sitio (atributo `lang`), igual que
+  las dos palabras de la tarjeta de vocabulario: así un lector de pantalla pronuncia cada una en su idioma.
 - Los minijuegos y el host pueden hablar con la misma voz nombrando al personaje: `audio.decir(texto, idioma,
   clave, 'bobby')` en un minijuego y `juego.decir(texto, { idioma, quien: 'bobby' })` en el host.
 - El motor elige, de las voces del dispositivo, una que hable el idioma del personaje: para español prefiere
@@ -363,7 +365,7 @@ lee sepa **a dónde ir**:
 | Paso | Ejemplo | Qué hace |
 | --- | --- | --- |
 | Línea | `{ "dice": "tortu", "texto": "¡Hola!", "audio": "vo_hola" }` | Globo sobre quien habla. Termina con un toque o al acabar el audio. Un toque solo la cierra cuando ya lleva medio segundo a la vista, para que un doble toque no se salte la línea que acaba de empezar. Opcional: `trad`, y `en` + `es` (siempre juntos) para una **tarjeta de vocabulario**; `con`, `reacciona` y `piensa` (ver «Caras y pensamientos»). |
-| Opción | `{ "elige": "¿Cuál quieres?", "opciones": [ { "imagen": "img_rosa", "audio": "vo_rosa", "secuencia": [...] } ] }` | Espera la elección. Cada opción: `texto`, `trad`, `imagen`, `audio`, `cuando`, y `secuencia` (pasos o nombre de secuencia). Una opción sin `imagen` da advertencia. |
+| Opción | `{ "elige": "¿Cuál quieres?", "opciones": [ { "imagen": "img_rosa", "audio": "vo_rosa", "secuencia": [...] } ] }` | Espera la elección. Cada opción: `texto`, `trad`, `imagen`, `audio`, `cuando`, y `secuencia` (pasos o nombre de secuencia). El `texto` va en el idioma del sitio (así se lee en voz alta) y `trad` en el otro (`"texto": "Agua", "trad": "water"`). Una opción sin `imagen` da advertencia. |
 | Efecto | `{ "efecto": "magia" }` | Partículas y sonido. Disponibles: `magia`, `confeti` (papelitos que llueven sobre todo lo que se ve; se ven del mismo tamaño con la cámara cerca o lejos) y `destello` (un flash blanco de toda la pantalla, como el de una cámara de fotos). Opcional: `sonido`, la clave del sonido que lo acompaña (por ejemplo un obturador); sin él suenan unas notas cortas. Dura un segundo. |
 | Estado | `{ "pon": { "globo": "rosa" } }` | Asigna objetivos o variables. Con números también suma y resta: `{ "pon": { "dinero": { "resta": 10 }, "estrellas": { "suma": 1 } } }`. |
 | Minijuego | `{ "juego": "Tortilleria", "config": { "palabras": ["hot"] } }` | Abre el minijuego que registró el host y, al volver, ejecuta `alVolver`. |

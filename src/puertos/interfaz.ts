@@ -3,13 +3,19 @@
 // La aplicación decide qué se muestra y cuándo; el adaptador decide cómo se ve.
 
 import type { GrosorDeFranjas } from '../dominio/contenido.ts';
+import type { Idioma } from '../dominio/idioma.ts';
 import type { PalabraDeVocabulario } from '../dominio/paso.ts';
 import type { LugarEnPantalla } from './escenario.ts';
 
 /** Lo que lleva un globo de diálogo. */
 export interface GloboPorMostrar {
   readonly texto: string;
-  /** Se muestra debajo del texto, más pequeña. */
+  /**
+   * El idioma de `texto`: el de quien habla. Va en el atributo `lang`, para que un lector de pantalla pronuncie
+   * «Lettuce?» en inglés aunque la página esté en español.
+   */
+  readonly idioma: Idioma;
+  /** Se muestra debajo del texto, más pequeña. Está en el otro idioma (el del sitio). */
   readonly traduccion?: string;
   /** Si existe, el globo lleva una tarjeta de vocabulario con la palabra en los dos idiomas. */
   readonly palabra?: PalabraDeVocabulario;
@@ -23,6 +29,9 @@ export interface GloboPorMostrar {
 /** Una de las tarjetas entre las que el jugador elige. */
 export interface OpcionPorMostrar {
   readonly texto?: string;
+  /** El idioma de `texto`, que es el del sitio (así se lee en voz alta). Va en el atributo `lang`. */
+  readonly idioma: Idioma;
+  /** Está en el otro idioma: en un sitio en español, la palabra en inglés («water»). */
   readonly traduccion?: string;
   /** Dirección completa de su imagen. Es lo que permite elegir a quien todavía no lee. */
   readonly direccionDeLaImagen?: string;

@@ -504,7 +504,7 @@ test('una línea dicha desde código puede llevar traducción y enseñar una pal
   await reloj.avanzar(0.1);
 
   expect(interfaz.globosMostrados).toEqual([
-    { texto: 'Bread!', traduccion: '¡Pan!', palabra: { en: 'bread', es: 'pan' } },
+    { texto: 'Bread!', idioma: 'en', traduccion: '¡Pan!', palabra: { en: 'bread', es: 'pan' } },
   ]);
   expect(palabras).toEqual([{ en: 'bread', es: 'pan' }]);
 });
@@ -614,5 +614,5 @@ test('una línea desde código acepta que las opciones lleguen en null, como pas
   await reloj.avanzar(0.1);
 
   expect(fallas).toEqual([]);
-  expect(interfaz.globosMostrados).toEqual([{ texto: 'Hi!' }]);
+  expect(interfaz.globosMostrados).toEqual([{ texto: 'Hi!', idioma: 'en' }]);
 });
