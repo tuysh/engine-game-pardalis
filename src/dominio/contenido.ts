@@ -4,6 +4,7 @@
 // Estos tipos son el contenido ya leído y revisado. Su forma sigue de cerca la del archivo
 // `contenido.json`, que se explica en docs/NIVELES.md.
 
+import type { AjustesDeVoz } from './ajustes-de-voz.ts';
 import type { Condicion } from './condicion.ts';
 import type { DeclaracionDeEstado } from './estado.ts';
 import type { Idioma } from './idioma.ts';
@@ -15,6 +16,8 @@ export interface Personaje {
   readonly idioma: Idioma;
   /** Clave de su imagen en el manifiesto de assets. */
   readonly sprite: string;
+  /** Cómo suena su voz sintetizada. `undefined` = como la trae el dispositivo. No cambia las voces grabadas. */
+  readonly voz?: AjustesDeVoz;
 }
 
 /** Los datos generales del nivel. */
