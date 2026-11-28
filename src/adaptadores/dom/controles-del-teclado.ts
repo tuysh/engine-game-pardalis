@@ -7,13 +7,18 @@
 // de un minijuego o de un diálogo del host, que tapan a quien está detrás; ahí tampoco las flechas mueven
 // al jugador.
 //
+// Después de que Enter o la barra espaciadora siguen un diálogo, las teclas de hablar descansan un momento
+// (espera-para-volver-a-hablar.ts): el segundo dedazo de un doble toque que cerró la última línea no empieza
+// otra plática.
+//
 // Las teclas se reconocen por su lugar en el teclado (`code`) y no por la letra que escriben (`key`):
 // así W, A, S y D quedan bajo los mismos dedos también en teclados con otra distribución.
 //
 // Se verifica a mano en la demo; la decisión de qué tecla es de un control se prueba en
-// `tecla-de-un-control.test.ts`.
+// `tecla-de-un-control.test.ts`, y el descanso de la tecla de hablar en `espera-para-volver-a-hablar.test.ts`.
 
 import type { Controles, DireccionDeControl } from '../../puertos/controles.ts';
+import { EsperaParaVolverAHablar } from './espera-para-volver-a-hablar.ts';
 import { esTeclaDeUnCampo, esTeclaDeUnControl, esTeclaDeUnaVentana } from './tecla-de-un-control.ts';
 
 /** Qué eje y qué sentido mueve cada tecla. */
@@ -38,6 +43,7 @@ export class ControlesDelTeclado implements Controles {
   /** Las teclas de movimiento que están oprimidas ahora, por su `code`. */
   private readonly teclasOprimidas = new Set<string>();
   private funcionesDeHablar: (() => void)[] = [];
+  private readonly esperaParaVolverAHablar = new EsperaParaVolverAHablar();
   private estanDestruidos = false;
 
   constructor() {
@@ -98,12 +104,20 @@ export class ControlesDelTeclado implements Controles {
     // En un botón, Enter y la barra espaciadora lo oprimen. Cancelarlas aquí lo dejaría sin funcionar con
     // teclado, y pedir hablar empezaría una plática con quien está cerca que nadie pidió.
     if (TECLAS_QUE_OPRIMEN_BOTONES.includes(evento.code) && esTeclaDeUnControl(camino)) return;
+    if (!esTeclaDeHablar) return;
     // Enter y la barra espaciadora también siguen el diálogo, y la interfaz las atiende antes (escucha en
     // `document`, que recibe la tecla antes que `window`) y lo marca con `preventDefault`. Si esa tecla cerró
     // la última línea, aquí el diálogo ya terminó: pedir hablar lo empezaría otra vez con quien está cerca.
-    const yaLaAtendioLaInterfaz = evento.defaultPrevented;
-    const pideHablar = esTeclaDeHablar && !yaLaAtendioLaInterfaz;
-    if (pideHablar && this.funcionesDeHablar.length > 0) {
+    if (evento.defaultPrevented) {
+      this.esperaParaVolverAHablar.anotarQueSeSiguioElDialogo(evento.timeStamp);
+      return;
+    }
+    // Y si llega un instante después (el segundo dedazo de un doble toque), tampoco: la tecla descansa.
+    if (!this.esperaParaVolverAHablar.puedeHablar(evento.timeStamp)) {
+      evento.preventDefault();
+      return;
+    }
+    if (this.funcionesDeHablar.length > 0) {
       // Evita que la barra espaciadora, además, desplace la página.
       evento.preventDefault();
       for (const funcion of [...this.funcionesDeHablar]) {

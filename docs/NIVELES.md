@@ -786,6 +786,10 @@ del host, los de un minijuego, las tarjetas), `Enter` y la barra espaciadora opr
 las toma para hablar ni para seguir el diálogo. `E` sigue sirviendo para hablar, salvo dentro de un
 minijuego o de un diálogo del host, que tapan a quien está detrás; ahí tampoco las flechas mueven al jugador.
 
+Después de que un toque, `Enter` o la barra espaciadora cierran la última línea de una plática o de una escena,
+hablar descansa medio segundo: el segundo toque (o la segunda tecla) de un doble toque no empieza otra plática
+con quien quedó debajo del dedo o con quien está a la mano, casi siempre el acompañante.
+
 ### Verlo en la demo
 
 ```bash
