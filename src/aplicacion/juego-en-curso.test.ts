@@ -12,6 +12,7 @@ import { ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
 import type { Asset } from '../dominio/manifiesto.ts';
 import type { Nivel } from '../dominio/nivel.ts';
 import type { Partida } from '../dominio/partida.ts';
+import type { Minijuego } from '../puertos/minijuego.ts';
 import { JuegoEnCurso } from './juego-en-curso.ts';
 import { leerNivelPorJugar } from './leer-nivel-por-jugar.ts';
 import type { FuenteDeNiveles } from './leer-nivel-por-jugar.ts';
@@ -136,6 +137,34 @@ const COMEDOR: Nivel = {
   },
 };
 
+/**
+ * Un puesto de rascaditas sin jugador: su cinemática de entrada abre el minijuego "Rascadita" dos veces.
+ * No cumple ningún objetivo: lo que cambie el estado solo lo cambia el minijuego.
+ */
+const RASCADITAS: Nivel = {
+  ...CASA,
+  contenido: {
+    ...CASA.contenido,
+    meta: { ...CASA.contenido.meta, id: 'rascaditas' },
+    estado: { objetivos: [], variables: ['dinero', 'premio'], lista: {} },
+    cinematicas: {
+      intro: {
+        inicio: { tipo: 'alEntrar' },
+        condicion: leerCondicionDeTexto('no vista.intro'),
+        saltable: true,
+        guion: {
+          tipo: 'pasos',
+          pasos: [
+            { tipo: 'pon', valores: { dinero: 100 } },
+            { tipo: 'juego', nombre: 'Rascadita', config: undefined },
+            { tipo: 'juego', nombre: 'Rascadita', config: undefined },
+          ],
+        },
+      },
+    },
+  },
+};
+
 /** Los niveles que «existen» en estas pruebas, por la dirección de su `nivel.json`. */
 const NIVELES_POR_DIRECCION: Record<string, Nivel> = {
   '/niveles/mercado/nivel.json': MERCADO,
@@ -143,6 +172,7 @@ const NIVELES_POR_DIRECCION: Record<string, Nivel> = {
   '/niveles/casa/nivel.json': CASA,
   '/niveles/casa-con-salida-rota/nivel.json': CASA_CON_SALIDA_ROTA,
   '/niveles/barrio/nivel.json': BARRIO,
+  '/niveles/rascaditas/nivel.json': RASCADITAS,
 };
 
 const FUENTE: FuenteDeNiveles = {
@@ -156,7 +186,7 @@ const FUENTE: FuenteDeNiveles = {
 };
 
 /** Crea el juego con adaptadores falsos, lo pone a jugar en un nivel y anota en `avisos` todo lo que avisa. */
-async function empezarEn(nivel: string, partidaInicial?: Partida) {
+async function empezarEn(nivel: string, partidaInicial?: Partida, minijuegos: Record<string, Minijuego> = {}) {
   const escenario = new EscenarioDeMemoria();
   const interfaz = new InterfazDeMemoria();
   const reloj = new RelojDeMemoria();
@@ -169,7 +199,7 @@ async function empezarEn(nivel: string, partidaInicial?: Partida) {
     fuente: FUENTE,
     cargador: new CargadorDeMemoria({}),
     idiomaBase: 'es',
-    minijuegos: {},
+    minijuegos,
     cinematicasEnCodigo: {},
     conMenosMovimiento: false,
     puertos: {
@@ -287,6 +317,24 @@ test('la partida conserva el estado del nivel que se dejó', async () => {
   expect(juego.leerPartida()).toEqual(partidaEsperada);
   // La última vez que se avisó de guardar fue al terminar de cargar el barrio.
   expect(partidasPorGuardar.at(-1)).toEqual(partidaEsperada);
+});
+
+test('un minijuego que cambia el estado avisa que conviene guardar, aunque no cumpla un objetivo', async () => {
+  // La primera rascadita cobra y da premio; la segunda no otorga nada.
+  const resultados = [{ exito: false, otorgar: { dinero: { resta: 5 }, premio: 'pizarron' } }, { exito: false }];
+  const Rascadita: Minijuego = async () => resultados.shift() ?? { exito: false };
+  const { reloj, partidasPorGuardar } = await empezarEn('/niveles/rascaditas/nivel.json', undefined, { Rascadita });
+
+  await reloj.avanzar(0.1);
+  await reloj.avanzar(0.1);
+
+  // Una vez por la primera rascadita (la segunda no cambió nada) y otra al terminar la cinemática.
+  expect(partidasPorGuardar).toHaveLength(2);
+  expect(partidasPorGuardar[0]).toEqual({
+    v: 1,
+    nivel: 'rascaditas',
+    niveles: { rascaditas: { estado: { dinero: 95, premio: 'pizarron' } } },
+  });
 });
 
 test('al volver a un nivel ya visitado se restauran sus variables', async () => {

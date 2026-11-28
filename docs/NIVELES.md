@@ -557,6 +557,8 @@ Si el minijuego terminó con éxito → `siLogrado`; si no (o si falló con un e
 Lo que el minijuego concede (`otorgar`) se aplica al estado antes de ejecutar cualquiera de los dos
 (y antes de avisar al host que el minijuego se cerró).
 `otorgar` acepta las mismas sumas y restas que `pon`: `{ "dinero": { "resta": 15 } }`.
+Si `otorgar` cambió alguna variable, el motor avisa al host que conviene guardar (evento `guardar`), aunque el
+minijuego no cumpla ningún objetivo: así un premio o el dinero de un antojo no se pierden al recargar la página.
 
 ### `comentarios`
 

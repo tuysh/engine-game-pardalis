@@ -245,7 +245,15 @@ export class JuegoEnCurso {
       alEmpezarDialogo: (dialogo) => avisos.alEmpezarDialogo(dialogo),
       alTerminarDialogo: (dialogo) => avisos.alTerminarDialogo(dialogo),
       alEmpezarMinijuego: (nombre) => avisos.alEmpezarMinijuego(nombre),
-      alTerminarMinijuego: (nombre, cierre) => avisos.alTerminarMinijuego(nombre, cierre),
+      alTerminarMinijuego: (nombre, cierre) => {
+        avisos.alTerminarMinijuego(nombre, cierre);
+        // Lo que otorga un minijuego no siempre cumple un objetivo (un premio, el dinero de un antojo):
+        // si no se guardara aquí, recargar la página lo perdería. Con o sin éxito: también se cobra al no ganar.
+        const cambioElEstado = Object.keys(cierre.cambios).length > 0;
+        if (cambioElEstado) {
+          avisos.alGuardar(this.leerPartida());
+        }
+      },
     };
   }
 

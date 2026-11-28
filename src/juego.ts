@@ -122,7 +122,10 @@ export interface CambioDeEstado {
 
 /** Cada evento del juego con el dato que entrega a quien lo escucha. */
 export interface EventosDeJuego {
-  /** Conviene guardar: objetivo cumplido, fin de cinemática o cambio de nivel. */
+  /**
+   * Conviene guardar: objetivo cumplido, fin de cinemática, cambio de nivel o un minijuego que cambió el estado
+   * con lo que otorgó (un premio, el dinero de un antojo), aunque no haya cumplido ningún objetivo.
+   */
   readonly guardar: Partida;
   /** Se cumplió un objetivo. El dato es su id. */
   readonly objetivo: string;

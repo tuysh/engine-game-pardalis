@@ -183,7 +183,7 @@ frase no corre mientras el juego está en pausa.
 
 | Evento | Dato | Cuándo |
 | --- | --- | --- |
-| `guardar` | `partida` | Cada vez que conviene guardar: objetivo cumplido, fin de cinemática, cambio de nivel. |
+| `guardar` | `partida` | Cada vez que conviene guardar: objetivo cumplido, fin de cinemática, cambio de nivel, o un minijuego que cambió el estado con lo que otorgó (llega después de su `minijuego` de fin). |
 | `objetivo` | `id` | Se cumplió un objetivo. |
 | `palabra` | `{ en, es }` | Se mostró una tarjeta de vocabulario. |
 | `nivel` | `{ id, anterior }` | Se terminó de cargar otro nivel. `anterior` es el id del que se dejó. |
