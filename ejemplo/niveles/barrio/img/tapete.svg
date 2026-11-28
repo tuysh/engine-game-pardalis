@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 180">
+  <!-- Tapete de la sala, visto desde arriba. Provisional, para el nivel de ejemplo. -->
+  <ellipse cx="180" cy="90" rx="176" ry="86" fill="#d94f70"/>
+  <ellipse cx="180" cy="90" rx="146" ry="68" fill="#f6c453"/>
+  <ellipse cx="180" cy="90" rx="112" ry="50" fill="#d94f70"/>
+  <ellipse cx="180" cy="90" rx="76" ry="32" fill="#fdf3d0"/>
+</svg>

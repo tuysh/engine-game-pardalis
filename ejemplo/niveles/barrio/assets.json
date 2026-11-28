@@ -1,9 +1,21 @@
 {
+  "arbol": {
+    "tipo": "imagen",
+    "archivo": "img/arbol.svg",
+    "ancho": 180,
+    "alto": 280
+  },
   "cajas": {
     "tipo": "imagen",
     "archivo": "img/cajas.svg",
     "ancho": 120,
     "alto": 110
+  },
+  "cojin": {
+    "tipo": "imagen",
+    "archivo": "img/cojin.svg",
+    "ancho": 90,
+    "alto": 70
   },
   "comal": {
     "tipo": "imagen",
@@ -29,6 +41,12 @@
     "ancho": 320,
     "alto": 300
   },
+  "spr_canelo": {
+    "tipo": "imagen",
+    "archivo": "img/spr_canelo.svg",
+    "ancho": 110,
+    "alto": 90
+  },
   "spr_tortu": {
     "tipo": "imagen",
     "archivo": "img/spr_tortu.svg",
@@ -40,6 +58,12 @@
     "archivo": "img/suelo_barrio.svg",
     "ancho": 2048,
     "alto": 768
+  },
+  "tapete": {
+    "tipo": "imagen",
+    "archivo": "img/tapete.svg",
+    "ancho": 360,
+    "alto": 180
   },
   "telon_fachadas": {
     "tipo": "imagen",

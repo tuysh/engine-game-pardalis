@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 90">
+  <!-- Canelo, el perro que acompaña a Tommy. Figura de papel provisional para el nivel de ejemplo. -->
+  <rect x="20" y="62" width="11" height="26" rx="5" fill="#b8742f"/>
+  <rect x="64" y="62" width="11" height="26" rx="5" fill="#b8742f"/>
+  <ellipse cx="48" cy="56" rx="38" ry="18" fill="#d9944a" stroke="#7a4a1f" stroke-width="4"/>
+  <path d="M10 50 Q0 30 8 22" stroke="#7a4a1f" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <circle cx="86" cy="36" r="20" fill="#d9944a" stroke="#7a4a1f" stroke-width="4"/>
+  <ellipse cx="80" cy="22" rx="7" ry="13" fill="#7a4a1f"/>
+  <circle cx="92" cy="32" r="3.5" fill="#2b1a0e"/>
+  <circle cx="105" cy="40" r="4" fill="#2b1a0e"/>
+</svg>

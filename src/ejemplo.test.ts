@@ -23,7 +23,7 @@ test('las únicas advertencias del barrio son por voces que todavía no se graba
 
   const resultado = await validarNivel(rutaDelNivel, { minijuegos: ['Tortilleria'] });
 
-  expect(resultado.advertencias).toHaveLength(7);
+  expect(resultado.advertencias).toHaveLength(8);
   for (const advertencia of resultado.advertencias) {
     expect(advertencia).toEndWith('; se usará voz sintetizada');
   }
