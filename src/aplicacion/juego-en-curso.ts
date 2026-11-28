@@ -23,8 +23,8 @@ import { leerNivelPorJugar } from './leer-nivel-por-jugar.ts';
 import type { NivelPorJugar } from './leer-nivel-por-jugar.ts';
 import type { AvisosDelNivel, NivelEnJuego } from './nivel-en-juego.ts';
 import { PartidaEnCurso } from './partida-en-curso.ts';
-import type { VocesDelNivel } from './voces-del-nivel.ts';
 import type { PiezasDelJuegoEnCurso } from './piezas-del-juego-en-curso.ts';
+import type { VocesDelNivel } from './voces-del-nivel.ts';
 
 /** Lo que tarda la pantalla en cerrarse a negro cuando un nivel sale hacia otro. */
 const DURACION_DEL_CIERRE_ENTRE_NIVELES_EN_SEGUNDOS = 0.4;

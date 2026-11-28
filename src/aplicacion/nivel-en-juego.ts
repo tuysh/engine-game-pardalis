@@ -17,10 +17,10 @@ import type { PanelDeDepuracion } from '../puertos/panel-de-depuracion.ts';
 import type { Reloj } from '../puertos/reloj.ts';
 import type { Video } from '../puertos/video.ts';
 import type { UbicacionDeAssets } from './direccion-de-asset.ts';
-import type { VocesDelNivel } from './voces-del-nivel.ts';
 import type { DialogoDelNivel } from './conversacion.ts';
 import type { FundidoDePantalla } from './fundido-de-pantalla.ts';
 import type { CierreDeMinijuego } from './jugar-minijuego.ts';
+import type { VocesDelNivel } from './voces-del-nivel.ts';
 
 /** Lo que hace falta para el modo depuración (docs/DISENO-3.0.md §9.3). */
 export interface HerramientasDeDepuracion {
