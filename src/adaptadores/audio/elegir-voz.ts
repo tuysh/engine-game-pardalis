@@ -6,8 +6,9 @@
 // Preferencias:
 //   - español: México (es-MX); si no hay, otro español de América (es-US, es-419); si no, cualquier español;
 //   - inglés: Estados Unidos (en-US); si no hay, cualquier inglés.
-// Entre voces de la misma región gana la que el dispositivo marca como suya por omisión (`default`); si no,
-// la primera de la lista, que es el orden en que las da el navegador.
+// Entre voces de la misma región gana una natural antes que una de las «robóticas» de Apple (Eddy, Flo,
+// Grandma…, que en macOS llegan antes que Paulina); luego, la que el dispositivo usa por omisión
+// (`default`); si no, la primera de la lista, que es el orden en que las da el navegador.
 //
 // Las voces «de broma» de Apple (Albert, Bad News, Bells, Zarvox…) se descartan: en macOS y en iOS llegan
 // marcadas como en-US y, por orden alfabético, antes que Samantha. Sin esto, Bobby podía hablar con burbujas.
@@ -31,12 +32,28 @@ const REGIONES_PREFERIDAS: Readonly<Record<Idioma, readonly string[]>> = {
 };
 
 /**
- * Los puntos de una voz: cada región preferida vale `PUNTOS_POR_REGION` más que la siguiente, y ser la voz
- * por omisión suma `PUNTOS_POR_SER_LA_VOZ_POR_OMISION`, que es menos: la región siempre pesa más.
+ * Los puntos de una voz: cada región preferida vale `PUNTOS_POR_REGION` más que la siguiente. Dentro de una
+ * región, sonar natural suma más que ser la voz por omisión. Las dos sumas juntas no llegan a una región.
  */
 const PUNTOS_DE_OTRA_REGION = 10;
 const PUNTOS_POR_REGION = 10;
+const PUNTOS_POR_SONAR_NATURAL = 2;
 const PUNTOS_POR_SER_LA_VOZ_POR_OMISION = 1;
+
+/**
+ * Las voces «robóticas» de Apple (las de Eloquence), en minúsculas. Se entienden, pero suenan a máquina;
+ * en macOS su nombre llega con el idioma, como "Eddy (Spanish (Mexico))", así que se compara la primera palabra.
+ */
+const VOCES_ROBOTICAS: ReadonlySet<string> = new Set([
+  'eddy',
+  'flo',
+  'grandma',
+  'grandpa',
+  'reed',
+  'rocko',
+  'sandy',
+  'shelley',
+]);
 
 /**
  * Las voces de efectos que traen macOS e iOS en inglés (cantan, susurran o suenan a robot), en minúsculas.
@@ -88,6 +105,9 @@ function puntuarVoz(voz: VozDisponible, idioma: Idioma): number {
   if (VOCES_DE_BROMA.has(voz.name.trim().toLowerCase())) return 0;
 
   let puntos = PUNTOS_DE_OTRA_REGION + puntosDeLaRegion(etiqueta, idioma);
+  if (!VOCES_ROBOTICAS.has(primeraPalabra(voz.name))) {
+    puntos += PUNTOS_POR_SONAR_NATURAL;
+  }
   if (voz.default) {
     puntos += PUNTOS_POR_SER_LA_VOZ_POR_OMISION;
   }
@@ -100,6 +120,12 @@ function puntosDeLaRegion(etiqueta: string, idioma: Idioma): number {
   const posicion = regiones.indexOf(etiqueta);
   if (posicion < 0) return 0;
   return (regiones.length - posicion) * PUNTOS_POR_REGION;
+}
+
+/** "Eddy (Spanish (Mexico))" se vuelve "eddy". */
+function primeraPalabra(nombre: string): string {
+  const palabras = nombre.trim().toLowerCase().split(' ');
+  return palabras[0] ?? '';
 }
 
 /** "es_MX" y "ES-mx" se vuelven "es-mx". */

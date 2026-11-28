@@ -163,8 +163,9 @@ personaje suene distinto, `voz` le cambia el tono y la velocidad (es opcional, y
 - La traducción (`trad`) de una línea se dice con la voz normal, no con la del personaje.
 - El motor elige, de las voces del dispositivo, una que hable el idioma del personaje: para español prefiere
   la de México, luego otra de América y luego cualquier español; para inglés, la de Estados Unidos y luego
-  cualquier inglés. Entre voces de la misma región prefiere la que el dispositivo usa por omisión, y nunca
-  elige las voces de efectos de Apple (Albert, Bubbles, Zarvox…). Si el dispositivo no tiene ninguna de ese
+  cualquier inglés. Entre voces de la misma región prefiere una natural a una robótica de Apple (Eddy,
+  Grandma…) y luego la que el dispositivo usa por omisión; nunca elige las voces de efectos de Apple
+  (Albert, Bubbles, Zarvox…). Si el dispositivo no tiene ninguna de ese
   idioma, solo pide el acento.
 
 ### `jugador` y `mundo`

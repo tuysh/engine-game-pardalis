@@ -43,12 +43,23 @@ test('descarta las voces de broma de Apple aunque sean de Estados Unidos', () =>
 });
 
 test('entre voces de la misma región gana la del dispositivo por omisión, pero la región pesa más', () => {
-  const eddy = { lang: 'es-MX', name: 'Eddy', default: false };
+  const juan = { lang: 'es-MX', name: 'Juan', default: false };
   const paulina = { lang: 'es-MX', name: 'Paulina', default: true };
   const espanaPorOmision = { lang: 'es-ES', name: 'Mónica', default: true };
 
-  expect(elegirVoz([eddy, paulina], 'es')).toBe(paulina);
-  expect(elegirVoz([espanaPorOmision, eddy], 'es')).toBe(eddy);
+  expect(elegirVoz([juan, paulina], 'es')).toBe(paulina);
+  expect(elegirVoz([espanaPorOmision, juan], 'es')).toBe(juan);
+});
+
+test('una voz natural gana a una robótica de Apple de la misma región, aunque esa sea la de por omisión', () => {
+  const eddy = { lang: 'es-MX', name: 'Eddy (Spanish (Mexico))', default: true };
+  const grandma = { lang: 'es-MX', name: 'Grandma (Spanish (Mexico))', default: false };
+  const paulina = { lang: 'es_MX', name: 'Paulina', default: false };
+  const espana = { lang: 'es-ES', name: 'Mónica', default: false };
+
+  expect(elegirVoz([eddy, grandma, paulina], 'es')).toBe(paulina);
+  // La región sigue pesando más: una robótica de México gana a una natural de España.
+  expect(elegirVoz([espana, eddy], 'es')).toBe(eddy);
 });
 
 test('la etiqueta de idioma de una voz de Android se escribe con guion', () => {
