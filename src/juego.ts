@@ -25,9 +25,15 @@ export interface OpcionesDeVoz {
   readonly clave?: string;
   /**
    * Tono y velocidad de la voz sintetizada, de 0.5 a 2 (1 = normal), como la `voz` de `meta.personajes`.
-   * Sirve para que el host diga algo con la voz de un personaje.
+   * Si también llega `quien`, gana `voz`.
    */
   readonly voz?: { readonly tono?: number; readonly velocidad?: number };
+  /**
+   * Id de un personaje del nivel actual: la frase suena con su voz de `meta.personajes.<id>.voz`, como sus líneas.
+   * Así el host no tiene que copiar la tabla de voces. Si el nivel no tiene ese personaje, se avisa en la consola
+   * (una vez por nivel) y se usa la voz normal. Si también llega `voz`, gana `voz`.
+   */
+  readonly quien?: string;
 }
 
 /** Una palabra de vocabulario, en inglés y en español. */
@@ -207,10 +213,12 @@ export interface Juego {
    * ni lo corta. Se oye aunque el juego esté en pausa. Una frase nueva de `juego.decir` corta la anterior.
    * La promesa termina cuando acaba de hablar (o cuando la corta otra, o al destruir el juego) y rechaza con
    * `ErrorDeEscenario` solo si los argumentos no sirven.
+   * Una `clave` que el nivel no tiene se avisa en la consola una sola vez por nivel.
    *
    * @example
    * await juego.decir('maíz', { idioma: 'es' });
-   * await juego.decir('corn', { idioma: 'en', clave: 'vo_bobby_corn', voz: { tono: 1.3 } });
+   * await juego.decir('corn', { idioma: 'en', clave: 'vo_bobby_corn', quien: 'bobby' });
+   * await juego.decir('corn', { idioma: 'en', voz: { tono: 1.3 } });
    */
   decir(texto: string, opciones: OpcionesDeVoz): Promise<void>;
   /** Modo salón de clases. Se puede cambiar sin reiniciar. */

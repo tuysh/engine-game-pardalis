@@ -28,6 +28,7 @@ import type { Reparto } from './reparto.ts';
 import { SalidaDelNivel } from './salida-del-nivel.ts';
 import { SenalesDePendientes } from './senales-de-pendientes.ts';
 import { VisibilidadDelDecorado } from './visibilidad-del-decorado.ts';
+import { VocesDelNivel } from './voces-del-nivel.ts';
 
 /** Un nivel con todas sus piezas ya creadas y conectadas entre sí, listo para ponerse en marcha. */
 export interface NivelArmado {
@@ -51,6 +52,8 @@ export interface NivelArmado {
   readonly visibilidad: VisibilidadDelDecorado;
   /** Las estrellitas sobre lo que todavía está pendiente (`senal` de un NPC o interactivo). */
   readonly senales: SenalesDePendientes;
+  /** Las voces que piden los minijuegos y el host, con sus avisos de lo que falta (una vez por nivel). */
+  readonly voces: VocesDelNivel;
 }
 
 /** Lo que casi todas las piezas de un nivel necesitan para crearse. */
@@ -116,6 +119,7 @@ export async function armarNivel(
     cercania: new Cercania({ nivel, reparto, escenario, interfaz, acompanante, estado }),
     visibilidad,
     senales: new SenalesDePendientes({ nivel, estado, reparto, escenario, interfaz }),
+    voces: escena.voces,
   };
 }
 
@@ -139,6 +143,11 @@ function crearPiezasDeEscena(base: BaseDelNivel): PiezasDeEscena {
     estado: base.estado,
     minijuegos: pedido.minijuegos,
     direccionDeAsset: (clave) => buscarDireccionDeAsset(clave, nivel.assets, pedido.ubicacion),
+    // Una por nivel: así los avisos de lo que falta salen una vez en cada nivel (voces-del-nivel.ts).
+    voces: new VocesDelNivel({
+      personajes: nivel.contenido.meta.personajes,
+      direccionDeAsset: (clave) => buscarDireccionDeAsset(clave, nivel.assets, pedido.ubicacion),
+    }),
     cuadrosDeAsset: (clave) => buscarCuadrosDeAsset(clave, nivel.assets, pedido.ubicacion),
     imagenDeAsset: (clave) => crearImagenDeEscena(clave, nivel, pedido.ubicacion),
     alVerPalabra: (palabra) => avisos.alVerPalabra(palabra),

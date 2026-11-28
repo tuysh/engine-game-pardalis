@@ -16,6 +16,7 @@ import type { Reloj } from '../puertos/reloj.ts';
 import type { EstadoEnJuego } from './estado-en-juego.ts';
 import type { CierreDeMinijuego } from './jugar-minijuego.ts';
 import type { Reparto } from './reparto.ts';
+import type { VocesDelNivel } from './voces-del-nivel.ts';
 
 export interface PiezasDeEscena {
   readonly contenido: Contenido;
@@ -52,6 +53,8 @@ export interface PiezasDeEscena {
   readonly minijuegos: Readonly<Record<string, Minijuego>>;
   /** La dirección completa de un asset por su clave, o `undefined` si el nivel no lo tiene (una voz sin grabar). */
   readonly direccionDeAsset: (clave: string) => string | undefined;
+  /** Las voces que piden los minijuegos: la grabada de una clave y la de cada personaje, con sus avisos. */
+  readonly voces: VocesDelNivel;
   /** Los cuadros de una imagen o animación por su clave, para los minijuegos; `undefined` si no es una imagen. */
   readonly cuadrosDeAsset: (clave: string) => CuadrosDeAsset | undefined;
   /** La imagen (o la animación) de una clave de assets, lista para dibujarse. La validación garantiza que existe. */

@@ -34,7 +34,10 @@ export interface AudioParaMinijuego {
   tocarTono(frecuenciaEnHertz: number, duracionEnSegundos: number): void;
   /**
    * Dice un texto en voz alta. Si `clave` nombra una voz grabada se usa esa;
-   * si no, se usa la voz sintetizada del navegador.
+   * si no, se usa la voz sintetizada del navegador (y se avisa en la consola, una vez por nivel y clave).
+   * `quien` es el id de un personaje del nivel: la voz sintetizada suena con su tono y su velocidad
+   * (`meta.personajes.<id>.voz`), igual que sus líneas. Sin `quien`, o con un id que el nivel no tiene
+   * (se avisa una vez), suena la voz normal. Para dar `quien` sin voz grabada, `clave` va en `undefined`.
    *
    * La promesa termina cuando acaba de hablar, así que dos frases se encadenan con `await`.
    * Solo se dice una frase a la vez: llamar a `decir` mientras otra suena **la corta** (y la promesa de la
@@ -42,9 +45,10 @@ export interface AudioParaMinijuego {
    *
    * @example
    * await audio.decir('¡Lechuga!', 'es');
-   * await audio.decir('lettuce!', 'en');
+   * await audio.decir('lettuce!', 'en', 'vo_bobby_lettuce', 'bobby');
+   * await audio.decir('¡Muy bien!', 'es', undefined, 'tortu');
    */
-  decir(texto: string, idioma: Idioma, clave?: string): Promise<void>;
+  decir(texto: string, idioma: Idioma, clave?: string, quien?: string): Promise<void>;
 }
 
 /** Los cuadros de una imagen del manifiesto, con su ritmo. */

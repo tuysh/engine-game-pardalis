@@ -13,6 +13,7 @@ import { decirLinea } from './decir-linea.ts';
 import { EstadoEnJuego } from './estado-en-juego.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { Reparto } from './reparto.ts';
+import { VocesDelNivel } from './voces-del-nivel.ts';
 import { VozEnOrden } from './voz-en-orden.ts';
 
 const CONTENIDO: Contenido = {
@@ -64,6 +65,7 @@ async function crearEscena() {
     minijuegos: {},
     direccionDeAsset: (clave) => (clave === 'vo_tortu_hola' ? '/voz/vo_tortu_hola.mp3' : undefined),
     cuadrosDeAsset: () => undefined,
+    voces: new VocesDelNivel({ personajes: {}, direccionDeAsset: () => undefined }),
     azar: () => 0,
     imagenDeAsset: (clave) => ({
       direcciones: [`/img/${clave}.svg`],

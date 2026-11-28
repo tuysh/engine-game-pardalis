@@ -9,6 +9,9 @@
 // - Del host se dice una frase a la vez: una frase nueva corta la anterior del host (no las del juego).
 // - La promesa termina cuando acaba de hablar, cuando la corta otra frase del host o cuando se destruye
 //   el juego. Rechaza solo si el host la llamó mal, con un `ErrorDeEscenario` que nombra `juego.decir`.
+// - Con `quien`, la frase suena con la voz de ese personaje del nivel (`meta.personajes.<id>.voz`). Si además
+//   llega `voz`, gana `voz`: es lo más concreto que pidió el host. Un id que el nivel no tiene no es un error
+//   (el host puede pasar de un nivel a otro con la misma tabla): se avisa una vez y se usa la voz normal.
 
 import { TONO_MAXIMO, TONO_MINIMO, VELOCIDAD_MAXIMA, VELOCIDAD_MINIMA, VOZ_NORMAL } from '../dominio/ajustes-de-voz.ts';
 import type { AjustesDeVoz } from '../dominio/ajustes-de-voz.ts';
@@ -17,6 +20,7 @@ import { ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
 import { esObjetoPlano } from '../dominio/es-objeto-plano.ts';
 import type { Idioma } from '../dominio/idioma.ts';
 import type { FrasePorDecir } from '../puertos/audio.ts';
+import type { VocesDelNivel } from './voces-del-nivel.ts';
 import type { VozEnOrden } from './voz-en-orden.ts';
 
 /** Lo que el host puede pedir al decir algo. */
@@ -27,14 +31,19 @@ export interface OpcionesParaDecir {
   readonly clave?: string;
   /** Tono y velocidad de la voz sintetizada, como en `meta.personajes` (docs/NIVELES.md). `undefined` = normal. */
   readonly voz?: { readonly tono?: number; readonly velocidad?: number };
+  /** Id de un personaje del nivel actual: se usa su voz de `meta.personajes`. Si también llega `voz`, gana `voz`. */
+  readonly quien?: string;
 }
 
 /** Lo que la voz del host necesita del motor. */
 export interface PiezasDeLaVozDelHost {
   /** La fila de voces: también pone el tope de tiempo si la voz del dispositivo nunca avisa que terminó. */
   readonly voz: Pick<VozEnOrden, 'decirDelHost'>;
-  /** Dirección de un asset del nivel actual. `undefined` = no está. */
-  readonly direccionDeAsset: (clave: string) => string | undefined;
+  /**
+   * Las voces del nivel actual: la grabada de una clave y la de cada personaje.
+   * `undefined` = no hay un nivel en juego (mientras se pasa de uno a otro).
+   */
+  readonly vocesDelNivel: () => VocesDelNivel | undefined;
 }
 
 /** Lo que hay detrás de `juego.decir()`: revisa lo que pide el host y lo pone en la fila de voces. */
@@ -99,22 +108,42 @@ export class VozDelHost {
     if (clave !== undefined && typeof clave !== 'string') {
       problemas.push(`juego.decir("${texto}"): clave debe ser la clave de un asset; llegó ${describirValor(clave)}`);
     }
+    const quien = opciones['quien'];
+    if (quien !== undefined && typeof quien !== 'string') {
+      problemas.push(
+        `juego.decir("${texto}"): quien debe ser el id de un personaje del nivel; llegó ${describirValor(quien)}`,
+      );
+    }
     const voz = leerVoz(opciones['voz'], `juego.decir("${texto}")`, problemas);
     if (idioma === undefined || problemas.length > 0) {
       throw new ErrorDeEscenario(problemas);
     }
 
-    return { texto, idioma, voz, direccionDeLaVoz: this.buscarVozGrabada(clave) };
+    const voces = this.piezas.vocesDelNivel();
+    return {
+      texto,
+      idioma,
+      voz: elegirVoz(voz, quien, voces),
+      direccionDeLaVoz: buscarVozGrabada(clave, voces),
+    };
   }
+}
 
-  private buscarVozGrabada(clave: unknown): string | undefined {
-    if (typeof clave !== 'string') return undefined;
-    const direccion = this.piezas.direccionDeAsset(clave);
-    if (direccion === undefined) {
-      console.warn(`[escenario-engine] juego.decir: "${clave}" no está en los assets del nivel; se usa voz sintetizada`);
-    }
-    return direccion;
-  }
+/** La voz que pidió el host con `voz` o, si no la pidió, la del personaje `quien`. */
+function elegirVoz(
+  voz: AjustesDeVoz | undefined,
+  quien: unknown,
+  voces: VocesDelNivel | undefined,
+): AjustesDeVoz | undefined {
+  if (voz !== undefined) return voz;
+  if (typeof quien !== 'string' || voces === undefined) return undefined;
+  return voces.vozDe(quien, 'juego.decir');
+}
+
+/** La dirección de la voz grabada `clave`. Entre un nivel y otro no hay assets: se usa la voz sintetizada. */
+function buscarVozGrabada(clave: unknown, voces: VocesDelNivel | undefined): string | undefined {
+  if (typeof clave !== 'string' || voces === undefined) return undefined;
+  return voces.direccionDeVoz(clave, 'juego.decir');
 }
 
 function leerIdioma(idioma: unknown): Idioma | undefined {

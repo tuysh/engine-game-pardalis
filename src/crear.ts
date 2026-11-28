@@ -72,7 +72,7 @@ export async function crearEscenario(elemento: HTMLElement, opcionesDelHost: Opc
   const dejarDeVigilarLaPagina = pausarAlOcultarLaPagina(opciones, pausa);
   const vozDelHost = new VozDelHost({
     voz,
-    direccionDeAsset: (clave) => juegoEnCurso.direccionDeAsset(clave),
+    vocesDelNivel: () => juegoEnCurso.vocesDelNivel(),
   });
   const volumen = new VolumenDelJuego(voz);
   const juego = new JuegoCreado({ juegoEnCurso, emisor, pausa, adaptadores, voz, vozDelHost, volumen, dejarDeVigilarLaPagina });

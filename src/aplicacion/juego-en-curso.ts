@@ -23,6 +23,7 @@ import { leerNivelPorJugar } from './leer-nivel-por-jugar.ts';
 import type { NivelPorJugar } from './leer-nivel-por-jugar.ts';
 import type { AvisosDelNivel, NivelEnJuego } from './nivel-en-juego.ts';
 import { PartidaEnCurso } from './partida-en-curso.ts';
+import type { VocesDelNivel } from './voces-del-nivel.ts';
 import type { PiezasDelJuegoEnCurso } from './piezas-del-juego-en-curso.ts';
 
 /** Lo que tarda la pantalla en cerrarse a negro cuando un nivel sale hacia otro. */
@@ -143,12 +144,12 @@ export class JuegoEnCurso {
   }
 
   /**
-   * Dirección completa de un asset del nivel que se está jugando. `undefined` = el nivel no tiene esa clave,
-   * o no hay un nivel en juego (mientras se pasa de uno a otro).
+   * Las voces del nivel que se está jugando (voces-del-nivel.ts). Cada nivel trae las suyas, así que sus avisos
+   * vuelven a salir al cambiar de nivel. `undefined` = no hay un nivel en juego (mientras se pasa de uno a otro).
    */
-  direccionDeAsset(clave: string): string | undefined {
+  vocesDelNivel(): VocesDelNivel | undefined {
     if (this.nivelActual === undefined) return undefined;
-    return this.nivelActual.enJuego.direccionDeAsset(clave);
+    return this.nivelActual.enJuego.voces;
   }
 
   /** Salta la cinemática o cierra el diálogo en curso. */

@@ -3,6 +3,7 @@
 //
 // El minijuego es código del host: todo lo que pide se revisa, y nada de lo que pide puede fallar con un error.
 
+import type { AjustesDeVoz } from '../dominio/ajustes-de-voz.ts';
 import { cumpleCondicion, leerCondicionDeTexto } from '../dominio/condicion.ts';
 import { valorDe } from '../dominio/estado.ts';
 import { esObjetoPlano } from '../dominio/es-objeto-plano.ts';
@@ -100,7 +101,7 @@ function crearAudio(senalDelMinijuego: AbortSignal, piezas: PiezasDeEscena): Aud
   // Solo se dice una frase a la vez: una frase nueva corta la que estuviera sonando.
   let cortarLaFraseAnterior = (): void => {};
 
-  async function decir(texto: string, idioma: Idioma, clave?: string): Promise<void> {
+  async function decir(texto: string, idioma: Idioma, clave?: string, quien?: string): Promise<void> {
     cortarLaFraseAnterior();
     if (senalDelMinijuego.aborted) return;
 
@@ -112,13 +113,11 @@ function crearAudio(senalDelMinijuego: AbortSignal, piezas: PiezasDeEscena): Aud
     cortarLaFraseAnterior = cortar;
     senalDelMinijuego.addEventListener('abort', cortar, { once: true });
 
-    let direccionDeLaVoz: string | undefined;
-    if (clave !== undefined) {
-      direccionDeLaVoz = piezas.direccionDeAsset(clave);
-    }
+    const direccionDeLaVoz = buscarVozGrabada(clave, piezas);
+    const voz = buscarVozDelPersonaje(quien, piezas);
     try {
       // En el juego, `piezas.audio` es la fila de voces (voz-en-orden.ts): espera su turno y pone el tope de tiempo.
-      await piezas.audio.decir({ texto, idioma, direccionDeLaVoz }, corte.signal);
+      await piezas.audio.decir({ texto, idioma, direccionDeLaVoz, voz }, corte.signal);
     } finally {
       senalDelMinijuego.removeEventListener('abort', cortar);
     }
@@ -143,6 +142,27 @@ function crearAudio(senalDelMinijuego: AbortSignal, piezas: PiezasDeEscena): Aud
     },
     decir,
   };
+}
+
+/** La dirección de la voz grabada que pidió el minijuego. `undefined` = la dice la voz sintetizada. */
+function buscarVozGrabada(clave: unknown, piezas: PiezasDeEscena): string | undefined {
+  if (clave === undefined) return undefined;
+  // El minijuego puede estar escrito en JavaScript sin tipos: lo que no es texto se ignora, no se rompe.
+  if (typeof clave !== 'string') {
+    console.warn('[escenario-engine] contexto.audio.decir: la clave de la voz no es un texto; se usa voz sintetizada');
+    return undefined;
+  }
+  return piezas.voces.direccionDeVoz(clave, 'contexto.audio.decir');
+}
+
+/** El tono y la velocidad del personaje que pidió el minijuego. `undefined` = la voz normal. */
+function buscarVozDelPersonaje(quien: unknown, piezas: PiezasDeEscena): AjustesDeVoz | undefined {
+  if (quien === undefined) return undefined;
+  if (typeof quien !== 'string') {
+    console.warn('[escenario-engine] contexto.audio.decir: quien no es el id de un personaje; se usa la voz normal');
+    return undefined;
+  }
+  return piezas.voces.vozDe(quien, 'contexto.audio.decir');
 }
 
 /**

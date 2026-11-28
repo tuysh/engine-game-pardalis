@@ -11,6 +11,7 @@ import { elegirOpcion } from './elegir-opcion.ts';
 import { EstadoEnJuego } from './estado-en-juego.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { Reparto } from './reparto.ts';
+import { VocesDelNivel } from './voces-del-nivel.ts';
 
 const OPCIONES: Opcion[] = [
   { imagen: 'img_rosa', texto: 'El rosa', audio: 'vo_rosa', alElegir: { tipo: 'pasos', pasos: [] } },
@@ -46,6 +47,7 @@ function crearEscena() {
     minijuegos: {},
     direccionDeAsset: (clave) => `/assets/${clave}`,
     cuadrosDeAsset: () => undefined,
+    voces: new VocesDelNivel({ personajes: {}, direccionDeAsset: () => undefined }),
     azar: () => 0,
     imagenDeAsset: (clave) => ({
       direcciones: [`/img/${clave}.svg`],

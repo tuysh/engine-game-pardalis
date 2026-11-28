@@ -17,6 +17,7 @@ import type { PanelDeDepuracion } from '../puertos/panel-de-depuracion.ts';
 import type { Reloj } from '../puertos/reloj.ts';
 import type { Video } from '../puertos/video.ts';
 import type { UbicacionDeAssets } from './direccion-de-asset.ts';
+import type { VocesDelNivel } from './voces-del-nivel.ts';
 import type { DialogoDelNivel } from './conversacion.ts';
 import type { FundidoDePantalla } from './fundido-de-pantalla.ts';
 import type { CierreDeMinijuego } from './jugar-minijuego.ts';
@@ -107,8 +108,8 @@ export interface NivelEnJuego {
    * y rechaza con `ErrorDeEscenario` si el nivel no tiene una con ese id.
    */
   reproducirCinematica(id: string): Promise<void>;
-  /** Dirección completa de un asset del manifiesto del nivel. `undefined` = el nivel no tiene esa clave. */
-  direccionDeAsset(clave: string): string | undefined;
+  /** Las voces del nivel: con ellas `juego.decir` usa la voz grabada o la de un personaje. */
+  readonly voces: VocesDelNivel;
   /** Deja de atender toques y de dibujar, y termina lo que esté en curso. No destruye el escenario. */
   terminar(): void;
 }

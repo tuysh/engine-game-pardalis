@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test';
+import { expect, spyOn, test } from 'bun:test';
 import { crearMapaDeCaminos } from '../dominio/rejilla-de-caminos.ts';
 import { AudioDeMemoria } from '../adaptadores/memoria/audio-de-memoria.ts';
 import { EscenarioDeMemoria } from '../adaptadores/memoria/escenario-de-memoria.ts';
@@ -12,6 +12,7 @@ import { jugarMinijuego } from './jugar-minijuego.ts';
 import type { CierreDeMinijuego } from './jugar-minijuego.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { Reparto } from './reparto.ts';
+import { VocesDelNivel } from './voces-del-nivel.ts';
 import { VozEnOrden } from './voz-en-orden.ts';
 
 /** Una escena con adaptadores falsos donde el host registró esos minijuegos. El jugador ya tiene un globo. */
@@ -49,6 +50,10 @@ function crearEscena(minijuegos: Record<string, Minijuego>) {
     }),
     minijuegos,
     direccionDeAsset: (clave) => (clave === 'comal' ? '/assets/img/comal.svg' : undefined),
+    voces: new VocesDelNivel({
+      personajes: { tortu: { idioma: 'es', sprite: 'spr_tortu', voz: { tono: 1.4, velocidad: 0.9 } } },
+      direccionDeAsset: (clave) => (clave === 'vo_tortu_bien' ? '/assets/voz/vo_tortu_bien.mp3' : undefined),
+    }),
     cuadrosDeAsset: (clave) => {
       if (clave === 'comal') return { urls: ['/assets/img/comal.svg'], cuadrosPorSegundo: 0 };
       // Parpadea con dos dibujos: tres cuadros con los ojos abiertos y uno cerrados, a 4 por segundo.
@@ -250,6 +255,54 @@ test('decir termina cuando la voz acaba: dos frases se encadenan con await', asy
   audio.terminarDeHablar();
 
   expect(await juego).toEqual({ exito: true });
+});
+
+test('con quien, el minijuego dice la frase con la voz de ese personaje y su voz grabada', async () => {
+  const Tortilleria: Minijuego = async ({ audio }) => {
+    void audio.decir('¡Muy bien!', 'es', 'vo_tortu_bien', 'tortu');
+    return { exito: true };
+  };
+  const { piezas, audio } = crearEscena({ Tortilleria });
+
+  await jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+
+  expect(audio.frasesDichas).toEqual([
+    {
+      texto: '¡Muy bien!',
+      idioma: 'es',
+      direccionDeLaVoz: '/assets/voz/vo_tortu_bien.mp3',
+      voz: { tono: 1.4, velocidad: 0.9 },
+    },
+  ]);
+});
+
+test('lo que falta para decir algo en un minijuego se avisa una vez y nunca lanza un error', async () => {
+  const avisos: string[] = [];
+  const espia = spyOn(console, 'warn').mockImplementation((aviso: unknown) => {
+    avisos.push(String(aviso));
+  });
+  const Tortilleria: Minijuego = async ({ audio }) => {
+    for (let ronda = 0; ronda < 3; ronda++) {
+      void audio.decir('¡Otra vez!', 'es', 'vo_sin_grabar', 'pardi');
+    }
+    return { exito: true };
+  };
+  const { piezas, audio } = crearEscena({ Tortilleria });
+
+  let resultado: ResultadoDeMinijuego;
+  try {
+    resultado = await jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+  } finally {
+    espia.mockRestore();
+  }
+
+  expect(resultado).toEqual({ exito: true });
+  expect(audio.frasesDichas[0]).toEqual({ texto: '¡Otra vez!', idioma: 'es', direccionDeLaVoz: undefined });
+  expect(avisos).toEqual([
+    '[escenario-engine] contexto.audio.decir: "vo_sin_grabar" no está en los assets del nivel; se usa voz sintetizada',
+    '[escenario-engine] contexto.audio.decir: "pardi" no es un personaje del nivel (meta.personajes); ' +
+      'se usa la voz normal',
+  ]);
 });
 
 test('una frase nueva corta la que estaba sonando, y la promesa de la que se cortó termina', async () => {
