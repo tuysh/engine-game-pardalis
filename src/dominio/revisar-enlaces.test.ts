@@ -337,6 +337,27 @@ test('una comparación sin número a la derecha explica cómo se escribe', () =>
   ]);
 });
 
+test('una igualdad de texto que nunca podría cumplirse explica cómo se escribe', () => {
+  const diagnostico = revisarPasosDeTortu([
+    { tipo: 'condicional', condicion: leerCondicionDeTexto("globo = 'rosa'"), pasos: [] },
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('globo = true'), pasos: [] },
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('tortillas = muchas'), pasos: [] },
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('charlas.tortu = hola'), pasos: [] },
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('globo = rosa'), pasos: [] },
+  ]);
+
+  expect(diagnostico.errores).toEqual([
+    `condición "globo = 'rosa'" usada en npcs.tortu.dialogo[0].dice[0]: el texto de la derecha va sin comillas, ` +
+      'como "premio = pizarron"',
+    'condición "globo = true" usada en npcs.tortu.dialogo[0].dice[1]: para preguntar si "globo" ya tiene valor ' +
+      'se escribe "tengo globo" o "no globo"',
+    'condición "tortillas = muchas" usada en npcs.tortu.dialogo[0].dice[2]: "tortillas" solo guarda si ya pasó, ' +
+      'nunca un texto; se pregunta con "tengo tortillas"',
+    'condición "charlas.tortu = hola" usada en npcs.tortu.dialogo[0].dice[3]: "charlas.tortu" solo guarda si ya ' +
+      'pasó, nunca un texto; se pregunta con "tengo charlas.tortu"',
+  ]);
+});
+
 test('la variable de una igualdad de texto debe estar declarada', () => {
   const diagnostico = revisarPasosDeTortu([
     { tipo: 'condicional', condicion: leerCondicionDeTexto('globo = rosa'), pasos: [] },

@@ -107,9 +107,9 @@ function leerComparacion(texto: string): Condicion {
   if (EXPRESION_DE_NUMERO.test(derecha)) {
     return { tipo: 'comparacion', nombre, operador, numero: Number(derecha) };
   }
-  // Un signo pegado a la derecha ("premio == globo", "dinero => 3") es un error de dedo, no un texto.
-  const empiezaConOtroSigno = SIGNOS_DE_COMPARACION.includes(derecha.charAt(0));
-  if (operador === '=' && !empiezaConOtroSigno) {
+  // Otro signo en la derecha ("premio == globo", "dinero => 3", "a = b = c") es un error de dedo, no un texto.
+  const llevaOtroSigno = SIGNOS_DE_COMPARACION.some((signo) => derecha.includes(signo));
+  if (operador === '=' && !llevaOtroSigno) {
     return { tipo: 'textoIgual', nombre, texto: derecha };
   }
   return { tipo: 'variable', nombre: texto };
@@ -149,6 +149,31 @@ function cumpleComparacion(condicion: CondicionDeComparacion, estado: EstadoDeNi
       return numeroDeLaVariable < condicion.numero;
     case '=':
       return numeroDeLaVariable === condicion.numero;
+  }
+}
+
+/**
+ * Las igualdades de texto (`premio = pizarron`) que hay dentro de una condición, en orden.
+ * Sirve para revisar que el texto de la derecha esté bien escrito.
+ */
+export function igualdadesDeTextoEn(condicion: Condicion): CondicionDeTextoIgual[] {
+  switch (condicion.tipo) {
+    case 'textoIgual':
+      return [condicion];
+    case 'variable':
+    case 'comparacion':
+    case 'objetivosCompletos':
+      return [];
+    case 'no':
+      return igualdadesDeTextoEn(condicion.condicion);
+    case 'todas':
+    case 'alguna': {
+      const igualdades: CondicionDeTextoIgual[] = [];
+      for (const parte of condicion.condiciones) {
+        igualdades.push(...igualdadesDeTextoEn(parte));
+      }
+      return igualdades;
+    }
   }
 }
 

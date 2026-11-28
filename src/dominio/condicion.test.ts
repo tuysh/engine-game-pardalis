@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { cumpleCondicion, leerCondicionDeTexto, variablesQueUsa } from './condicion.ts';
+import { cumpleCondicion, igualdadesDeTextoEn, leerCondicionDeTexto, variablesQueUsa } from './condicion.ts';
 import type { Condicion } from './condicion.ts';
 import { conCambios, crearEstadoDeNivel } from './estado.ts';
 
@@ -152,6 +152,22 @@ test('con un número a la derecha, "=" sigue comparando números aunque se escri
 test('un texto a la derecha de >=, <=, > o < no es una comparación: queda como un nombre para que la validación avise', () => {
   expect(leerCondicionDeTexto('globo >= mucho')).toEqual({ tipo: 'variable', nombre: 'globo >= mucho' });
   expect(leerCondicionDeTexto('premio == globo')).toEqual({ tipo: 'variable', nombre: 'premio == globo' });
+  expect(leerCondicionDeTexto('premio = globo = rosa')).toEqual({ tipo: 'variable', nombre: 'premio = globo = rosa' });
+});
+
+test('encuentra las igualdades de texto dentro de "no", "todas" y "alguna"', () => {
+  const condicion: Condicion = {
+    tipo: 'alguna',
+    condiciones: [
+      leerCondicionDeTexto('no premio = globo'),
+      { tipo: 'todas', condiciones: [leerCondicionDeTexto('dinero >= 10'), leerCondicionDeTexto('salsa = verde')] },
+    ],
+  };
+
+  expect(igualdadesDeTextoEn(condicion)).toEqual([
+    { tipo: 'textoIgual', nombre: 'premio', texto: 'globo' },
+    { tipo: 'textoIgual', nombre: 'salsa', texto: 'verde' },
+  ]);
 });
 
 test('una igualdad de texto usa la variable que nombra', () => {

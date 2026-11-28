@@ -311,6 +311,8 @@ y el motor elige.
   `tu`, `su`). Con dos o más, o con un nombre plural (`los`, `las`, `unos`, `unas`, `mis`, `tus`, `sus`), «faltan».
 - Si un nivel usa `{falta_o_faltan}` y el nombre de algún objetivo no empieza con una de esas palabras
   (`"pan"`, o un objetivo que no está en `lista`), hay **advertencia**: en ese caso dirá «faltan».
+- `{falta_o_faltan}` siempre se escribe en minúsculas: ponlo después de otra palabra («Te», «Nos», «Todavía»),
+  no al empezar la frase.
 - Cuando ya no falta nada, `{faltan}` queda vacío y `{falta_o_faltan}` dice «faltan»: esa línea va dentro de
   `{ "cuando": "no objetivosCompletos", ... }`.
 
@@ -446,6 +448,9 @@ o el `otorgar` de un minijuego. Para preguntar cuál es, se compara con `=`:
 - Una variable sin valor, o con un número, no es igual a ningún texto. Para «cualquier premio» basta `"tengo premio"`,
   y para «cualquiera menos este», `"no premio = pizarron"`.
 - `>=`, `<=`, `>` y `<` solo van con números: `"premio > globo"` es error.
+- También es error lo que nunca se cumpliría: el texto entre comillas (`"premio = 'pizarron'"`), preguntar por
+  sí o no (`"premio = true"`: se escribe `"tengo premio"`) y comparar un objetivo, `charlas.<id>` o `vista.<id>`
+  con un texto, porque solo guardan si ya pasó.
 
 ### `alVolver` (después de un minijuego)
 
