@@ -516,7 +516,9 @@ El jugador se mueve de dos formas, que conviven:
   no se puede alcanzar, llega lo más cerca que se pueda. Tocar a un personaje o a un objeto interactivo lo lleva
   junto a él y empieza su diálogo.
 - **Teclado:** mantener oprimida `W` `A` `S` `D` o una flecha lo hace caminar hacia ese lado. El teclado manda
-  sobre el lugar tocado. Durante un diálogo o un minijuego no mueve al jugador.
+  sobre el lugar tocado. Durante un diálogo o un minijuego no mueve al jugador. Contra lo que estorba, el jugador
+  se desliza por su orilla; si va de frente contra algo y a menos de medio metro de lado puede librarlo (un
+  arbusto, una maceta), lo rodea por el lado más cercano en vez de quedarse pegado.
 
 En los diálogos, `Enter` o la barra espaciadora siguen la línea, y las teclas `1` a `9` eligen una opción.
 

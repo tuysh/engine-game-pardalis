@@ -590,7 +590,7 @@ Y los de las cinemáticas y los pasos de escena:
 
 | Para… | Con dedo o ratón | Con teclado |
 | --- | --- | --- |
-| Caminar | Tocar un lugar del piso | Mantener oprimida `W` `A` `S` `D` o una flecha |
+| Caminar | Tocar un lugar del piso | Mantener oprimida `W` `A` `S` `D` o una flecha (rodea lo pequeño que estorba) |
 | Hablar con alguien o usar un objeto | Tocarlo: el jugador camina hasta ahí | — |
 | Hablar con quien se tiene a la mano | — | `E`, `Enter` o la barra espaciadora |
 | Seguir un diálogo | Tocar la pantalla | `Enter` o la barra espaciadora |
