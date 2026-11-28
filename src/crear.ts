@@ -8,6 +8,7 @@ import { InterfazDelNavegador } from './adaptadores/dom/interfaz-del-navegador.t
 import { leerSiSePrefiereMenosMovimiento } from './adaptadores/dom/preferencia-de-movimiento.ts';
 import { RelojDelNavegador } from './adaptadores/dom/reloj-del-navegador.ts';
 import { VideoDelNavegador } from './adaptadores/dom/video-del-navegador.ts';
+import { vigilarLaVisibilidadDeLaPagina } from './adaptadores/dom/visibilidad-de-la-pagina.ts';
 import { LectorDeNivelesDeJson } from './adaptadores/json/lector-de-niveles-de-json.ts';
 import { CargadorDeRed } from './adaptadores/red/cargador-de-red.ts';
 import { EscenarioDeThree } from './adaptadores/three/escenario-de-three.ts';
@@ -62,7 +63,8 @@ export async function crearEscenario(elemento: HTMLElement, opcionesDelHost: Opc
   const emisor = new EmisorDeEventos();
   const pausa = new PausaDelJuego(adaptadores.reloj, [adaptadores.audio, adaptadores.video]);
   const juegoEnCurso = crearJuegoEnCurso(opciones, { adaptadores, emisor, pausa, cargador, fuente, partidaInicial });
-  const juego = new JuegoCreado({ juegoEnCurso, emisor, pausa, adaptadores });
+  const dejarDeVigilarLaPagina = pausarAlOcultarLaPagina(opciones, pausa);
+  const juego = new JuegoCreado({ juegoEnCurso, emisor, pausa, adaptadores, dejarDeVigilarLaPagina });
 
   try {
     await empezarElPrimerNivel(primerNivel, opciones, { juego, juegoEnCurso, pausa, adaptadores });
@@ -72,6 +74,20 @@ export async function crearEscenario(elemento: HTMLElement, opcionesDelHost: Opc
     throw error;
   }
   return juego;
+}
+
+/**
+ * Con `pausarAlOcultar` (por defecto, sí), el juego se detiene mientras la página no se ve.
+ * Devuelve la función que deja de vigilarla; sin la opción, una que no hace nada.
+ */
+function pausarAlOcultarLaPagina(opciones: OpcionesDeEscenario, pausa: PausaDelJuego): () => void {
+  if (opciones.pausarAlOcultar === false) {
+    return () => {};
+  }
+  return vigilarLaVisibilidadDeLaPagina({
+    alOcultarse: () => pausa.ocultarLaPagina(),
+    alMostrarse: () => pausa.mostrarLaPagina(),
+  });
 }
 
 /** Crea el panel de depuración dentro del elemento del juego. */

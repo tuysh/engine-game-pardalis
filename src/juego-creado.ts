@@ -36,6 +36,8 @@ export interface PiezasDelJuego {
   readonly emisor: EmisorDeEventos;
   readonly pausa: PausaDelJuego;
   readonly adaptadores: AdaptadoresDelJuego;
+  /** Deja de vigilar si la página se ve (la opción `pausarAlOcultar`). */
+  readonly dejarDeVigilarLaPagina: () => void;
 }
 
 export class JuegoCreado implements Juego {
@@ -109,6 +111,7 @@ export class JuegoCreado implements Juego {
     this.estaDestruido = true;
 
     const adaptadores = this.piezas.adaptadores;
+    this.piezas.dejarDeVigilarLaPagina();
     this.piezas.juegoEnCurso.terminar();
     adaptadores.reloj.detener();
     adaptadores.controles.destruir();

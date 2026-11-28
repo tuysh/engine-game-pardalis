@@ -34,6 +34,7 @@ const OPCIONES_QUE_EXISTEN: Readonly<Record<keyof OpcionesDeEscenario, true>> = 
   idioma: true,
   iniciarCon: true,
   proyeccion: true,
+  pausarAlOcultar: true,
   alCargar: true,
   senal: true,
   depurar: true,
@@ -173,7 +174,7 @@ function revisarAjustes(opciones: Record<string, unknown>, errores: string[]): v
   if (semilla !== undefined && (typeof semilla !== 'number' || !Number.isFinite(semilla))) {
     anotar('semilla', 'un número');
   }
-  for (const opcion of ['proyeccion', 'depurar']) {
+  for (const opcion of ['proyeccion', 'pausarAlOcultar', 'depurar']) {
     if (opciones[opcion] !== undefined && typeof opciones[opcion] !== 'boolean') {
       anotar(opcion, 'true o false');
     }

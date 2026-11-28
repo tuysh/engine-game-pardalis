@@ -34,6 +34,12 @@ export interface OpcionesDeEscenario {
   /** Modo salón de clases: todo más grande. Por defecto `false`. */
   readonly proyeccion?: boolean;
   /**
+   * Pausa el juego (tiempo, audio y video) mientras la página no se ve: otra pestaña, la ventana minimizada,
+   * el teléfono bloqueado; y lo reanuda al volver. Nunca reanuda una pausa que el host pidió con
+   * `juego.pausar()`. Por defecto `true`; con `false`, el host decide qué hacer.
+   */
+  readonly pausarAlOcultar?: boolean;
+  /**
    * Avisa el avance de la carga de las imágenes de cada nivel (el primero y los que se carguen después),
    * para que el host dibuje su propia barra: una vez al empezar (0 de `total`) y otra por cada archivo.
    */

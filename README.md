@@ -98,7 +98,7 @@ pintarMonedero(juego.estado.obtener('dinero'));                            // y 
 juego.on('salida', (destino) => irA(destino));              // un destino que no es un nivel: decide el host
 juego.on('error', (error) => console.error(error.problemas));
 
-juego.pausar();                 // y juego.reanudar()
+juego.pausar();                 // y juego.reanudar(); al cambiar de pestaña se pausa solo (pausarAlOcultar)
 juego.proyeccion = true;        // modo salón de clases: todo más grande
 await juego.cargar('barrio');   // cambia de nivel en el mismo lienzo
 await juego.reproducir('intro');

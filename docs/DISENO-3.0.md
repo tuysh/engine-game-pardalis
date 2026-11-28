@@ -108,6 +108,7 @@ no ponerla (salvo `nivel`, que es obligatoria).
 | `idioma` | `'es' \| 'en'` | `'es'` | Idioma base de la interfaz. |
 | `iniciarCon` | `'boton' \| 'host'` | `'boton'` | Quién da el primer toque que desbloquea el audio. Ver §7.5. |
 | `proyeccion` | `boolean` | `false` | Modo salón de clases: todo más grande. |
+| `pausarAlOcultar` | `boolean` | `true` | Pausa juego, audio y video mientras la página no se ve (otra pestaña, ventana minimizada, teléfono bloqueado) y los reanuda al volver. Ver «Pausa al ocultar la página». |
 | `alCargar` | `({ cargados, total }) => void` | — | Progreso de carga de las imágenes de cada nivel, para que el host dibuje su propia barra. Avisa una vez al empezar (0 de `total`) y otra por cada archivo. |
 | `senal` | `AbortSignal` | — | Cancela la creación (por ejemplo, si el componente se desmonta mientras carga). |
 | `depurar` | `boolean` | `false` | Dibuja piso, huellas y zonas, y activa la cámara libre (§9.3). |
@@ -122,7 +123,7 @@ no ponerla (salvo `nivel`, que es obligatoria).
 | `cargar(nivel)` | Cambia de nivel reutilizando el mismo lienzo. `nivel` es un id de `niveles` o la dirección de un `nivel.json`. Promesa que se resuelve cuando ya se puede jugar y rechaza con `ErrorDeEscenario` si el nivel tiene errores o no cargó alguna de sus imágenes (entonces sigue el nivel que estaba). |
 | `reproducir(idDeCinematica)` | Lanza una cinemática del nivel actual, aunque ya se haya visto. Promesa que se resuelve al terminar. |
 | `interrumpir()` | Salta la cinemática o cierra el diálogo en curso. |
-| `pausar()` / `reanudar()` | Congela y reanuda juego, audio y video. |
+| `pausar()` / `reanudar()` | Congela y reanuda juego, audio y video. Volver a la página nunca deshace un `pausar()`. |
 | `proyeccion` | Propiedad booleana; se puede cambiar sin reiniciar. |
 | `nivel` | Id del nivel actual (solo lectura). |
 | `estado` | El estado del nivel actual, solo para leer: `estado.obtener('dinero')` y `estado.cumple('tengo maiz')`. Es el mismo lector que reciben los minijuegos. Mientras se carga un nivel, `obtener` entrega `undefined` y `cumple`, `false`. |
@@ -154,6 +155,20 @@ niña o el niño sí vio.
 
 Si una función que escucha un evento lanza un error, el motor lo muestra en la consola y sigue:
 un descuido del host no deja una cinemática o un diálogo a medias.
+
+### Pausa al ocultar la página
+
+Con `pausarAlOcultar` (activa si no se dice otra cosa), el motor escucha `visibilitychange` del documento:
+cuando la página deja de verse, el juego se detiene como con `pausar()`, y cuando se ve otra vez, sigue.
+Es una razón de pausa aparte de la del host, y ninguna deshace a la otra:
+
+- si el host pausó el juego (un menú abierto), volver a la página **no** lo reanuda: sigue en pausa hasta
+  `juego.reanudar()`;
+- si el host llama a `juego.reanudar()` con la página oculta, el juego sigue detenido hasta que la página
+  se vuelve a ver;
+- mientras se espera el botón de inicio (§7.5), volver a la página no echa a andar el tiempo.
+
+Con `pausarAlOcultar: false` el motor no escucha nada y el host decide qué hacer.
 
 ## 5. Niveles
 
