@@ -148,3 +148,21 @@ test('si quien acompaña todavía no entra al escenario, no pasa nada', async ()
 
   expect(reparto.posicionDe('bobby')).toEqual({ x: 1, y: 1 });
 });
+
+test('después de una escena sigue del lado donde lo dejaron los pasos, aunque el jugador se haya movido', async () => {
+  const { acompanante, reparto } = await crearAcompanante('bobby');
+  reparto.mover('tommy', { x: 1, y: 3.5 });
+  reparto.mover('bobby', { x: 0.5, y: 3.5 });
+  avanzarCuadros(acompanante, 1);
+
+  // Durante un diálogo los pasos llevan a Tommy hacia la derecha y a Bobby a su derecha, un poco al frente.
+  acompanante.detener();
+  reparto.mover('tommy', { x: 7, y: 3.3 });
+  reparto.mover('bobby', { x: 8.6, y: 3.5 });
+  avanzarCuadros(acompanante, 200);
+
+  // Al terminar no cruza al otro lado de Tommy: se queda a su derecha, un poco atrás.
+  const bobby = reparto.posicionDe('bobby')!;
+  expect(bobby.x).toBeGreaterThan(7);
+  expect(bobby.y).toBeLessThan(3.3);
+});

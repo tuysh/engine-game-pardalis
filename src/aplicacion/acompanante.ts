@@ -72,7 +72,6 @@ export class Acompanante {
   /** Cambia quién acompaña al jugador. Con `undefined`, ya nadie lo acompaña. */
   cambiar(idDelAcompanante: string | undefined): void {
     this.idDelAcompanante = idDelAcompanante;
-    this.lado = undefined;
     this.detener();
   }
 
@@ -81,6 +80,11 @@ export class Acompanante {
     this.estaCaminando = false;
     this.ruta = [];
     this.finDeLaRuta = undefined;
+    // Durante una escena los pasos mueven al jugador sin que esto lo vea: lo que se movió entonces no dice
+    // hacia dónde camina. El lado se vuelve a decidir por dónde quedó quien acompaña, para que no cruce
+    // al otro lado del jugador al terminar cada diálogo.
+    this.lado = undefined;
+    this.posicionAnteriorDelJugador = undefined;
   }
 
   /** Avanza lo que corresponde a un cuadro. `segundos` es el tiempo desde el cuadro anterior. */
