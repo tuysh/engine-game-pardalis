@@ -10,6 +10,7 @@
   "mundo": {
     "camara": { "distancia": 9, "altura": 3.6, "giro": 0 },
     "fondo": "#3b2a20",
+    "franjas": "delgadas",
     "planos": {
       "plano_tele": { "mira": "frente_tele", "distancia": 5.5, "altura": 2.2, "giro": 18 },
       "plano_sala": { "mira": "centro_sala", "distancia": 8, "altura": 3.2, "giro": 0 },
@@ -21,7 +22,6 @@
       "inicia": "alEntrar",
       "pasos": [
         { "camara": "plano_tele" },
-        { "anima": "tommy", "con": "tommy_viendo_tele", "repite": true },
         { "fundido": "abrir", "duracion": 1 },
         { "espera": 2 },
         {
@@ -37,6 +37,7 @@
         { "dice": "tommy", "texto": "Hmm… tortillas!", "trad": "Mmm… ¡tortillas!", "piensa": true },
         { "dice": "mama", "texto": "¿Me traes tortillas, mijo?", "audio": "vo_mama_tortillas" },
         { "mira": "tommy", "hacia": "mama" },
+        { "anima": "tele", "con": "tele_apagada", "repite": true },
         { "anima": "tommy", "con": "spr_tommy", "repite": true },
         { "dice": "tommy", "texto": "Yes, mom!", "trad": "¡Sí, mamá!", "audio": "vo_tommy_si" },
         { "fundido": "cerrar", "duracion": 0.8 },

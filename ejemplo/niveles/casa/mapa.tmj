@@ -156,6 +156,11 @@
        "name": "asset",
        "type": "string",
        "value": "tele"
+      },
+      {
+       "name": "id",
+       "type": "string",
+       "value": "tele"
       }
      ]
     },
@@ -228,6 +233,11 @@
        "name": "mira",
        "type": "string",
        "value": "izquierda"
+      },
+      {
+       "name": "anima",
+       "type": "string",
+       "value": "tommy_viendo_tele"
       }
      ]
     }

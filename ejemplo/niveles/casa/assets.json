@@ -33,6 +33,12 @@
     "ancho": 150,
     "alto": 170
   },
+  "tele_apagada": {
+    "tipo": "imagen",
+    "archivo": "img/tele_apagada.svg",
+    "ancho": 150,
+    "alto": 170
+  },
   "telon_pared": {
     "tipo": "imagen",
     "archivo": "img/telon_pared.svg",
