@@ -2,7 +2,8 @@
 // y, si la línea las trae, las poses de quien habla y de quienes escuchan (poses-de-linea.ts).
 //
 // Cómo termina una línea (lo primero que pase):
-//   - el jugador toca la pantalla (salvo en los comentarios, que no esperan toques);
+//   - el jugador toca la pantalla (salvo en los comentarios, que no esperan toques), pero solo cuando la línea
+//     ya lleva un momento a la vista: así un doble toque no se salta la línea que acaba de empezar;
 //   - la voz termina y pasa un momento;
 //   - el diálogo se interrumpe.
 //
@@ -18,6 +19,14 @@ const ESPERA_AL_TERMINAR_LA_VOZ_EN_SEGUNDOS = 0.7;
 /** Si el dispositivo no tiene voz, el globo se queda el tiempo que tomaría leerlo. */
 const SEGUNDOS_DE_LECTURA_POR_LETRA = 0.06;
 const SEGUNDOS_MINIMOS_DE_LECTURA = 1.5;
+
+/**
+ * Tiempo que una línea se queda a la vista antes de que un toque la cierre.
+ * Niñas y niños tocan dos veces muy seguido: el segundo toque llegaba justo cuando empezaba la línea siguiente
+ * y se la saltaba (la palabra en inglés de Bobby, la respuesta cariñosa al salir de un minijuego).
+ * Los toques que llegan antes no se pierden en el mapa: la capa de toque ya los atrapa, solo no cierran nada.
+ */
+const SEGUNDOS_ANTES_DE_ACEPTAR_UN_TOQUE = 0.5;
 
 /** Una línea lista para decirse. */
 export interface LineaPorDecir {
@@ -60,7 +69,7 @@ export async function decirLinea(porDecir: LineaPorDecir, senal: AbortSignal, pi
   senal.addEventListener('abort', cerrar, { once: true });
   let dejarDeEscucharToques = (): void => {};
   if (porDecir.seCierraConUnToque) {
-    dejarDeEscucharToques = piezas.interfaz.alTocarParaSeguir(cerrar);
+    dejarDeEscucharToques = cerrarConUnToqueDentroDeUnMomento(cierre, piezas);
   }
 
   // El globo sigue a quien habla aunque la cámara o el personaje se muevan.
@@ -97,6 +106,26 @@ export async function decirLinea(porDecir: LineaPorDecir, senal: AbortSignal, pi
     quitarGlobo();
     devolverLosDibujos();
   }
+}
+
+/**
+ * Hace que un toque cierre la línea, pero solo cuando ya lleva `SEGUNDOS_ANTES_DE_ACEPTAR_UN_TOQUE` a la vista.
+ * Se escucha desde el principio para que la capa de toque atrape también los toques tempranos (si no, un toque
+ * temprano caería en el mapa y haría caminar al jugador). El momento se mide con el reloj del juego:
+ * si el juego se pausa, la espera también. Devuelve la función que deja de escuchar.
+ */
+function cerrarConUnToqueDentroDeUnMomento(cierre: AbortController, piezas: PiezasDeEscena): () => void {
+  let yaSeAceptanToques = false;
+  const aceptarToquesDentroDeUnMomento = async (): Promise<void> => {
+    // Si la línea se cierra antes, la espera termina ahí (nunca queda colgada) y el valor ya no importa.
+    await piezas.reloj.esperar(SEGUNDOS_ANTES_DE_ACEPTAR_UN_TOQUE, cierre.signal);
+    yaSeAceptanToques = true;
+  };
+  void aceptarToquesDentroDeUnMomento();
+  return piezas.interfaz.alTocarParaSeguir(() => {
+    if (!yaSeAceptanToques) return;
+    cierre.abort();
+  });
 }
 
 function calcularSegundosDeLectura(texto: string, traduccion: string | undefined): number {

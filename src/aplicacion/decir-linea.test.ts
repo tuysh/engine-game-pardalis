@@ -96,15 +96,41 @@ test('muestra el globo sobre quien habla y dice el texto con su voz grabada', as
 });
 
 test('un toque cierra la línea: se quita el globo y se calla la voz', async () => {
-  const { piezas, interfaz, audio } = await crearEscena();
+  const { piezas, interfaz, audio, reloj } = await crearEscena();
 
   const linea = decirLinea({ paso: HOLA, textoCompleto: '¡Hola!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(0.5);
   interfaz.simularToqueParaSeguir();
   await linea;
 
   expect(interfaz.globo).toBeUndefined();
   expect(audio.hayAlguienHablando).toBe(false);
   expect(interfaz.hayQuienEscuchaToques).toBe(false);
+});
+
+test('un toque que llega apenas empieza la línea no la cierra: un doble toque no se salta lo que se dice', async () => {
+  const { piezas, interfaz, audio, reloj } = await crearEscena();
+  let termino = false;
+
+  void decirLinea({ paso: HOLA, textoCompleto: '¡Hola!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas).then(() => {
+    termino = true;
+  });
+  await reloj.avanzar(0.1);
+  interfaz.simularToqueParaSeguir();
+  await reloj.avanzar(0);
+
+  expect(termino).toBe(false);
+  expect(interfaz.globo?.texto).toBe('¡Hola!');
+  expect(audio.hayAlguienHablando).toBe(true);
+  // El toque temprano sigue atrapado por la capa de toque: no se va al mapa.
+  expect(interfaz.hayQuienEscuchaToques).toBe(true);
+
+  await reloj.avanzar(0.5);
+  interfaz.simularToqueParaSeguir();
+  await reloj.avanzar(0);
+
+  expect(termino).toBe(true);
+  expect(interfaz.globo).toBeUndefined();
 });
 
 test('si nadie toca, la línea se cierra sola un momento después de que termina la voz', async () => {
@@ -231,12 +257,13 @@ test('una voz grabada se espera completa, dure lo que dure', async () => {
 });
 
 test('con una pose, quien habla cambia de dibujo mientras dura la línea y al terminar vuelve al que tenía', async () => {
-  const { piezas, interfaz, escenario } = await crearEscena();
+  const { piezas, interfaz, escenario, reloj } = await crearEscena();
   const sorpresa: PasoDeLinea = { tipo: 'linea', hablante: 'tortu', texto: '¡Ay!', pose: 'tortu_sorpresa' };
 
   const linea = decirLinea({ paso: sorpresa, textoCompleto: '¡Ay!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
   expect(escenario.dibujos.get('tortu')?.imagen.direcciones).toEqual(['/img/tortu_sorpresa.svg']);
 
+  await reloj.avanzar(0.5);
   interfaz.simularToqueParaSeguir();
   await linea;
 
@@ -244,7 +271,7 @@ test('con una pose, quien habla cambia de dibujo mientras dura la línea y al te
 });
 
 test('quien escucha puede reaccionar con otro dibujo, y quien no está en el escenario no cambia nada', async () => {
-  const { piezas, interfaz, escenario, reparto } = await crearEscena();
+  const { piezas, interfaz, escenario, reparto, reloj } = await crearEscena();
   // Tommy sí está en el escenario y escucha; "pancho" no está.
   await reparto.agregar({ id: 'tommy', imagen: IMAGEN, posicion: { x: 3, y: 2 }, mira: 'derecha', sePuedeTocar: false });
   const linea: PasoDeLinea = {
@@ -259,6 +286,7 @@ test('quien escucha puede reaccionar con otro dibujo, y quien no está en el esc
   expect(escenario.dibujos.has('pancho')).toBe(false);
   expect(escenario.dibujos.has('tortu')).toBe(false);
 
+  await reloj.avanzar(0.5);
   interfaz.simularToqueParaSeguir();
   await dicha;
 

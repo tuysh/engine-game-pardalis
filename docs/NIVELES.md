@@ -358,7 +358,7 @@ lee sepa **a dónde ir**:
 
 | Paso | Ejemplo | Qué hace |
 | --- | --- | --- |
-| Línea | `{ "dice": "tortu", "texto": "¡Hola!", "audio": "vo_hola" }` | Globo sobre quien habla. Termina con un toque o al acabar el audio. Opcional: `trad`, y `en` + `es` (siempre juntos) para una **tarjeta de vocabulario**; `con`, `reacciona` y `piensa` (ver «Caras y pensamientos»). |
+| Línea | `{ "dice": "tortu", "texto": "¡Hola!", "audio": "vo_hola" }` | Globo sobre quien habla. Termina con un toque o al acabar el audio. Un toque solo la cierra cuando ya lleva medio segundo a la vista, para que un doble toque no se salte la línea que acaba de empezar. Opcional: `trad`, y `en` + `es` (siempre juntos) para una **tarjeta de vocabulario**; `con`, `reacciona` y `piensa` (ver «Caras y pensamientos»). |
 | Opción | `{ "elige": "¿Cuál quieres?", "opciones": [ { "imagen": "img_rosa", "audio": "vo_rosa", "secuencia": [...] } ] }` | Espera la elección. Cada opción: `texto`, `trad`, `imagen`, `audio`, `cuando`, y `secuencia` (pasos o nombre de secuencia). Una opción sin `imagen` da advertencia. |
 | Efecto | `{ "efecto": "magia" }` | Partículas y sonido. Disponibles: `magia`, `confeti` (papelitos que llueven sobre todo lo que se ve; se ven del mismo tamaño con la cámara cerca o lejos) y `destello` (un flash blanco de toda la pantalla, como el de una cámara de fotos). Opcional: `sonido`, la clave del sonido que lo acompaña (por ejemplo un obturador); sin él suenan unas notas cortas. Dura un segundo. |
 | Estado | `{ "pon": { "globo": "rosa" } }` | Asigna objetivos o variables. Con números también suma y resta: `{ "pon": { "dinero": { "resta": 10 }, "estrellas": { "suma": 1 } } }`. |
@@ -606,7 +606,7 @@ franjas negras de cine. Es una lista de pasos, los mismos de los diálogos.
   (los personajes en su destino, lo que hagan `pon`, `aparece`, `musica` y `sale`); las líneas, los sonidos,
   los efectos y los videos se omiten. Así el nivel queda igual que si se hubiera visto completa.
 - Al terminar, el motor marca `vista.<id>`. Si la partida se guarda a media cinemática, al volver empieza de nuevo.
-- Las líneas (`dice`) se cierran solas al acabar la voz, o con un toque.
+- Las líneas (`dice`) se cierran solas al acabar la voz, o con un toque (pasado medio segundo).
 - Con «movimiento reducido» activo en el dispositivo, los viajes de cámara se vuelven cortes.
 
 #### Franjas de cine
