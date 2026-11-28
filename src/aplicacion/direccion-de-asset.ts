@@ -5,6 +5,7 @@ import type { AssetsDeNivel } from '../dominio/assets-de-nivel.ts';
 import { ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
 import { rutaDesdeLaRaizDeAssets } from '../dominio/ruta-desde-la-raiz-de-assets.ts';
 import type { Cargador } from '../puertos/cargador.ts';
+import type { CuadrosDeAsset } from '../puertos/minijuego.ts';
 
 /** De dónde salen los assets de un nivel. */
 export interface UbicacionDeAssets {
@@ -58,4 +59,33 @@ export function buscarDireccionDeAsset(
     archivo = ubicado.asset.archivo;
   }
   return direccionDeArchivoDeAssets(ubicado.carpeta, archivo, ubicacion);
+}
+
+/**
+ * Las direcciones de los cuadros de una imagen o animación, en el orden en que se muestran, con su ritmo.
+ * Devuelve `undefined` si la clave no está en los assets del nivel o es un sonido o un video.
+ */
+export function buscarCuadrosDeAsset(
+  clave: string,
+  assets: AssetsDeNivel,
+  ubicacion: UbicacionDeAssets,
+): CuadrosDeAsset | undefined {
+  if (!Object.hasOwn(assets, clave)) return undefined;
+  const ubicado = assets[clave]!; // `hasOwn` acaba de comprobar que existe
+  const asset = ubicado.asset;
+
+  switch (asset.tipo) {
+    case 'imagen':
+      return { urls: [direccionDeArchivoDeAssets(ubicado.carpeta, asset.archivo, ubicacion)], cuadrosPorSegundo: 0 };
+    case 'animacion': {
+      const urls: string[] = [];
+      for (const cuadro of asset.cuadros) {
+        urls.push(direccionDeArchivoDeAssets(ubicado.carpeta, cuadro, ubicacion));
+      }
+      return { urls, cuadrosPorSegundo: asset.cuadrosPorSegundo };
+    }
+    case 'audio':
+    case 'video':
+      return undefined;
+  }
 }

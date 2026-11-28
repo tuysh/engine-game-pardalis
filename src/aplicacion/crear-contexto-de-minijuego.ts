@@ -6,7 +6,15 @@
 import { cumpleCondicion, leerCondicionDeTexto } from '../dominio/condicion.ts';
 import { valorDe } from '../dominio/estado.ts';
 import type { Idioma } from '../dominio/idioma.ts';
-import type { AudioParaMinijuego, ContextoDeMinijuego } from '../puertos/minijuego.ts';
+import type {
+  AnimacionDeImagen,
+  AssetsParaMinijuego,
+  AudioParaMinijuego,
+  ContextoDeMinijuego,
+  CuadrosDeAsset,
+  ImagenAnimable,
+} from '../puertos/minijuego.ts';
+import { animarImagenDeMinijuego } from './animar-imagen-de-minijuego.ts';
 import { decirSinEsperarDeMas } from './decir-sin-esperar-de-mas.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 
@@ -30,17 +38,52 @@ export function crearContextoDeMinijuego(apertura: AperturaDeMinijuego, piezas: 
       cumple: (condicion) => cumpleCondicion(leerCondicionDeTexto(condicion), piezas.estado.actual),
     },
     audio: crearAudio(apertura.senal, piezas),
-    assets: {
-      url(clave) {
-        const direccion = piezas.direccionDeAsset(clave);
-        if (direccion === undefined) {
-          console.warn(`[escenario-engine] un minijuego pidió "${clave}", que no está en los assets del nivel`);
-          return '';
-        }
-        return direccion;
-      },
-    },
+    assets: crearAssets(apertura.senal, piezas),
     azar: () => piezas.azar(),
+  };
+}
+
+function crearAssets(senalDelMinijuego: AbortSignal, piezas: PiezasDeEscena): AssetsParaMinijuego {
+  // La animación de cada imagen, para que volver a animar una la cambie en vez de ponerle dos encima.
+  const animaciones = new WeakMap<ImagenAnimable, AnimacionDeImagen>();
+
+  /** Los cuadros de una clave; sin direcciones (y con una advertencia) si no es una imagen del nivel. */
+  function cuadros(clave: string): CuadrosDeAsset {
+    const encontrados = piezas.cuadrosDeAsset(clave);
+    if (encontrados === undefined) {
+      console.warn(`[escenario-engine] un minijuego pidió los cuadros de "${clave}", que no es una imagen del nivel`);
+      return { urls: [], cuadrosPorSegundo: 0 };
+    }
+    return encontrados;
+  }
+
+  return {
+    url(clave) {
+      const direccion = piezas.direccionDeAsset(clave);
+      if (direccion === undefined) {
+        console.warn(`[escenario-engine] un minijuego pidió "${clave}", que no está en los assets del nivel`);
+        return '';
+      }
+      return direccion;
+    },
+    cuadros,
+    animar(imagen, clave, senal) {
+      animaciones.get(imagen)?.detener();
+
+      const senales = [senalDelMinijuego];
+      if (senal !== undefined) {
+        senales.push(senal);
+      }
+      const animacion = animarImagenDeMinijuego({
+        imagen,
+        cuadros: cuadros(clave),
+        reloj: piezas.reloj,
+        buscarCuadros: cuadros,
+        senales,
+      });
+      animaciones.set(imagen, animacion);
+      return animacion;
+    },
   };
 }
 

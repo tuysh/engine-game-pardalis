@@ -30,10 +30,72 @@ export interface AudioParaMinijuego {
   decir(texto: string, idioma: Idioma, clave?: string): Promise<void>;
 }
 
+/** Los cuadros de una imagen del manifiesto, con su ritmo. */
+export interface CuadrosDeAsset {
+  /**
+   * Dirección completa de cada cuadro, en el orden en que se muestran. Ya sigue la `secuencia` de
+   * `assets.config.json`, así que un cuadro puede repetirse: con `"secuencia": { "spr_tepo": [1, 1, 1, 2] }`
+   * llegan cuatro direcciones, tres de ellas iguales. Una imagen fija trae una sola.
+   * Vacía si la clave no es una imagen ni una animación del nivel.
+   */
+  readonly urls: readonly string[];
+  /** Cuántos cuadros pasan por segundo (el `fps` de `assets.config.json`). `0` en una imagen fija. */
+  readonly cuadrosPorSegundo: number;
+}
+
+/**
+ * Lo único que `assets.animar` necesita de una imagen: poder cambiarle la dirección.
+ * Un `HTMLImageElement` (`<img>`) lo cumple; también un objeto cualquiera con `src`.
+ */
+export interface ImagenAnimable {
+  src: string;
+}
+
+/** Una imagen que `assets.animar` está animando. */
+export interface AnimacionDeImagen {
+  /**
+   * Pasa a otra clave en la misma imagen, desde su primer cuadro. Sirve para alternar poses:
+   * de `spr_tepo` (quieto, parpadea) a `tepo_habla` (mueve la boca) y de vuelta.
+   * Una clave que no es imagen del nivel se ignora con una advertencia y la animación sigue como estaba.
+   */
+  cambiar(clave: string): void;
+  /** Deja de animar. La imagen se queda en el cuadro que mostraba. Llamarla dos veces no hace nada. */
+  detener(): void;
+}
+
 /** Los assets del nivel, vistos desde un minijuego. */
 export interface AssetsParaMinijuego {
-  /** Dirección completa de un asset del manifiesto, lista para usarse en un `<img>`. */
+  /**
+   * Dirección completa de un asset del manifiesto, lista para usarse en un `<img>`.
+   * De una animación, la de su primer cuadro: para verla moverse, `animar`.
+   */
   url(clave: string): string;
+  /**
+   * Las direcciones de todos los cuadros de una imagen o animación, con su ritmo. Sirve para dibujar
+   * la animación a mano (en un `<canvas>`, en Three.js) o para precargar sus cuadros.
+   *
+   * @example
+   * const { urls } = assets.cuadros('tepo_habla');
+   * for (const url of new Set(urls)) new Image().src = url; // precarga, para que no parpadee al cambiar
+   */
+  cuadros(clave: string): CuadrosDeAsset;
+  /**
+   * Anima una imagen con los cuadros de `clave`, al ritmo y en el orden de `assets.config.json`, igual que
+   * los personajes del escenario: así parpadean y mueven la boca también dentro del minijuego.
+   * Se repite sin fin hasta que se llama a `detener()`, se dispara `senal` o se cierra el minijuego.
+   * Una imagen fija solo se pone, sin animar. Volver a animar la misma imagen detiene la animación anterior.
+   * El tiempo es el del juego: si el host pausa el juego, la animación también se pausa.
+   *
+   * @example
+   * const tepo = document.createElement('img');
+   * const animacion = assets.animar(tepo, 'spr_tepo');
+   * elemento.append(tepo);
+   *
+   * animacion.cambiar('tepo_habla');      // mueve la boca mientras habla
+   * await audio.decir('¡Buenos días!', 'es');
+   * animacion.cambiar('spr_tepo');        // vuelve a quedarse quieto, parpadeando
+   */
+  animar(imagen: ImagenAnimable, clave: string, senal?: AbortSignal): AnimacionDeImagen;
 }
 
 /** Lo que el motor le entrega a un minijuego al empezar. */

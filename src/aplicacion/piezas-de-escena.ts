@@ -10,7 +10,7 @@ import type { Audio } from '../puertos/audio.ts';
 import type { Azar } from '../puertos/azar.ts';
 import type { Escenario, ImagenDeEscena } from '../puertos/escenario.ts';
 import type { Interfaz } from '../puertos/interfaz.ts';
-import type { Minijuego } from '../puertos/minijuego.ts';
+import type { CuadrosDeAsset, Minijuego } from '../puertos/minijuego.ts';
 import type { Reloj } from '../puertos/reloj.ts';
 import type { EstadoEnJuego } from './estado-en-juego.ts';
 import type { Reparto } from './reparto.ts';
@@ -38,6 +38,8 @@ export interface PiezasDeEscena {
   readonly minijuegos: Readonly<Record<string, Minijuego>>;
   /** La dirección completa de un asset por su clave, o `undefined` si el nivel no lo tiene (una voz sin grabar). */
   readonly direccionDeAsset: (clave: string) => string | undefined;
+  /** Los cuadros de una imagen o animación por su clave, para los minijuegos; `undefined` si no es una imagen. */
+  readonly cuadrosDeAsset: (clave: string) => CuadrosDeAsset | undefined;
   /** La imagen (o la animación) de una clave de assets, lista para dibujarse. La validación garantiza que existe. */
   readonly imagenDeAsset: (clave: string) => ImagenDeEscena;
   /** Se llama cada vez que una línea muestra una tarjeta de vocabulario. */
