@@ -15,7 +15,8 @@ const SEGUNDOS_MINIMOS_DEL_TOPE_DE_VOZ = 6;
 
 /** Lo que hace falta para decir una frase. */
 export interface PiezasParaDecir {
-  readonly audio: Audio;
+  /** Solo hace falta quien diga la frase: puede ser el audio o la fila de voces del host (voz-en-orden.ts). */
+  readonly audio: Pick<Audio, 'decir'>;
   readonly reloj: Reloj;
 }
 

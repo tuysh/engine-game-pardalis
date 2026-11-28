@@ -98,6 +98,8 @@ export interface NivelEnJuego {
    * y rechaza con `ErrorDeEscenario` si el nivel no tiene una con ese id.
    */
   reproducirCinematica(id: string): Promise<void>;
+  /** Dirección completa de un asset del manifiesto del nivel. `undefined` = el nivel no tiene esa clave. */
+  direccionDeAsset(clave: string): string | undefined;
   /** Deja de atender toques y de dibujar, y termina lo que esté en curso. No destruye el escenario. */
   terminar(): void;
 }

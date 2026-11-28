@@ -1,6 +1,8 @@
 // El puerto del audio: voces y sonidos. Nada del juego requiere leer, así que todo lo que se muestra se dice.
 
+import type { AjustesDeVoz } from '../dominio/ajustes-de-voz.ts';
 import type { Idioma } from '../dominio/idioma.ts';
+import type { VolumenesDeAudio } from '../dominio/volumenes.ts';
 
 /** Cómo terminó de decirse un texto. */
 export type ResultadoDeDecir =
@@ -16,6 +18,19 @@ export interface FrasePorDecir {
   readonly idioma: Idioma;
   /** Dirección completa de la voz grabada. `undefined` = no hay grabación: se usa voz sintetizada. */
   readonly direccionDeLaVoz?: string;
+  /** Tono y velocidad de la voz sintetizada, si quien habla tiene los suyos. `undefined` = la voz normal. */
+  readonly voz?: AjustesDeVoz;
+}
+
+/** Cómo tocar un sonido corto. */
+export interface OpcionesDeSonido {
+  /** Qué tan fuerte, de 0 a 1, antes de aplicar el volumen de los efectos. `undefined` = 1. */
+  readonly volumen?: number;
+  /**
+   * Qué tan rápido se reproduce, y con eso qué tan agudo suena: 2 suena una octava más agudo y la mitad de largo,
+   * 0.5 una octava más grave. `undefined` = 1, como está grabado.
+   */
+  readonly tono?: number;
 }
 
 export interface Audio {
@@ -27,7 +42,7 @@ export interface Audio {
   decir(frase: FrasePorDecir, senal: AbortSignal): Promise<ResultadoDeDecir>;
 
   /** Toca un sonido corto sin esperar a que termine. */
-  tocar(direccionDelSonido: string): void;
+  tocar(direccionDelSonido: string, opciones?: OpcionesDeSonido): void;
 
   /** Toca una nota corta hecha por el dispositivo, sin archivo. La usan los efectos. */
   tocarTono(frecuenciaEnHertz: number, duracionEnSegundos: number): void;
@@ -38,7 +53,16 @@ export interface Audio {
    */
   ponerMusica(direccionDeLaMusica: string | undefined): void;
 
-  /** Congela y reanuda todo lo que suena. */
+  /**
+   * Cambia qué tan fuerte suena cada canal. Se aplica también a lo que ya está sonando, salvo a una frase
+   * de voz sintetizada que ya empezó: esa termina como empezó (el navegador no deja cambiarla a media frase).
+   */
+  ajustarVolumenes(volumenes: VolumenesDeAudio): void;
+
+  /**
+   * Congela y reanuda la música y los sonidos. Las voces no: una frase que se está diciendo sigue hasta terminar.
+   * Quien necesite callar una frase al pausar la cancela con su señal (ver aplicacion/voz-en-orden.ts).
+   */
   pausar(): void;
   reanudar(): void;
 

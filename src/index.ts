@@ -10,13 +10,16 @@ export type { ProgresoDeCarga } from './dominio/progreso-de-carga.ts';
 export type {
   AvisoDeCinematica,
   AvisoDeMinijuego,
+  CambiosDeVolumen,
   CambioDeEstado,
   CambioDeNivel,
   EventosDeJuego,
   Juego,
   NombreDeEvento,
+  OpcionesDeVoz,
   PalabraMostrada,
 } from './juego.ts';
+export type { CanalDeAudio, VolumenesPorCanal } from './dominio/volumenes.ts';
 
 export type {
   CambioDeVariable,
@@ -35,6 +38,7 @@ export type {
   AudioParaMinijuego,
   ContextoDeMinijuego,
   Minijuego,
+  OpcionesDeSonidoParaMinijuego,
   ResultadoDeMinijuego,
 } from './puertos/minijuego.ts';
 export type {

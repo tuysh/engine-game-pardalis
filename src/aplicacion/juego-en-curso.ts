@@ -142,6 +142,15 @@ export class JuegoEnCurso {
     return this.nivelActual.enJuego.reproducirCinematica(idDeCinematica);
   }
 
+  /**
+   * Dirección completa de un asset del nivel que se está jugando. `undefined` = el nivel no tiene esa clave,
+   * o no hay un nivel en juego (mientras se pasa de uno a otro).
+   */
+  direccionDeAsset(clave: string): string | undefined {
+    if (this.nivelActual === undefined) return undefined;
+    return this.nivelActual.enJuego.direccionDeAsset(clave);
+  }
+
   /** Salta la cinemática o cierra el diálogo en curso. */
   interrumpir(): void {
     if (this.nivelActual !== undefined) {

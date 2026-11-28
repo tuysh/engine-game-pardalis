@@ -76,7 +76,8 @@ export async function decirLinea(porDecir: LineaPorDecir, senal: AbortSignal, pi
     if (linea.audio !== undefined) {
       direccionDeLaVoz = piezas.direccionDeAsset(linea.audio);
     }
-    const fraseOriginal = { texto: textoCompleto, idioma: personaje.idioma, direccionDeLaVoz };
+    // La voz de quien habla (tono y velocidad) solo se usa en su frase; la traducción la dice la voz normal.
+    const fraseOriginal = { texto: textoCompleto, idioma: personaje.idioma, direccionDeLaVoz, voz: personaje.voz };
     const resultado = await decirSinEsperarDeMas(fraseOriginal, cierre.signal, piezas);
     if (traduccion !== undefined && !cierre.signal.aborted) {
       await decirSinEsperarDeMas({ texto: traduccion, idioma: piezas.idiomaBase }, cierre.signal, piezas);

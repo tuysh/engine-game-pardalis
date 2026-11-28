@@ -292,3 +292,21 @@ test('el minijuego recibe el azar del motor y puede tocar tonos sin archivo', as
   // El tono con una frecuencia que no sirve se ignora con una advertencia.
   expect(audio.tonosTocados).toEqual([880]);
 });
+
+test('el minijuego puede tocar un sonido más bajito o más agudo, y una opción que no sirve se ignora', async () => {
+  const Chiles: Minijuego = async ({ audio }) => {
+    audio.tocar('comal', { tono: 1.2 });
+    audio.tocar('comal', { volumen: 0.3, tono: 9 });
+    audio.tocar('comal');
+    return { exito: true };
+  };
+  const { piezas, audio } = crearEscena({ Chiles });
+
+  await jugarMinijuego({ nombre: 'Chiles', config: undefined }, SIN_INTERRUMPIR, piezas);
+
+  expect(audio.sonidosConOpciones).toEqual([
+    { direccion: '/assets/img/comal.svg', opciones: { volumen: undefined, tono: 1.2 } },
+    { direccion: '/assets/img/comal.svg', opciones: { volumen: 0.3, tono: undefined } },
+    { direccion: '/assets/img/comal.svg', opciones: undefined },
+  ]);
+});

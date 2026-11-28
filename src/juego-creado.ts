@@ -8,12 +8,16 @@ import type { InterfazDelNavegador } from './adaptadores/dom/interfaz-del-navega
 import type { RelojDelNavegador } from './adaptadores/dom/reloj-del-navegador.ts';
 import type { VideoDelNavegador } from './adaptadores/dom/video-del-navegador.ts';
 import type { JuegoEnCurso } from './aplicacion/juego-en-curso.ts';
+import type { VolumenDelJuego } from './aplicacion/volumen-del-juego.ts';
+import type { VozDelHost } from './aplicacion/voz-del-host.ts';
+import type { VozEnOrden } from './aplicacion/voz-en-orden.ts';
 import { cumpleCondicion, leerCondicionDeTexto } from './dominio/condicion.ts';
 import { valorDe } from './dominio/estado.ts';
 import type { LectorDeEstado } from './dominio/estado.ts';
 import type { Partida } from './dominio/partida.ts';
 import type { EmisorDeEventos } from './emisor-de-eventos.ts';
-import type { EventosDeJuego, Juego, NombreDeEvento } from './juego.ts';
+import type { VolumenesPorCanal } from './dominio/volumenes.ts';
+import type { CambiosDeVolumen, EventosDeJuego, Juego, NombreDeEvento, OpcionesDeVoz } from './juego.ts';
 import type { PausaDelJuego } from './pausa-del-juego.ts';
 import type { Escenario } from './puertos/escenario.ts';
 import type { PanelDeDepuracion } from './puertos/panel-de-depuracion.ts';
@@ -36,6 +40,10 @@ export interface PiezasDelJuego {
   readonly emisor: EmisorDeEventos;
   readonly pausa: PausaDelJuego;
   readonly adaptadores: AdaptadoresDelJuego;
+  /** El audio con sus voces en fila. Al final se destruye este, que destruye también `adaptadores.audio`. */
+  readonly voz: VozEnOrden;
+  readonly vozDelHost: VozDelHost;
+  readonly volumen: VolumenDelJuego;
 }
 
 export class JuegoCreado implements Juego {
@@ -76,6 +84,34 @@ export class JuegoCreado implements Juego {
     this.piezas.adaptadores.interfaz.ajustarProyeccion(estaActiva);
   }
 
+  get volumen(): number {
+    return this.piezas.volumen.general;
+  }
+
+  set volumen(volumen: number) {
+    this.piezas.volumen.cambiarGeneral(volumen);
+  }
+
+  get silenciado(): boolean {
+    return this.piezas.volumen.silenciado;
+  }
+
+  set silenciado(estaSilenciado: boolean) {
+    this.piezas.volumen.cambiarSilencio(estaSilenciado);
+  }
+
+  get volumenes(): VolumenesPorCanal {
+    return this.piezas.volumen.porCanal;
+  }
+
+  ajustarVolumenes(cambios: CambiosDeVolumen): void {
+    this.piezas.volumen.cambiarCanales(cambios);
+  }
+
+  decir(texto: string, opciones: OpcionesDeVoz): Promise<void> {
+    return this.piezas.vozDelHost.decir(texto, opciones);
+  }
+
   on<Evento extends NombreDeEvento>(evento: Evento, funcion: (dato: EventosDeJuego[Evento]) => void): () => void {
     return this.piezas.emisor.on(evento, funcion);
   }
@@ -112,7 +148,8 @@ export class JuegoCreado implements Juego {
     this.piezas.juegoEnCurso.terminar();
     adaptadores.reloj.detener();
     adaptadores.controles.destruir();
-    adaptadores.audio.destruir();
+    this.piezas.vozDelHost.destruir();
+    this.piezas.voz.destruir();
     adaptadores.video.destruir();
     if (adaptadores.panelDeDepuracion !== undefined) {
       adaptadores.panelDeDepuracion.destruir();
