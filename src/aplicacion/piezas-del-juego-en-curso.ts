@@ -11,6 +11,7 @@ import type { ProgresoDeCarga } from '../dominio/progreso-de-carga.ts';
 import type { Cargador } from '../puertos/cargador.ts';
 import type { CinematicaEnCodigo } from '../puertos/cinematica-en-codigo.ts';
 import type { Minijuego } from '../puertos/minijuego.ts';
+import type { DialogoDelNivel } from './conversacion.ts';
 import type { CierreDeMinijuego } from './jugar-minijuego.ts';
 import type { FuenteDeNiveles } from './leer-nivel-por-jugar.ts';
 import type { HerramientasDeDepuracion, PuertosParaJugar } from './nivel-en-juego.ts';
@@ -35,6 +36,8 @@ export interface AvisosDelJuego {
   alCambiarDeNivel(id: string, anterior: string): void;
   alEmpezarCinematica(id: string): void;
   alTerminarCinematica(id: string): void;
+  alEmpezarDialogo(dialogo: DialogoDelNivel): void;
+  alTerminarDialogo(dialogo: DialogoDelNivel): void;
   /** Cambió alguna variable del nivel que se juega. */
   alCambiarElEstado(cambio: CambioDeEstadoDelNivel): void;
   alEmpezarMinijuego(nombre: string): void;

@@ -114,6 +114,8 @@ async function empezarConPasos(pasos: readonly Paso[], idiomaBase: Idioma = 'es'
       },
       alEmpezarCinematica: () => {},
       alTerminarCinematica: () => {},
+      alEmpezarDialogo: () => {},
+      alTerminarDialogo: () => {},
       alCambiarElEstado: () => {},
       alEmpezarMinijuego: () => {},
       alTerminarMinijuego: () => {},

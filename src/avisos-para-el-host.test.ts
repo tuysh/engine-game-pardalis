@@ -44,6 +44,21 @@ test('un minijuego llega como el evento "minijuego" dos veces: al empezar y al t
   ]);
 });
 
+test('un diálogo llega como el evento "dialogo" dos veces: al empezar y al terminar, con su origen', () => {
+  const emisor = new EmisorDeEventos();
+  const avisos: unknown[] = [];
+  emisor.on('dialogo', (aviso) => avisos.push(aviso));
+
+  const avisosDelJuego = crearAvisosParaElHost(emisor);
+  avisosDelJuego.alEmpezarDialogo({ origen: 'npc', id: 'tortu' });
+  avisosDelJuego.alTerminarDialogo({ origen: 'npc', id: 'tortu' });
+
+  expect(avisos).toEqual([
+    { fase: 'inicio', origen: 'npc', id: 'tortu' },
+    { fase: 'fin', origen: 'npc', id: 'tortu' },
+  ]);
+});
+
 test('un cambio del estado llega como el evento "estado", con el nivel, lo que cambió y todas las variables', () => {
   const emisor = new EmisorDeEventos();
   const cambios: unknown[] = [];

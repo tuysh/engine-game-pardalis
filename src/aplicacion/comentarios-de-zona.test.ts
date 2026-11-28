@@ -34,6 +34,7 @@ const FUERA = { x: 5, y: 5 };
 /** Comentarios cuyo «decir» anota el texto y no termina hasta que la prueba lo cierra o se cancela. */
 function crearComentarios(zonas: Record<string, Zona>, azar: () => number = () => 0) {
   const dichos: string[] = [];
+  const avisos: string[] = [];
   let cerrarElGlobo = (): void => {};
   const comentarios = new ComentariosDeZona({
     contenido: CONTENIDO,
@@ -47,8 +48,10 @@ function crearComentarios(zonas: Record<string, Zona>, azar: () => number = () =
       });
     },
     alFallar: () => {},
+    alEmpezarComentario: (zona) => avisos.push(`inicio ${zona}`),
+    alTerminarComentario: (zona) => avisos.push(`fin ${zona}`),
   });
-  return { comentarios, dichos, cerrar: () => cerrarElGlobo() };
+  return { comentarios, dichos, avisos, cerrar: () => cerrarElGlobo() };
 }
 
 /** Deja que corra el código que estaba detenido en un `await`. */
@@ -146,4 +149,28 @@ test('si decir el comentario falla, se avisa y se puede volver a comentar despu�
 
   expect(fallas).toEqual([fallo]);
   expect(comentarios.hayUnComentario).toBe(false);
+});
+
+test('avisa cuando un comentario empieza y cuando su globo se cierra, con el nombre de la zona', async () => {
+  const { comentarios, avisos, cerrar } = crearComentarios({ entrada: ENTRADA });
+
+  comentarios.avanzar(0.016, DENTRO, true);
+  expect(avisos).toEqual(['inicio entrada']);
+
+  cerrar();
+  await darTurno();
+  expect(avisos).toEqual(['inicio entrada', 'fin entrada']);
+});
+
+test('callar un comentario avisa su fin en ese mismo momento, y una sola vez', async () => {
+  const { comentarios, avisos } = crearComentarios({ entrada: ENTRADA });
+  comentarios.avanzar(0.016, DENTRO, true);
+
+  comentarios.callar();
+  expect(avisos).toEqual(['inicio entrada', 'fin entrada']);
+  expect(comentarios.hayUnComentario).toBe(false);
+
+  await darTurno();
+  comentarios.callar();
+  expect(avisos).toEqual(['inicio entrada', 'fin entrada']);
 });

@@ -6,6 +6,9 @@
 //   - Cada zona espera su tiempo (`espera`, 20 segundos por defecto) antes de volver a comentar.
 //   - Nunca interrumpe un diálogo, y un diálogo que empieza calla el comentario.
 //   - El globo de un comentario no atrapa toques: se puede seguir caminando mientras se oye.
+//   - Avisa cuándo empieza y cuándo termina cada comentario, con el nombre de su zona. Al callarlo, el fin
+//     se avisa en ese mismo momento: así, cuando un diálogo calla un comentario, el host recibe el fin
+//     del comentario antes que el inicio del diálogo, y nunca se le enciman.
 
 import type { Contenido } from '../dominio/contenido.ts';
 import { puntoDentroDeForma } from '../dominio/forma.ts';
@@ -27,6 +30,16 @@ export interface PiezasDeComentarios {
   readonly decirComentario: (linea: PasoDeLinea, senal: AbortSignal) => Promise<void>;
   /** Se llama si decir un comentario falla con un error inesperado. */
   readonly alFallar: (error: unknown) => void;
+  /** Se llama justo antes de decir un comentario, con el nombre de su zona. */
+  readonly alEmpezarComentario?: (zona: string) => void;
+  /** Se llama una sola vez cuando ese comentario termina o se calla, con el nombre de su zona. */
+  readonly alTerminarComentario?: (zona: string) => void;
+}
+
+/** El comentario que se está diciendo. */
+interface ComentarioEnCurso {
+  readonly zona: string;
+  readonly cancelador: AbortController;
 }
 
 export class ComentariosDeZona {
@@ -37,14 +50,14 @@ export class ComentariosDeZona {
   private readonly ultimoComentarioEnSegundos = new Map<string, number>();
   private ahoraEnSegundos = 0;
   /** Existe solo mientras se está diciendo un comentario. */
-  private cancelador: AbortController | undefined;
+  private enCurso: ComentarioEnCurso | undefined;
 
   constructor(piezas: PiezasDeComentarios) {
     this.piezas = piezas;
   }
 
   get hayUnComentario(): boolean {
-    return this.cancelador !== undefined;
+    return this.enCurso !== undefined;
   }
 
   /**
@@ -73,9 +86,10 @@ export class ComentariosDeZona {
 
   /** Calla el comentario en curso. Si no hay ninguno, no hace nada. */
   callar(): void {
-    if (this.cancelador !== undefined) {
-      this.cancelador.abort();
-    }
+    const enCurso = this.enCurso;
+    if (enCurso === undefined) return;
+    enCurso.cancelador.abort();
+    this.terminar(enCurso);
   }
 
   private comentarSiYaEsperoLoSuficiente(nombre: string, zona: Zona): void {
@@ -92,21 +106,31 @@ export class ComentariosDeZona {
 
     this.ultimoComentarioEnSegundos.set(nombre, this.ahoraEnSegundos);
     // No se espera a que termine: el comentario suena mientras el juego sigue.
-    void this.decir(linea);
+    void this.decir(linea, nombre);
   }
 
-  private async decir(linea: PasoDeLinea): Promise<void> {
-    const cancelador = new AbortController();
-    this.cancelador = cancelador;
+  private async decir(linea: PasoDeLinea, zona: string): Promise<void> {
+    const enCurso: ComentarioEnCurso = { zona, cancelador: new AbortController() };
+    this.enCurso = enCurso;
     try {
-      await this.piezas.decirComentario(linea, cancelador.signal);
+      if (this.piezas.alEmpezarComentario !== undefined) {
+        this.piezas.alEmpezarComentario(zona);
+      }
+      await this.piezas.decirComentario(linea, enCurso.cancelador.signal);
     } catch (error) {
       this.piezas.alFallar(error);
     } finally {
       // Pase lo que pase, se libera: si no, nunca se volvería a comentar.
-      if (this.cancelador === cancelador) {
-        this.cancelador = undefined;
-      }
+      this.terminar(enCurso);
+    }
+  }
+
+  /** Libera el comentario y avisa que terminó. Si ya se liberó (porque se calló), no hace nada. */
+  private terminar(enCurso: ComentarioEnCurso): void {
+    if (this.enCurso !== enCurso) return;
+    this.enCurso = undefined;
+    if (this.piezas.alTerminarComentario !== undefined) {
+      this.piezas.alTerminarComentario(enCurso.zona);
     }
   }
 }

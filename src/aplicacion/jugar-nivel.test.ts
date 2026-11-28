@@ -84,6 +84,7 @@ async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
   const objetivosCumplidos: string[] = [];
   const salidas: string[] = [];
   const fallas: unknown[] = [];
+  const dialogos: string[] = [];
 
   const ubicacion = { direccionDelNivel: '/niveles/barrio/nivel.json', cargador: new CargadorDeMemoria({}) };
   const nivelEnJuego = await jugarNivel(
@@ -96,12 +97,15 @@ async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
       alFallar: (error) => fallas.push(error),
       alEmpezarCinematica: () => {},
       alTerminarCinematica: () => {},
+      alEmpezarDialogo: ({ origen, id }) => dialogos.push(`inicio ${origen} ${id}`),
+      alTerminarDialogo: ({ origen, id }) => dialogos.push(`fin ${origen} ${id}`),
       alCambiarElEstado: () => {},
       alEmpezarMinijuego: () => {},
       alTerminarMinijuego: () => {},
     },
   );
-  return { nivelEnJuego, escenario, interfaz, audio, controles, reloj, objetivosCumplidos, salidas, fallas };
+  const avisos = { objetivosCumplidos, salidas, fallas, dialogos };
+  return { nivelEnJuego, escenario, interfaz, audio, controles, reloj, ...avisos };
 }
 
 test('al empezar, monta la escenografía con la dirección y el tamaño en metros de cada imagen', async () => {
@@ -184,6 +188,38 @@ test('cuando un diálogo cumple un objetivo, el nivel avisa y la variable queda 
 
   expect(objetivosCumplidos).toEqual(['tortillas']);
   expect(nivelEnJuego.leerVariables()).toEqual({ 'charlas.tortu': true, tortillas: true });
+});
+
+test('un diálogo con un personaje avisa al empezar y al terminar, con quién', async () => {
+  const { escenario, interfaz, reloj, dialogos } = await empezar(NIVEL);
+
+  escenario.simularToque({ tipo: 'personaje', id: 'tortu' });
+  await reloj.avanzar(3);
+  expect(dialogos).toEqual(['inicio npc tortu']);
+
+  interfaz.simularToqueParaSeguir();
+  await reloj.avanzar(0.1);
+  expect(dialogos).toEqual(['inicio npc tortu', 'fin npc tortu']);
+});
+
+test('un interactivo y una salida cerrada también avisan su diálogo', async () => {
+  const { nivelEnJuego, escenario, interfaz, reloj, dialogos } = await empezar(NIVEL);
+
+  escenario.simularToque({ tipo: 'decorado', id: 'comal' });
+  await reloj.avanzar(5);
+  interfaz.simularToqueParaSeguir();
+  await reloj.avanzar(0.1);
+  escenario.simularToque({ tipo: 'piso', punto: { x: 9.5, y: 3.5 } });
+  await reloj.avanzar(5);
+  nivelEnJuego.interrumpir();
+  await reloj.avanzar(0.1);
+
+  expect(dialogos).toEqual([
+    'inicio interactivo comal',
+    'fin interactivo comal',
+    'inicio salida undefined',
+    'fin salida undefined',
+  ]);
 });
 
 test('al tocar un objeto interactivo, el jugador camina hasta quedar frente a él y lo usa', async () => {
@@ -327,7 +363,7 @@ test('un diálogo que empieza reemplaza el comentario, y el comentario no le bor
       },
     },
   };
-  const { escenario, interfaz, reloj } = await empezar(nivelConZona);
+  const { escenario, interfaz, reloj, dialogos } = await empezar(nivelConZona);
   await reloj.avanzar(0.016);
   expect(interfaz.globo?.texto).toBe('Wow!');
 
@@ -335,6 +371,8 @@ test('un diálogo que empieza reemplaza el comentario, y el comentario no le bor
   await reloj.avanzar(3);
 
   expect(interfaz.globo?.texto).toBe('¡Aquí tienes!');
+  // El comentario avisa su fin antes de que el diálogo avise su inicio: nunca se enciman.
+  expect(dialogos).toEqual(['inicio comentario todo', 'fin comentario todo', 'inicio npc tortu']);
 });
 
 test('la flecha de la salida aparece cuando se cumple su condición y apunta a la salida', async () => {
@@ -505,6 +543,8 @@ test('en modo depuración se ven las guías del mapa, y con la cámara libre act
       alFallar: () => {},
       alEmpezarCinematica: () => {},
       alTerminarCinematica: () => {},
+      alEmpezarDialogo: () => {},
+      alTerminarDialogo: () => {},
       alCambiarElEstado: () => {},
       alEmpezarMinijuego: () => {},
       alTerminarMinijuego: () => {},
@@ -554,6 +594,8 @@ test('mientras cargan las imágenes del nivel, avisa del avance: una vez al empe
       alFallar: () => {},
       alEmpezarCinematica: () => {},
       alTerminarCinematica: () => {},
+      alEmpezarDialogo: () => {},
+      alTerminarDialogo: () => {},
       alCambiarElEstado: () => {},
       alEmpezarMinijuego: () => {},
       alTerminarMinijuego: () => {},

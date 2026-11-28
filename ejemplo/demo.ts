@@ -35,7 +35,15 @@ try {
   juego.on('palabra', (palabra) => console.log('palabra vista:', palabra.en, '=', palabra.es));
   juego.on('guardar', (partida) => console.log('conviene guardar:', JSON.stringify(partida)));
   juego.on('cinematica', (cinematica) => console.log('cinemática:', cinematica.id, cinematica.fase));
-  juego.on('minijuego', (minijuego) => console.log('minijuego:', minijuego.nombre, minijuego.fase));
+  juego.on('dialogo', (dialogo) => console.log('diálogo:', dialogo.origen, dialogo.id, dialogo.fase));
+  juego.on('minijuego', (minijuego) => {
+    if (minijuego.fase === 'inicio') {
+      console.log('minijuego:', minijuego.nombre, 'inicio');
+      return;
+    }
+    // El fin llega cuando lo que otorgó ya está en el estado: aquí un host animaría su monedero o su lista.
+    console.log('minijuego:', minijuego.nombre, 'fin', minijuego.exito, JSON.stringify(minijuego.cambios));
+  });
   juego.on('estado', (estado) => console.log('cambió el estado:', JSON.stringify(estado.cambios)));
   juego.on('nivel', (cambio) => console.log('nivel:', cambio.id, '(antes:', cambio.anterior + ')'));
   juego.on('salida', (destino) => console.log('el jugador salió hacia:', destino));

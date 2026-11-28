@@ -138,6 +138,7 @@ no ponerla (salvo `nivel`, que es obligatoria).
 | `palabra` | `{ en, es }` | Se mostró una tarjeta de vocabulario. |
 | `nivel` | `{ id, anterior }` | Se terminó de cargar otro nivel. `anterior` es el id del que se dejó. |
 | `cinematica` | `{ id, fase }` | `fase` es `'inicio'` o `'fin'`. Sirve para ocultar la interfaz del host. |
+| `dialogo` | `{ fase, origen, id }` | Empezó (`'inicio'`) o terminó (`'fin'`) un diálogo que no es una cinemática. Sirve para que lo que el host dibuja encima no tape los globos. Ver «Diálogos». |
 | `minijuego` | `{ nombre, fase }`; al cerrarse, también `{ exito, cambios }` | Se abrió (`'inicio'`) o se cerró (`'fin'`) un minijuego. El minijuego se dibuja dentro del elemento del juego, así que queda debajo de lo que el host tenga encima: con este evento lo esconde. El `'fin'` llega **después** de aplicar lo que el minijuego otorgó: ver «Al cerrarse un minijuego». |
 | `estado` | `{ nivel, cambios, variables }` | Cambió alguna variable del nivel: el dinero después de pagar, un objetivo, lo que hizo un `pon` o concedió un minijuego. `cambios` trae solo lo que cambió, con su valor nuevo; `variables`, todas. |
 | `salida` | `destino` | El jugador salió hacia un destino que **no** es un nivel registrado: el host decide. |
@@ -148,6 +149,34 @@ Cualquier otro destino (`"Selector"`, `"Creditos"`) llega al host por `salida`.
 
 El evento `estado` no se emite al empezar un nivel, solo cuando algo cambia: para pintar por primera vez
 (el monedero, la lista) se lee `juego.estado` al crear el juego y en cada evento `nivel`.
+
+### Diálogos
+
+El evento `dialogo` avisa cuando alguien empieza a hablar fuera de una cinemática, y cuando termina
+(completo, cerrado con `interrumpir()` o con un error). `origen` dice qué lo empezó:
+
+| `origen` | `id` | Cuándo |
+| --- | --- | --- |
+| `'npc'` | id del NPC | El jugador tocó a un personaje (o usó la tecla de hablar). |
+| `'interactivo'` | id del interactivo | El jugador tocó un objeto del decorado que tiene diálogo. |
+| `'salida'` | `undefined` | El jugador intentó salir sin cumplir `salida.requiere`: se dicen los pasos de `siBloqueada`. |
+| `'comentario'` | nombre de la zona | El jugador entró a una zona con `grupo` y dice un comentario. Mientras se oye se puede seguir caminando. |
+
+Reglas:
+
+- Nunca se enciman dos: el `'fin'` de uno llega antes que el `'inicio'` del siguiente. Si un diálogo
+  calla un comentario, el `'fin'` del comentario llega primero.
+- Una cinemática no emite `dialogo`: avisa con `cinematica`.
+- Un minijuego que se abre dentro de un diálogo llega entre sus dos avisos:
+  `dialogo` inicio → `minijuego` inicio → `minijuego` fin → `dialogo` fin.
+- Si el diálogo termina con un paso `sale`, el `'fin'` llega antes que el cambio de nivel o la `salida`.
+
+```js
+juego.on('dialogo', ({ fase, origen }) => {
+  if (origen === 'comentario') return; // son cortos: aquí el host decide no esconder nada
+  achicarLista(fase === 'inicio');
+});
+```
 
 ### Al cerrarse un minijuego
 

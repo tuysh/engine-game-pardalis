@@ -17,6 +17,7 @@ import type { PanelDeDepuracion } from '../puertos/panel-de-depuracion.ts';
 import type { Reloj } from '../puertos/reloj.ts';
 import type { Video } from '../puertos/video.ts';
 import type { UbicacionDeAssets } from './direccion-de-asset.ts';
+import type { DialogoDelNivel } from './conversacion.ts';
 import type { FundidoDePantalla } from './fundido-de-pantalla.ts';
 import type { CierreDeMinijuego } from './jugar-minijuego.ts';
 
@@ -78,6 +79,10 @@ export interface AvisosDelNivel {
   alEmpezarCinematica(id: string): void;
   /** Terminó una cinemática: completa, saltada o con error. */
   alTerminarCinematica(id: string): void;
+  /** Empezó un diálogo con un NPC o un interactivo, el de una salida cerrada, o un comentario de zona. */
+  alEmpezarDialogo(dialogo: DialogoDelNivel): void;
+  /** Terminó ese diálogo: completo, interrumpido o con error. Nunca se enciman dos. */
+  alTerminarDialogo(dialogo: DialogoDelNivel): void;
   /** Alguna variable cambió de valor. `cambios` trae solo las que cambiaron; `estado` es el estado ya cambiado. */
   alCambiarElEstado(cambios: VariablesDeEstado, estado: EstadoDeNivel): void;
   /** Se abrió un minijuego. El dato es el nombre con el que el host lo registró. */

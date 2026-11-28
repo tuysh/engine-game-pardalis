@@ -9,6 +9,7 @@ export type { OpcionesDeEscenario } from './opciones-de-escenario.ts';
 export type { ProgresoDeCarga } from './dominio/progreso-de-carga.ts';
 export type {
   AvisoDeCinematica,
+  AvisoDeDialogo,
   AvisoDeMinijuego,
   CambioDeEstado,
   CambioDeNivel,
@@ -29,6 +30,7 @@ export type {
   VariablesDeEstado,
 } from './dominio/estado.ts';
 export type { Idioma } from './dominio/idioma.ts';
+export type { OrigenDeDialogo } from './aplicacion/conversacion.ts';
 export type { Azar } from './puertos/azar.ts';
 export type { Partida, PartidaDeNivel } from './dominio/partida.ts';
 

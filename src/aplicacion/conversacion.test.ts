@@ -182,3 +182,67 @@ test('hablar con alguien que no existe no hace nada', async () => {
 
   expect(estado.actual.variables).toEqual({});
 });
+
+test('cada diálogo avisa con quién empieza y termina, entre "alEmpezar" y "alTerminar"', async () => {
+  const avisos: string[] = [];
+  const conversacion = new Conversacion({
+    contenido: CONTENIDO,
+    estado: crearEstado(),
+    acciones: crearAccionesFalsas([]),
+    alFallar: () => {},
+    alEmpezar: () => avisos.push('empieza el turno'),
+    alTerminar: () => avisos.push('termina el turno'),
+    alEmpezarDialogo: ({ origen, id }) => avisos.push(`inicio ${origen} ${id}`),
+    alTerminarDialogo: ({ origen, id }) => avisos.push(`fin ${origen} ${id}`),
+  });
+
+  await conversacion.hablarCon('npcs', 'tortu');
+  await conversacion.ejecutar({ tipo: 'secuencia', nombre: 'bloquea_salida' });
+
+  expect(avisos).toEqual([
+    'empieza el turno',
+    'inicio npc tortu',
+    'fin npc tortu',
+    'termina el turno',
+    'empieza el turno',
+    'inicio salida undefined',
+    'fin salida undefined',
+    'termina el turno',
+  ]);
+});
+
+test('una cinemática ocupa el turno pero no se avisa como diálogo', async () => {
+  const avisos: string[] = [];
+  const conversacion = new Conversacion({
+    contenido: CONTENIDO,
+    estado: crearEstado(),
+    acciones: crearAccionesFalsas([]),
+    alFallar: () => {},
+    alEmpezarDialogo: () => avisos.push('inicio'),
+    alTerminarDialogo: () => avisos.push('fin'),
+  });
+
+  await conversacion.ejecutarEscena(async () => {});
+
+  expect(avisos).toEqual([]);
+});
+
+test('un diálogo que falla también avisa que terminó', async () => {
+  const avisos: string[] = [];
+  const acciones = crearAccionesFalsas([]);
+  acciones.decirLinea = async () => {
+    throw new Error('se rompió');
+  };
+  const conversacion = new Conversacion({
+    contenido: CONTENIDO,
+    estado: crearEstado(),
+    acciones,
+    alFallar: () => avisos.push('falla'),
+    alEmpezarDialogo: () => avisos.push('inicio'),
+    alTerminarDialogo: () => avisos.push('fin'),
+  });
+
+  await conversacion.hablarCon('npcs', 'tortu');
+
+  expect(avisos).toEqual(['inicio', 'falla', 'fin']);
+});

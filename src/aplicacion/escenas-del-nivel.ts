@@ -66,6 +66,8 @@ export class EscenasDelNivel {
       alFallar: (error) => avisos.alFallar(error),
       alEmpezar: piezas.alEmpezarUnaEscena,
       alTerminar: () => this.alTerminarUnaEscena(),
+      alEmpezarDialogo: (dialogo) => avisos.alEmpezarDialogo(dialogo),
+      alTerminarDialogo: (dialogo) => avisos.alTerminarDialogo(dialogo),
     });
     this.cinematicas = new Cinematicas({
       contenido: escena.contenido,

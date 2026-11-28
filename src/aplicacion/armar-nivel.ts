@@ -172,6 +172,8 @@ function crearComentarios(base: BaseDelNivel, escena: PiezasDeEscena): Comentari
       return decirLinea({ paso: linea, textoCompleto, seCierraConUnToque: false }, senal, escena);
     },
     alFallar: (error) => base.avisos.alFallar(error),
+    alEmpezarComentario: (zona) => base.avisos.alEmpezarDialogo({ origen: 'comentario', id: zona }),
+    alTerminarComentario: (zona) => base.avisos.alTerminarDialogo({ origen: 'comentario', id: zona }),
   });
 }
 

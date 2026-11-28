@@ -132,6 +132,8 @@ async function empezar(nivel: Nivel, opciones: OpcionesDePrueba = {}) {
         }
       },
       alTerminarCinematica: (id) => avisosDeCinematicas.push(`fin ${id}`),
+      alEmpezarDialogo: () => {},
+      alTerminarDialogo: () => {},
       alCambiarElEstado: () => {},
       alEmpezarMinijuego: () => {},
       alTerminarMinijuego: () => {},

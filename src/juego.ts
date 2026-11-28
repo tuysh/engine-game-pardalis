@@ -1,5 +1,6 @@
 // El objeto `juego` que entrega `crearEscenario()` y los eventos que emite (docs/DISENO-3.0.md §4).
 
+import type { OrigenDeDialogo } from './aplicacion/conversacion.ts';
 import type { ErrorDeEscenario } from './dominio/error-de-escenario.ts';
 import type { LectorDeEstado, VariablesDeEstado } from './dominio/estado.ts';
 import type { Partida } from './dominio/partida.ts';
@@ -20,6 +21,29 @@ export interface CambioDeNivel {
 export interface AvisoDeCinematica {
   readonly id: string;
   readonly fase: 'inicio' | 'fin';
+}
+
+/**
+ * Dato del evento `dialogo`: empezó o terminó una conversación con globos que no es una cinemática.
+ * Sirve para esconder o achicar lo que el host dibuja encima del juego y que taparía los globos.
+ * Nunca se enciman dos: el `'fin'` de uno siempre llega antes que el `'inicio'` del siguiente.
+ *
+ * @example
+ * juego.on('dialogo', ({ fase, origen }) => {
+ *   if (origen === 'comentario') return; // los comentarios de zona son cortos: aquí no se esconde nada
+ *   achicarLista(fase === 'inicio');
+ * });
+ */
+export interface AvisoDeDialogo {
+  readonly fase: 'inicio' | 'fin';
+  /**
+   * Qué lo empezó: `'npc'` (tocar a un personaje), `'interactivo'` (tocar un objeto del decorado),
+   * `'salida'` (intentar salir por una salida cerrada, `salida.siBloqueada`) o `'comentario'`
+   * (el jugador entró a una zona con comentarios; mientras se oye, se puede seguir caminando).
+   */
+  readonly origen: OrigenDeDialogo;
+  /** El id del NPC o del interactivo, o el nombre de la zona del comentario. `undefined` en una salida. */
+  readonly id: string | undefined;
 }
 
 /** Dato del evento `minijuego` cuando se abre. */
@@ -77,6 +101,11 @@ export interface EventosDeJuego {
   readonly nivel: CambioDeNivel;
   /** Empezó o terminó una cinemática. Sirve para ocultar la interfaz del host. */
   readonly cinematica: AvisoDeCinematica;
+  /**
+   * Empezó o terminó un diálogo: con un NPC, con un interactivo, el de una salida cerrada o un comentario de zona.
+   * Sirve para que lo que el host dibuja encima no tape los globos. Las cinemáticas avisan con `cinematica`.
+   */
+  readonly dialogo: AvisoDeDialogo;
   /** Se abrió o se cerró un minijuego. Sirve para ocultar lo que el host dibuja encima del juego. */
   readonly minijuego: AvisoDeMinijuego;
   /** Cambió alguna variable del nivel: el dinero, un objetivo, lo que hizo un `pon`. */

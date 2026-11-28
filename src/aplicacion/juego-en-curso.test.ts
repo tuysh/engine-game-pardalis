@@ -188,6 +188,8 @@ async function empezarEn(nivel: string, partidaInicial?: Partida) {
       alCambiarDeNivel: (id, anterior) => avisos.push(`nivel ${id} (antes ${anterior})`),
       alEmpezarCinematica: (id) => avisos.push(`inicio ${id}`),
       alTerminarCinematica: (id) => avisos.push(`fin ${id}`),
+      alEmpezarDialogo: () => {},
+      alTerminarDialogo: () => {},
       alCambiarElEstado: (cambio) => cambiosDeEstado.push(cambio),
       alEmpezarMinijuego: () => {},
       alTerminarMinijuego: () => {},

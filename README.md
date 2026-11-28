@@ -92,6 +92,7 @@ llamándolos (`crearEscenario`, `juego.on`, `Minijuego`, `CinematicaEnCodigo`) t
 juego.on('objetivo', (id) => marcarEnLaLista(id));          // devuelve una función que deja de escuchar
 juego.on('palabra', ({ en, es }) => anotarPalabra(en, es));
 juego.on('cinematica', ({ fase }) => ocultarMenu(fase === 'inicio'));
+juego.on('dialogo', ({ fase }) => ocultarMenu(fase === 'inicio'));      // un NPC, un interactivo o un comentario
 juego.on('minijuego', ({ fase }) => ocultarMenu(fase === 'inicio'));   // el 'fin' trae { exito, cambios }
 juego.on('estado', ({ variables }) => pintarMonedero(variables.dinero));   // cada vez que cambia una variable
 pintarMonedero(juego.estado.obtener('dinero'));                            // y para leerlo cuando haga falta
