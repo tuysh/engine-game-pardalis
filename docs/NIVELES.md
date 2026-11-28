@@ -778,7 +778,7 @@ Y los de las cinemáticas y los pasos de escena:
 Si el foco está en un botón, un enlace, un campo o algo con `role="button"` o `role="dialog"` (los del tablero
 del host, los de un minijuego, las tarjetas), `Enter` y la barra espaciadora oprimen ese botón: el motor no
 las toma para hablar ni para seguir el diálogo. `E` sigue sirviendo para hablar, salvo dentro de un
-minijuego o de un diálogo del host, que tapan a quien está detrás.
+minijuego o de un diálogo del host, que tapan a quien está detrás; ahí tampoco las flechas mueven al jugador.
 
 ### Verlo en la demo
 

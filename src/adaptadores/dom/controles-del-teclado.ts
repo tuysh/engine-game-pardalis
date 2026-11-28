@@ -4,7 +4,8 @@
 // Enter o la barra espaciadora oprimidas en un control de la página (un botón del host, una tarjeta de
 // opciones, algo dentro de un minijuego o de un diálogo del host) son de ese control: aquí no se cancelan
 // ni piden hablar. `E` sí habla con el foco en un botón (tras tocar la bocina, por ejemplo), pero no dentro
-// de un minijuego o de un diálogo del host, que tapan a quien está detrás.
+// de un minijuego o de un diálogo del host, que tapan a quien está detrás; ahí tampoco las flechas mueven
+// al jugador.
 //
 // Las teclas se reconocen por su lugar en el teclado (`code`) y no por la letra que escriben (`key`):
 // así W, A, S y D quedan bajo los mismos dedos también en teclados con otra distribución.
@@ -81,6 +82,9 @@ export class ControlesDelTeclado implements Controles {
     const camino = evento.composedPath();
     // Si el host tiene un campo de texto y la persona está escribiendo, sus teclas no son para el juego.
     if (esTeclaDeUnCampo(camino)) return;
+    // Dentro de un minijuego o de un diálogo del host las teclas son de esa ventana: las flechas no mueven al
+    // jugador que quedó detrás (ni se cancelan, por si la ventana las usa) y `E` no pide hablar con nadie.
+    if (esTeclaDeUnaVentana(camino)) return;
 
     if (Object.hasOwn(MOVIMIENTO_POR_TECLA, evento.code)) {
       this.teclasOprimidas.add(evento.code);
@@ -94,7 +98,6 @@ export class ControlesDelTeclado implements Controles {
     // En un botón, Enter y la barra espaciadora lo oprimen. Cancelarlas aquí lo dejaría sin funcionar con
     // teclado, y pedir hablar empezaría una plática con quien está cerca que nadie pidió.
     if (TECLAS_QUE_OPRIMEN_BOTONES.includes(evento.code) && esTeclaDeUnControl(camino)) return;
-    if (esTeclaDeUnaVentana(camino)) return;
     // Enter y la barra espaciadora también siguen el diálogo, y la interfaz las atiende antes (escucha en
     // `document`, que recibe la tecla antes que `window`) y lo marca con `preventDefault`. Si esa tecla cerró
     // la última línea, aquí el diálogo ya terminó: pedir hablar lo empezaría otra vez con quien está cerca.
