@@ -571,3 +571,144 @@ test('una imagen fija solo se pone, y cambiar después de detener ya no hace nad
   expect(comal.src).toBe('/assets/img/comal.svg');
   expect(tepo.src).toBe('/tepo_1.svg');
 });
+
+test('el minijuego sabe si el juego está en pausa y se entera cuando se pausa y se reanuda', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  let contextoRecibido: ContextoDeMinijuego | undefined;
+  const avisosDePausa: boolean[] = [];
+  const Chiles: Minijuego = (contexto) => {
+    contextoRecibido = contexto;
+    contexto.alPausarOReanudar((pausado) => avisosDePausa.push(pausado));
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Chiles });
+
+  const jugando = jugarMinijuego({ nombre: 'Chiles', config: undefined }, SIN_INTERRUMPIR, piezas);
+  expect(contextoRecibido?.pausado).toBe(false);
+  reloj.pausar();
+  expect(contextoRecibido?.pausado).toBe(true);
+  reloj.reanudar();
+  expect(contextoRecibido?.pausado).toBe(false);
+  terminar({ exito: true });
+  await jugando;
+  // Cerrado el minijuego, ya no se le avisa.
+  reloj.pausar();
+
+  expect(avisosDePausa).toEqual([true, false]);
+});
+
+test('enCadaCuadro lleva el tiempo del juego: no avanza en pausa y se detiene al cerrarse el minijuego', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const cuadros: number[] = [];
+  const Chiles: Minijuego = (contexto) => {
+    contexto.enCadaCuadro((segundos) => cuadros.push(segundos));
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Chiles });
+
+  const jugando = jugarMinijuego({ nombre: 'Chiles', config: undefined }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(0.1);
+  // Con el teléfono de pie (el host pausa el juego) los chiles no caen.
+  reloj.pausar();
+  await reloj.avanzar(15);
+  reloj.reanudar();
+  await reloj.avanzar(0.05);
+  terminar({ exito: true });
+  await jugando;
+  await reloj.avanzar(0.1);
+
+  expect(cuadros).toEqual([0.1, 0.05]);
+});
+
+test('lo que el minijuego escucha del reloj se deja con su señal o con la función que devuelve', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const cuadros: string[] = [];
+  const caida = new AbortController();
+  let dejarLaCanasta = (): void => {};
+  const Chiles: Minijuego = (contexto) => {
+    contexto.enCadaCuadro(() => cuadros.push('chile'), caida.signal);
+    dejarLaCanasta = contexto.enCadaCuadro(() => cuadros.push('canasta'));
+    contexto.enCadaCuadro(() => cuadros.push('nube'));
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Chiles });
+
+  const jugando = jugarMinijuego({ nombre: 'Chiles', config: undefined }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(0.1);
+  caida.abort();
+  dejarLaCanasta();
+  dejarLaCanasta(); // llamarla de más no hace nada
+  await reloj.avanzar(0.1);
+  terminar({ exito: true });
+  await jugando;
+
+  expect(cuadros).toEqual(['chile', 'canasta', 'nube', 'nube']);
+});
+
+test('una función del minijuego que falla en el reloj no traba el juego, y lo que no es función se ignora', async () => {
+  const errores: unknown[] = [];
+  const avisos: unknown[] = [];
+  const espiaDeErrores = spyOn(console, 'error').mockImplementation((error: unknown) => errores.push(error));
+  const espiaDeAvisos = spyOn(console, 'warn').mockImplementation((aviso: unknown) => avisos.push(aviso));
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  let cuadrosDelJuego = 0;
+  const Chiles: Minijuego = (contexto) => {
+    contexto.enCadaCuadro(() => {
+      throw new Error('se cayó la canasta');
+    });
+    contexto.alPausarOReanudar(() => {
+      throw new Error('tampoco');
+    });
+    // Escrito en JavaScript sin tipos: no es una función.
+    (contexto.enCadaCuadro as (funcion: unknown) => () => void)('chile');
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Chiles });
+  reloj.enCadaCuadro(() => cuadrosDelJuego++);
+
+  try {
+    const jugando = jugarMinijuego({ nombre: 'Chiles', config: undefined }, SIN_INTERRUMPIR, piezas);
+    await reloj.avanzar(0.1);
+    reloj.pausar();
+    reloj.reanudar();
+    terminar({ exito: true });
+    await jugando;
+  } finally {
+    espiaDeErrores.mockRestore();
+    espiaDeAvisos.mockRestore();
+  }
+
+  expect(cuadrosDelJuego).toBe(1);
+  expect(errores).toHaveLength(3);
+  expect(avisos).toEqual(['[escenario-engine] contexto.enCadaCuadro necesita una función; se ignora']);
+});
+
+test('en pausa, los sonidos del minijuego no suenan y lo que dice espera a que se reanude', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const Chiles: Minijuego = ({ audio }) => {
+    audio.tocar('comal');
+    audio.tocarTono(880, 0.2);
+    void audio.decir('¡Chile guajillo!', 'es');
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const escena = crearEscena({ Chiles });
+  const reloj = escena.reloj;
+  // Como en el juego (crear.ts): la pausa llega al reloj y a la fila de voces a la vez.
+  const voz = new VozEnOrden(escena.audio, reloj);
+  const piezas: PiezasDeEscena = { ...escena.piezas, audio: voz };
+  reloj.pausar();
+  voz.pausar();
+
+  const jugando = jugarMinijuego({ nombre: 'Chiles', config: undefined }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(1);
+  expect(escena.audio.sonidosTocados).toEqual([]);
+  expect(escena.audio.tonosTocados).toEqual([]);
+  expect(escena.audio.frasesDichas).toEqual([]);
+
+  reloj.reanudar();
+  voz.reanudar();
+  await reloj.avanzar(0);
+  expect(escena.audio.frasesDichas.map((frase) => frase.texto)).toEqual(['¡Chile guajillo!']);
+  terminar({ exito: true });
+  await jugando;
+});

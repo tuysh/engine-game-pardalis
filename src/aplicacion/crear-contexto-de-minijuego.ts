@@ -1,5 +1,6 @@
 // Arma lo que el motor le entrega a un minijuego (docs/DISENO-3.0.md §6): su elemento, la configuración
-// del nivel, y el estado, el audio, los assets y el azar del motor vistos desde el minijuego.
+// del nivel, y el estado, el audio, los assets, el azar y el reloj (con su pausa) del motor vistos desde el
+// minijuego.
 //
 // El minijuego es código del host: todo lo que pide se revisa, y nada de lo que pide puede fallar con un error.
 
@@ -50,7 +51,70 @@ export function crearContextoDeMinijuego(apertura: AperturaDeMinijuego, piezas: 
     audio: crearAudio(apertura.senal, piezas),
     assets: crearAssets(apertura.senal, piezas),
     azar: () => piezas.azar(),
+    get pausado() {
+      return piezas.reloj.estaPausado;
+    },
+    alPausarOReanudar(funcion, senal) {
+      const protegida = protegerFuncionDelMinijuego(funcion, 'alPausarOReanudar');
+      return escucharHastaElCierre(() => piezas.reloj.alPausarOReanudar(protegida), apertura.senal, senal);
+    },
+    enCadaCuadro(funcion, senal) {
+      const protegida = protegerFuncionDelMinijuego(funcion, 'enCadaCuadro');
+      return escucharHastaElCierre(() => piezas.reloj.enCadaCuadro(protegida), apertura.senal, senal);
+    },
   };
+}
+
+/**
+ * Envuelve una función que el minijuego le da al reloj. Si lanza un error, se anota en la consola y el reloj
+ * sigue: un error ahí no debe trabar el juego entero. Lo que no es una función se ignora con un aviso.
+ */
+function protegerFuncionDelMinijuego<Dato>(funcion: unknown, quien: string): (dato: Dato) => void {
+  if (typeof funcion !== 'function') {
+    console.warn(`[escenario-engine] contexto.${quien} necesita una función; se ignora`);
+    return () => {};
+  }
+  return (dato) => {
+    try {
+      funcion(dato);
+    } catch (error) {
+      console.error(`[escenario-engine] la función que un minijuego le dio a contexto.${quien} falló:`, error);
+    }
+  };
+}
+
+/**
+ * Empieza a escuchar (con `escuchar`, que devuelve cómo dejar de hacerlo) hasta que el minijuego se cierre o se
+ * dispare la señal que dio el minijuego, si dio una: así nada suyo sigue llamándose después.
+ * Devuelve la función que deja de escuchar antes; llamarla de más no hace nada.
+ */
+function escucharHastaElCierre(
+  escuchar: () => () => void,
+  senalDelMinijuego: AbortSignal,
+  senalPropia: unknown,
+): () => void {
+  const senales = [senalDelMinijuego];
+  // El minijuego puede estar escrito en JavaScript sin tipos: lo que no es una señal se ignora.
+  if (senalPropia instanceof AbortSignal) {
+    senales.push(senalPropia);
+  }
+  // Con el minijuego ya cerrado (o su señal ya disparada) no se empieza a escuchar.
+  if (senales.some((senal) => senal.aborted)) return () => {};
+
+  const dejarDeEscuchar = escuchar();
+  let yaSeDejo = false;
+  const dejar = (): void => {
+    if (yaSeDejo) return;
+    yaSeDejo = true;
+    for (const senal of senales) {
+      senal.removeEventListener('abort', dejar);
+    }
+    dejarDeEscuchar();
+  };
+  for (const senal of senales) {
+    senal.addEventListener('abort', dejar, { once: true });
+  }
+  return dejar;
 }
 
 function crearAssets(senalDelMinijuego: AbortSignal, piezas: PiezasDeEscena): AssetsParaMinijuego {
@@ -125,6 +189,8 @@ function crearAudio(senalDelMinijuego: AbortSignal, piezas: PiezasDeEscena): Aud
 
   return {
     tocar(clave, opciones) {
+      // Con el juego en pausa nadie lo está viendo: un sonido suelto no espera a que se reanude, solo no suena.
+      if (piezas.reloj.estaPausado) return;
       const direccion = piezas.direccionDeAsset(clave);
       if (direccion === undefined) {
         console.warn(`[escenario-engine] un minijuego pidió tocar "${clave}", que no está en los assets del nivel`);
@@ -133,6 +199,7 @@ function crearAudio(senalDelMinijuego: AbortSignal, piezas: PiezasDeEscena): Aud
       piezas.audio.tocar(direccion, leerOpcionesDeSonido(clave, opciones));
     },
     tocarTono(frecuenciaEnHertz, duracionEnSegundos) {
+      if (piezas.reloj.estaPausado) return;
       const sonValidos = esNumeroPositivo(frecuenciaEnHertz) && esNumeroPositivo(duracionEnSegundos);
       if (!sonValidos) {
         console.warn('[escenario-engine] un minijuego pidió un tono sin una frecuencia y una duración mayores que cero');

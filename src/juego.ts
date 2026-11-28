@@ -181,6 +181,8 @@ export interface Juego {
   /**
    * Congela juego, audio y video. Si el juego estaba diciendo una frase, se corta y al reanudar se dice
    * otra vez desde el principio. Lo que diga el host con `decir()` sí se oye durante la pausa.
+   * Un minijuego abierto se entera con `contexto.pausado` y `contexto.alPausarOReanudar`, y su
+   * `contexto.enCadaCuadro` deja de avanzar (docs/DISENO-3.0.md §6, «Pausa en un minijuego»).
    */
   pausar(): void;
   /** Sigue desde donde `pausar()` lo dejó. */

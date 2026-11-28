@@ -1,4 +1,5 @@
-// Reloj falso para las pruebas: el tiempo solo pasa cuando la prueba llama a `avanzar()`.
+// Reloj falso para las pruebas: el tiempo solo pasa cuando la prueba llama a `avanzar()`,
+// y no pasa mientras la prueba lo tiene en pausa (`pausar()`), igual que el reloj del navegador.
 //
 // Uso:
 //   const reloj = new RelojDeMemoria();
@@ -19,6 +20,8 @@ export class RelojDeMemoria implements Reloj {
   private ahoraEnSegundos = 0;
   private esperasPendientes: EsperaPendiente[] = [];
   private funcionesDeCadaCuadro: ((segundos: number) => void)[] = [];
+  private funcionesDePausa: ((estaPausado: boolean) => void)[] = [];
+  private pausado = false;
 
   esperar(esperaEnSegundos: number, senal: AbortSignal): Promise<void> {
     if (senal.aborted || esperaEnSegundos <= 0) {
@@ -48,12 +51,40 @@ export class RelojDeMemoria implements Reloj {
     };
   }
 
+  get estaPausado(): boolean {
+    return this.pausado;
+  }
+
+  alPausarOReanudar(funcion: (estaPausado: boolean) => void): () => void {
+    this.funcionesDePausa.push(funcion);
+    return () => {
+      this.funcionesDePausa = this.funcionesDePausa.filter((registrada) => registrada !== funcion);
+    };
+  }
+
+  /** Detiene el tiempo: `avanzar()` no hace nada hasta `reanudar()`. */
+  pausar(): void {
+    if (this.pausado) return;
+    this.pausado = true;
+    this.avisarDeLaPausa();
+  }
+
+  reanudar(): void {
+    if (!this.pausado) return;
+    this.pausado = false;
+    this.avisarDeLaPausa();
+  }
+
   /**
-   * Hace pasar el tiempo. Cuenta como un solo cuadro: llama una vez a las funciones de `enCadaCuadro`.
+   * Hace pasar el tiempo. En pausa no pasa nada (solo le da turno al código que estaba esperando). Cuenta como un solo cuadro: llama una vez a las funciones de `enCadaCuadro`.
    * Luego termina las esperas que vencen, en orden, y le da turno al código que estaba esperando;
    * si ese código pide otra espera que también vence, también termina.
    */
   async avanzar(segundos: number): Promise<void> {
+    if (this.pausado) {
+      await dejarCorrerLoPendiente();
+      return;
+    }
     const destinoEnSegundos = this.ahoraEnSegundos + segundos;
     for (const funcion of this.funcionesDeCadaCuadro) {
       funcion(segundos);
@@ -75,6 +106,12 @@ export class RelojDeMemoria implements Reloj {
   /** Para comprobar en una prueba que nada quedó esperando. */
   get hayEsperasPendientes(): boolean {
     return this.esperasPendientes.length > 0;
+  }
+
+  private avisarDeLaPausa(): void {
+    for (const funcion of [...this.funcionesDePausa]) {
+      funcion(this.pausado);
+    }
   }
 
   private buscarEsperaQueVenceAntesDe(limiteEnSegundos: number): EsperaPendiente | undefined {

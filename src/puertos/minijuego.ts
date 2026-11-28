@@ -142,6 +142,41 @@ export interface ContextoDeMinijuego {
   readonly azar: Azar;
   /** Se dispara si el host destruye el juego. El minijuego debe limpiar lo suyo. */
   readonly senal: AbortSignal;
+  /**
+   * `true` mientras el juego está en pausa: el host llamó a `juego.pausar()` (por ejemplo, con el teléfono de pie
+   * o con su cuaderno abierto encima), la página no se ve, o todavía no tocan el botón de inicio.
+   * Un minijuego que se mueve solo (cosas que caen, un reloj de arena) se queda quieto mientras tanto: nadie
+   * lo está viendo, y no debe perder ni ganar nada por eso. Lo más fácil es moverlo con `enCadaCuadro`, que ya
+   * se detiene en la pausa; para lo demás, `alPausarOReanudar`.
+   *
+   * Lo que el motor hace por el minijuego ya respeta la pausa: `audio.decir` espera a que se reanude (y repite
+   * desde el principio la frase que la pausa cortó), `assets.animar` se detiene, y `audio.tocar` y
+   * `audio.tocarTono` no suenan mientras dure.
+   */
+  readonly pausado: boolean;
+  /**
+   * Llama a `funcion` cada vez que el juego se pausa (`true`) o se reanuda (`false`).
+   * Deja de avisar al llamar a la función que devuelve, al dispararse `senal` o al cerrarse el minijuego.
+   *
+   * @example
+   * alPausarOReanudar((pausado) => {
+   *   reloj.classList.toggle('detenido', pausado); // una animación de CSS también se detiene
+   * });
+   */
+  alPausarOReanudar(funcion: (pausado: boolean) => void, senal?: AbortSignal): () => void;
+  /**
+   * Llama a `funcion` en cada cuadro que se dibuja, con los segundos de juego que pasaron desde el anterior.
+   * Es el reloj del juego: no avanza mientras el juego está en pausa ni con la página oculta, y un cuadro nunca
+   * dura más de una décima de segundo, aunque el dispositivo se haya trabado. Conviene en vez de
+   * `requestAnimationFrame` y `performance.now()` para todo lo que se mueve solo.
+   * Deja de llamarla al llamar a la función que devuelve, al dispararse `senal` o al cerrarse el minijuego.
+   *
+   * @example
+   * enCadaCuadro((segundos) => {
+   *   chile.y += VELOCIDAD_DE_CAIDA_EN_PUNTOS_POR_SEGUNDO * segundos;
+   * });
+   */
+  enCadaCuadro(funcion: (segundos: number) => void, senal?: AbortSignal): () => void;
 }
 
 /** Lo que un minijuego devuelve al terminar. */

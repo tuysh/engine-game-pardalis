@@ -325,6 +325,9 @@ export function Tortilleria({ elemento, config, estado, audio, assets, azar, sen
 | `azar` | `azar()` entrega un número de 0 a 1, como `Math.random`, pero sale del azar del motor: con la opción `semilla`, el minijuego también es repetible. |
 | `assets` | `url(clave)` para usar imágenes del manifiesto (de una animación, su primer cuadro); `cuadros(clave)` y `animar(imagen, clave, senal?)` para las animaciones: ver «Imágenes animadas en un minijuego». |
 | `senal` | `AbortSignal`: se dispara si el host destruye el juego. El minijuego debe limpiar lo suyo. |
+| `pausado` | `true` mientras el juego está en pausa (`juego.pausar()`, la página oculta o antes del botón de inicio). Ver «Pausa en un minijuego». |
+| `alPausarOReanudar` | `alPausarOReanudar((pausado) => …, senal?)`: avisa cada vez que el juego se pausa o se reanuda. Devuelve la función que deja de avisar. |
+| `enCadaCuadro` | `enCadaCuadro((segundos) => …, senal?)`: llama en cada cuadro con los segundos del reloj del juego, que no avanza en pausa. Devuelve la función que la detiene. |
 
 Resultado: `{ exito: boolean, otorgar?: Record<string, valor> }`. Si la función lanza un error se trata como
 `{ exito: false }` y sigue el diálogo amable `siNo`. En `otorgar`, un valor puede ser también `{ suma: n }` o
@@ -374,8 +377,33 @@ y una clave que no es imagen del nivel trae `urls: []` y una advertencia.
 for (const url of new Set(assets.cuadros('tepo_habla').urls)) new Image().src = url;
 ```
 
+### Pausa en un minijuego
+
+Cuando el host pausa el juego (con el teléfono de pie, con su cuaderno abierto encima) o la página deja de
+verse, nadie está viendo el minijuego: lo que se mueve solo debe quedarse quieto, para que nadie pierda una
+estrella por chiles que cayeron detrás de un aviso. El motor ya detiene lo suyo: `audio.decir` espera a que se
+reanude (y repite desde el principio la frase que la pausa cortó), `assets.animar` se detiene, y `audio.tocar` y
+`audio.tocarTono` no suenan mientras dure la pausa. Lo que el minijuego mueve por su cuenta lo detiene él:
+
+- Lo más fácil es moverlo con `enCadaCuadro((segundos) => …)` en vez de `requestAnimationFrame` y
+  `performance.now()`: es el reloj del juego, así que en pausa no avanza, y un cuadro nunca dura más de una
+  décima de segundo aunque el dispositivo se haya trabado.
+- Para lo demás (un temporizador propio, una animación de CSS, un video) están `pausado` y
+  `alPausarOReanudar((pausado) => …)`.
+- Las dos dejan de llamarse solas al cerrarse el minijuego; su segundo parámetro, una `AbortSignal` opcional,
+  las detiene antes. Si la función lanza un error, se anota en la consola y el juego sigue.
+
+```js
+const dejarDeCaer = enCadaCuadro((segundos) => {
+  chile.y += VELOCIDAD_DE_CAIDA_EN_PUNTOS_POR_SEGUNDO * segundos;
+});
+alPausarOReanudar((pausado) => canasta.classList.toggle('quieta', pausado));
+```
+
 Un host que arma a mano un `ContextoDeMinijuego` (por ejemplo, una mesa de pruebas que abre un minijuego sin
-el motor) ahora tiene que darle también `assets.cuadros` y `assets.animar`; TypeScript lo señala. Para una
+el motor) ahora tiene que darle también `assets.cuadros`, `assets.animar`, `pausado`, `alPausarOReanudar` y
+`enCadaCuadro`; TypeScript lo señala. Para una prueba sin pausa basta con `pausado: false`,
+`alPausarOReanudar: () => () => {}` y un `enCadaCuadro` hecho con `requestAnimationFrame`. Para una
 prueba basta con poner el primer cuadro: `animar: (imagen, clave) => { imagen.src = url(clave); return { cambiar:
 (otra) => { imagen.src = url(otra); }, detener: () => {} }; }`.
 

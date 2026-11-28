@@ -23,11 +23,12 @@ export class RelojDelNavegador implements Reloj {
   private ahoraEnSegundos = 0;
   private esperasPendientes: EsperaPendiente[] = [];
   private funcionesDeCadaCuadro: ((segundos: number) => void)[] = [];
+  private funcionesDePausa: ((estaPausado: boolean) => void)[] = [];
   /** Momento, según el navegador, en que llegó el cuadro anterior. `undefined` = todavía no llega ninguno. */
   private momentoDelCuadroAnteriorEnMilisegundos: number | undefined;
   /** Identificador del cuadro pedido al navegador, para poder cancelarlo. */
   private cuadroPedido: number | undefined;
-  private estaPausado = false;
+  private pausado = false;
 
   esperar(esperaEnSegundos: number, senal: AbortSignal): Promise<void> {
     if (senal.aborted || esperaEnSegundos <= 0) {
@@ -60,15 +61,30 @@ export class RelojDelNavegador implements Reloj {
     };
   }
 
+  get estaPausado(): boolean {
+    return this.pausado;
+  }
+
+  alPausarOReanudar(funcion: (estaPausado: boolean) => void): () => void {
+    this.funcionesDePausa.push(funcion);
+    return () => {
+      this.funcionesDePausa = this.funcionesDePausa.filter((registrada) => registrada !== funcion);
+    };
+  }
+
   /** Congela el tiempo de juego: no avanzan las esperas ni se llama a las funciones de cada cuadro. */
   pausar(): void {
-    this.estaPausado = true;
+    if (this.pausado) return;
+    this.pausado = true;
+    this.avisarDeLaPausa();
   }
 
   reanudar(): void {
-    this.estaPausado = false;
+    if (!this.pausado) return;
+    this.pausado = false;
     // Se olvida el cuadro anterior para que el tiempo que duró la pausa no cuente como tiempo de juego.
     this.momentoDelCuadroAnteriorEnMilisegundos = undefined;
+    this.avisarDeLaPausa();
   }
 
   /** Detiene el reloj para siempre y termina las esperas pendientes, para que nada quede colgado. */
@@ -80,6 +96,7 @@ export class RelojDelNavegador implements Reloj {
     const esperas = this.esperasPendientes;
     this.esperasPendientes = [];
     this.funcionesDeCadaCuadro = [];
+    this.funcionesDePausa = [];
     for (const espera of esperas) {
       espera.terminar();
     }
@@ -96,7 +113,7 @@ export class RelojDelNavegador implements Reloj {
     const momentoAnterior = this.momentoDelCuadroAnteriorEnMilisegundos;
     this.momentoDelCuadroAnteriorEnMilisegundos = momentoEnMilisegundos;
 
-    if (!this.estaPausado && momentoAnterior !== undefined) {
+    if (!this.pausado && momentoAnterior !== undefined) {
       const segundosReales = (momentoEnMilisegundos - momentoAnterior) / MILISEGUNDOS_POR_SEGUNDO;
       const segundos = Math.min(segundosReales, DURACION_MAXIMA_DE_UN_CUADRO_EN_SEGUNDOS);
       this.avanzar(segundos);
@@ -123,6 +140,13 @@ export class RelojDelNavegador implements Reloj {
     for (const espera of vencidas) {
       this.quitarEspera(espera);
       espera.terminar();
+    }
+  }
+
+  private avisarDeLaPausa(): void {
+    // Se recorre una copia porque quien escucha puede darse de baja mientras se le avisa.
+    for (const funcion of [...this.funcionesDePausa]) {
+      funcion(this.pausado);
     }
   }
 

@@ -110,3 +110,29 @@ test('cada avance cuenta como un cuadro para quien pidió enterarse', async () =
 
   expect(cuadros).toEqual([0.016, 0.02]);
 });
+
+test('en pausa el tiempo no pasa, y avisa cada vez que se pausa o se reanuda', async () => {
+  const reloj = new RelojDeMemoria();
+  const avisos: boolean[] = [];
+  const cuadros: number[] = [];
+  const dejarDeAvisar = reloj.alPausarOReanudar((estaPausado) => avisos.push(estaPausado));
+  reloj.enCadaCuadro((segundos) => cuadros.push(segundos));
+  let termino = false;
+  void reloj.esperar(1, new AbortController().signal).then(() => {
+    termino = true;
+  });
+
+  reloj.pausar();
+  reloj.pausar(); // pausar dos veces avisa una sola
+  await reloj.avanzar(5);
+  expect(reloj.estaPausado).toBe(true);
+  expect(termino).toBe(false);
+  reloj.reanudar();
+  await reloj.avanzar(1);
+  dejarDeAvisar();
+  reloj.pausar();
+
+  expect(termino).toBe(true);
+  expect(cuadros).toEqual([1]);
+  expect(avisos).toEqual([true, false]);
+});

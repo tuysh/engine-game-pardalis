@@ -155,6 +155,8 @@ más agudo o más bajito: así un mismo sonido sube de nota en cada acierto segu
 Los personajes se animan como en el escenario, con el ritmo y la secuencia de `assets.config.json`:
 `const tepo = assets.animar(img, 'spr_tepo')` lo hace parpadear y `tepo.cambiar('tepo_habla')` le mueve la boca
 (detalles en [`docs/DISENO-3.0.md`](docs/DISENO-3.0.md) §6).
+Lo que se mueve solo se mueve con `enCadaCuadro((segundos) => …)`, el reloj del juego: así se queda quieto
+cuando el host pausa el juego o la página no se ve. Para lo demás están `pausado` y `alPausarOReanudar`.
 Un ejemplo completo: [`ejemplo/tortilleria.ts`](ejemplo/tortilleria.ts).
 
 ### Una cinemática en código
