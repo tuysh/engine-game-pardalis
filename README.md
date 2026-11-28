@@ -115,10 +115,13 @@ juego.silenciado = true;                       // el botón de bocina: nada suen
 juego.volumen = 0.5;                           // volumen general, de 0 a 1
 juego.ajustarVolumenes({ musica: 0.3 });       // por canal: musica, voces o efectos
 await juego.decir('corn', { idioma: 'en' });   // el host dice algo con la voz del motor
+await juego.decir('corn', { idioma: 'en', quien: 'bobby' });   // con la voz de Bobby (meta.personajes)
+juego.callar();                                // calla lo que dice el host; las líneas del juego siguen
 ```
 
 `juego.decir` pasa por la misma fila que las líneas del juego: no se encima con ellas ni las corta, y se oye
-aunque el juego esté en pausa. Detalles en [`docs/DISENO-3.0.md`](docs/DISENO-3.0.md) §4.
+aunque el juego esté en pausa. Con `quien` usa la voz de ese personaje del nivel, como sus líneas; si además se
+da `voz`, gana `voz`. Detalles en [`docs/DISENO-3.0.md`](docs/DISENO-3.0.md) §4.
 
 ### Un minijuego
 
@@ -142,7 +145,9 @@ export function Tortilleria({ elemento, assets, senal }) {
 
 El minijuego recibe además `audio` y `azar`. Como nada requiere leer, un minijuego habla mucho:
 `audio.decir` termina cuando acaba de hablar, así que dos frases se encadenan con `await`
-(`await audio.decir('¡Lechuga!', 'es'); await audio.decir('lettuce!', 'en');`), y `audio.tocarTono(880, 0.2)`
+(`await audio.decir('¡Lechuga!', 'es'); await audio.decir('lettuce!', 'en');`). El cuarto argumento es quién lo
+dice: `audio.decir('lettuce!', 'en', 'vo_bobby_lettuce', 'bobby')` usa la voz de Bobby de `meta.personajes`
+(sin voz grabada, la clave va en `undefined`). `audio.tocarTono(880, 0.2)`
 da un «ding» sin grabar nada. `audio.tocar('sfx_atrapa', { tono: 1.2, volumen: 0.5 })` toca un sonido
 más agudo o más bajito: así un mismo sonido sube de nota en cada acierto seguido. Para sortear algo conviene `azar()` en lugar de `Math.random()`: con la opción
 `semilla` el minijuego sale igual cada vez.

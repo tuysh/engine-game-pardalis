@@ -201,6 +201,8 @@ personaje suene distinto, `voz` le cambia el tono y la velocidad (es opcional, y
 - `tono`: de `0.5` (más grave) a `2` (más agudo). `velocidad`: de `0.5` (más despacio) a `2` (más rápido).
   En los dos, `1` es la voz normal, y es lo que vale si no se escribe.
 - La traducción (`trad`) de una línea se dice con la voz normal, no con la del personaje.
+- Los minijuegos y el host pueden hablar con la misma voz nombrando al personaje: `audio.decir(texto, idioma,
+  clave, 'bobby')` en un minijuego y `juego.decir(texto, { idioma, quien: 'bobby' })` en el host.
 - El motor elige, de las voces del dispositivo, una que hable el idioma del personaje: para español prefiere
   la de México, luego otra de América y luego cualquier español; para inglés, la de Estados Unidos y luego
   cualquier inglés. Entre voces de la misma región prefiere una natural a una robótica de Apple (Eddy,

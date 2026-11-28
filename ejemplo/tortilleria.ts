@@ -90,7 +90,8 @@ export const Tortilleria: Minijuego = ({ elemento, config, audio, assets, senal 
       frasesEmpezadas++;
       const estaFrase = frasesEmpezadas;
       tortuAnimada.cambiar('tortu_habla');
-      await audio.decir(palabra, 'en');
+      // Sin voz grabada (`undefined`), pero con la voz de Doña Tortu de `meta.personajes`, como en sus líneas.
+      await audio.decir(palabra, 'en', undefined, 'tortu');
       if (estaFrase === frasesEmpezadas) {
         tortuAnimada.cambiar('tortu_quieta');
       }
