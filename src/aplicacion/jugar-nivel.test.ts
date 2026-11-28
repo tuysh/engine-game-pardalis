@@ -11,6 +11,7 @@ import { leerCondicionDeTexto } from '../dominio/condicion.ts';
 import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from '../dominio/contenido.ts';
 import type { VariablesDeEstado } from '../dominio/estado.ts';
 import type { Nivel } from '../dominio/nivel.ts';
+import type { Minijuego } from '../puertos/minijuego.ts';
 import { jugarNivel } from './jugar-nivel.ts';
 
 /**
@@ -74,7 +75,11 @@ const NIVEL: Nivel = {
 };
 
 /** Pone a jugar un nivel con adaptadores falsos y anota en listas todo lo que el nivel avisa. */
-async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
+async function empezar(
+  nivel: Nivel,
+  variablesGuardadas?: VariablesDeEstado,
+  minijuegos: Readonly<Record<string, Minijuego>> = {},
+) {
   const escenario = new EscenarioDeMemoria();
   const interfaz = new InterfazDeMemoria();
   const audio = new AudioDeMemoria();
@@ -85,10 +90,12 @@ async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
   const salidas: string[] = [];
   const fallas: unknown[] = [];
   const dialogos: string[] = [];
+  /** Los avisos de diálogo, estado y minijuego en el orden en que llegaron. */
+  const cronologia: string[] = [];
 
   const ubicacion = { direccionDelNivel: '/niveles/barrio/nivel.json', cargador: new CargadorDeMemoria({}) };
   const nivelEnJuego = await jugarNivel(
-    { nivel, ubicacion, idiomaBase: 'es', minijuegos: {}, variablesGuardadas },
+    { nivel, ubicacion, idiomaBase: 'es', minijuegos, variablesGuardadas },
     { escenario, interfaz, audio, video, controles, reloj, azar: () => 0 },
     {
       alCumplirObjetivo: (objetivo) => objetivosCumplidos.push(objetivo),
@@ -97,14 +104,22 @@ async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
       alFallar: (error) => fallas.push(error),
       alEmpezarCinematica: () => {},
       alTerminarCinematica: () => {},
-      alEmpezarDialogo: ({ origen, id }) => dialogos.push(`inicio ${origen} ${id}`),
-      alTerminarDialogo: ({ origen, id }) => dialogos.push(`fin ${origen} ${id}`),
-      alCambiarElEstado: () => {},
-      alEmpezarMinijuego: () => {},
-      alTerminarMinijuego: () => {},
+      alEmpezarDialogo: ({ origen, id }) => {
+        dialogos.push(`inicio ${origen} ${id}`);
+        cronologia.push(`dialogo inicio ${id}`);
+      },
+      alTerminarDialogo: ({ origen, id }) => {
+        dialogos.push(`fin ${origen} ${id}`);
+        cronologia.push(`dialogo fin ${id}`);
+      },
+      alCambiarElEstado: (cambios) => cronologia.push(`estado ${JSON.stringify(cambios)}`),
+      alEmpezarMinijuego: (nombre) => cronologia.push(`minijuego inicio ${nombre}`),
+      alTerminarMinijuego: (nombre, cierre) => {
+        cronologia.push(`minijuego fin ${nombre} ${cierre.exito} ${JSON.stringify(cierre.cambios)}`);
+      },
     },
   );
-  const avisos = { objetivosCumplidos, salidas, fallas, dialogos };
+  const avisos = { objetivosCumplidos, salidas, fallas, dialogos, cronologia };
   return { nivelEnJuego, escenario, interfaz, audio, controles, reloj, ...avisos };
 }
 
@@ -200,6 +215,33 @@ test('un diálogo con un personaje avisa al empezar y al terminar, con quién', 
   interfaz.simularToqueParaSeguir();
   await reloj.avanzar(0.1);
   expect(dialogos).toEqual(['inicio npc tortu', 'fin npc tortu']);
+});
+
+test('un minijuego dentro de un diálogo otorga una sola vez, y avisa su fin ya con el estado nuevo', async () => {
+  // Doña Tortu cobra con un minijuego que resta 15 pesos: si lo que otorga se aplicara dos veces, quedarían 70.
+  const nivelConCobro: Nivel = {
+    ...NIVEL,
+    contenido: {
+      ...NIVEL.contenido,
+      estado: { objetivos: ['tortillas'], variables: ['dinero'], lista: {} },
+      npcs: { tortu: { dialogo: [{ pasos: [{ tipo: 'juego', nombre: 'Cobro', config: undefined }] }] } },
+    },
+  };
+  const Cobro: Minijuego = async () => ({ exito: true, otorgar: { dinero: { resta: 15 }, tortillas: true } });
+  const { nivelEnJuego, escenario, reloj, cronologia } = await empezar(nivelConCobro, { dinero: 100 }, { Cobro });
+
+  escenario.simularToque({ tipo: 'personaje', id: 'tortu' });
+  await reloj.avanzar(3);
+
+  expect(nivelEnJuego.leerVariables()).toMatchObject({ dinero: 85, tortillas: true });
+  expect(cronologia).toEqual([
+    'dialogo inicio tortu',
+    'estado {"charlas.tortu":true}',
+    'minijuego inicio Cobro',
+    'estado {"dinero":85,"tortillas":true}',
+    'minijuego fin Cobro true {"dinero":85,"tortillas":true}',
+    'dialogo fin tortu',
+  ]);
 });
 
 test('un interactivo y una salida cerrada también avisan su diálogo', async () => {
