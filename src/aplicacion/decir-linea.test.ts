@@ -13,6 +13,7 @@ import { decirLinea } from './decir-linea.ts';
 import { EstadoEnJuego } from './estado-en-juego.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { Reparto } from './reparto.ts';
+import { VozEnOrden } from './voz-en-orden.ts';
 
 const CONTENIDO: Contenido = {
   meta: {
@@ -193,7 +194,10 @@ test('en un dispositivo sin voz, el globo se queda el tiempo que tomaría leerlo
 });
 
 test('si la voz sintetizada nunca avisa que terminó, la línea se cierra sola al pasar un tiempo holgado', async () => {
-  const { piezas, interfaz, audio, reloj } = await crearEscena();
+  const escena = await crearEscena();
+  const { interfaz, audio, reloj } = escena;
+  // El tope de tiempo lo pone la fila de voces, como en el juego (crear.ts).
+  const piezas: PiezasDeEscena = { ...escena.piezas, audio: new VozEnOrden(audio, reloj) };
   const sinVozGrabada: PasoDeLinea = { tipo: 'linea', hablante: 'tortu', texto: '¡Hola!' };
   let termino = false;
 

@@ -150,6 +150,8 @@ con la voz del motor, en vez de usar `speechSynthesis` por su cuenta:
 
 - Todo lo que se dice pasa por **una sola fila**: lo del host espera a que termine la línea del juego, y la
   línea del juego espera a que termine lo del host. Nada se encima ni se corta.
+  El tope de tiempo de una frase (por si la voz del dispositivo nunca avisa que terminó) empieza a contar
+  cuando le toca hablar, no mientras espera en la fila.
 - Se oye **aunque el juego esté en pausa**: el host suele pausar justo para mostrar lo suyo.
 - Una frase nueva de `juego.decir` corta la anterior de `juego.decir` (no las del juego).
 - `clave` es una voz grabada del nivel actual; si falta, se usa la voz sintetizada. `voz` es `{ tono, velocidad }`,

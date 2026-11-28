@@ -64,13 +64,12 @@ export async function crearEscenario(elemento: HTMLElement, opcionesDelHost: Opc
   const adaptadores = crearAdaptadores(elemento, crearPanelDeDepuracion);
   const emisor = new EmisorDeEventos();
   // Todo lo que se dice pasa por una sola fila, también lo que dice el host con `juego.decir()`.
-  const voz = new VozEnOrden(adaptadores.audio);
+  const voz = new VozEnOrden(adaptadores.audio, adaptadores.reloj);
   const pausa = new PausaDelJuego(adaptadores.reloj, [voz, adaptadores.video]);
   const base = { adaptadores, voz, emisor, pausa, cargador, fuente, partidaInicial };
   const juegoEnCurso = crearJuegoEnCurso(opciones, base);
   const vozDelHost = new VozDelHost({
     voz,
-    reloj: adaptadores.reloj,
     direccionDeAsset: (clave) => juegoEnCurso.direccionDeAsset(clave),
   });
   const volumen = new VolumenDelJuego(voz);

@@ -12,10 +12,15 @@
 // - Si se pausa mientras el juego dice una frase, esa frase se corta y, al reanudar, se dice otra vez
 //   desde el principio. Así queda libre la voz para el host, y la niña o el niño oye la frase completa.
 //   La promesa de esa frase sigue esperando hasta que se haya dicho completa.
+// - El tope de tiempo de la voz sintetizada (decir-sin-esperar-de-mas.ts) se pone aquí y empieza a contar
+//   cuando a la frase le toca hablar, no cuando pidió su turno: así esperar detrás de una frase larga no le
+//   gasta el tiempo a la que sigue, que si no se callaría antes de terminar.
 // - Lo demás (sonidos, música, volumen) pasa directo al audio.
 
 import type { VolumenesDeAudio } from '../dominio/volumenes.ts';
 import type { Audio, FrasePorDecir, OpcionesDeSonido, ResultadoDeDecir } from '../puertos/audio.ts';
+import type { Reloj } from '../puertos/reloj.ts';
+import { decirSinEsperarDeMas } from './decir-sin-esperar-de-mas.ts';
 
 /** Quién pidió una frase: decide si puede decirse con el juego en pausa. */
 type OrigenDeLaFrase = 'juego' | 'host';
@@ -32,6 +37,8 @@ interface PedidoDeVoz {
 
 export class VozEnOrden implements Audio {
   private readonly audio: Audio;
+  /** El reloj del juego: mide el tope de tiempo de cada frase sintetizada. */
+  private readonly reloj: Reloj;
   /** Las frases que esperan su turno, en orden. */
   private readonly enEspera: PedidoDeVoz[] = [];
   /** La frase que se está diciendo. `undefined` = la voz está libre. */
@@ -40,8 +47,9 @@ export class VozEnOrden implements Audio {
   /** Se dispara al destruir: termina las frases que esperaban. */
   private readonly destruccion = new AbortController();
 
-  constructor(audio: Audio) {
+  constructor(audio: Audio, reloj: Reloj) {
     this.audio = audio;
+    this.reloj = reloj;
   }
 
   /** Dice una frase del juego. Con el juego en pausa, espera a que se reanude. */
@@ -124,7 +132,7 @@ export class VozEnOrden implements Audio {
       corte.abort();
     }
     try {
-      return await this.audio.decir(frase, corte.signal);
+      return await decirSinEsperarDeMas(frase, corte.signal, { audio: this.audio, reloj: this.reloj });
     } finally {
       senal.removeEventListener('abort', cortar);
       this.destruccion.signal.removeEventListener('abort', cortar);

@@ -17,9 +17,6 @@ import { ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
 import { esObjetoPlano } from '../dominio/es-objeto-plano.ts';
 import type { Idioma } from '../dominio/idioma.ts';
 import type { FrasePorDecir } from '../puertos/audio.ts';
-import type { Reloj } from '../puertos/reloj.ts';
-import { decirSinEsperarDeMas } from './decir-sin-esperar-de-mas.ts';
-import type { PiezasParaDecir } from './decir-sin-esperar-de-mas.ts';
 import type { VozEnOrden } from './voz-en-orden.ts';
 
 /** Lo que el host puede pedir al decir algo. */
@@ -34,8 +31,8 @@ export interface OpcionesParaDecir {
 
 /** Lo que la voz del host necesita del motor. */
 export interface PiezasDeLaVozDelHost {
+  /** La fila de voces: también pone el tope de tiempo si la voz del dispositivo nunca avisa que terminó. */
   readonly voz: Pick<VozEnOrden, 'decirDelHost'>;
-  readonly reloj: Reloj;
   /** Dirección de un asset del nivel actual. `undefined` = no está. */
   readonly direccionDeAsset: (clave: string) => string | undefined;
 }
@@ -62,12 +59,8 @@ export class VozDelHost {
     };
     this.cortarLaFraseAnterior = cortar;
     this.destruccion.signal.addEventListener('abort', cortar, { once: true });
-    const voz = this.piezas.voz;
-    const quienDice: PiezasParaDecir['audio'] = {
-      decir: (fraseDelHost, senalDeLaFrase) => voz.decirDelHost(fraseDelHost, senalDeLaFrase),
-    };
     try {
-      await decirSinEsperarDeMas(frase, corte.signal, { audio: quienDice, reloj: this.piezas.reloj });
+      await this.piezas.voz.decirDelHost(frase, corte.signal);
     } finally {
       this.destruccion.signal.removeEventListener('abort', cortar);
     }

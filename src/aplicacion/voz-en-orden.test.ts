@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
 import { AudioDeMemoria } from '../adaptadores/memoria/audio-de-memoria.ts';
+import { RelojDeMemoria } from '../adaptadores/memoria/reloj-de-memoria.ts';
 import { VozEnOrden } from './voz-en-orden.ts';
 
 /** Deja correr las promesas pendientes, como si pasara un instante. */
@@ -17,7 +18,7 @@ function textosDichos(audio: AudioDeMemoria): string[] {
 
 test('una frase del host espera a que termine la del juego, sin cortarla', async () => {
   const audio = new AudioDeMemoria();
-  const voz = new VozEnOrden(audio);
+  const voz = new VozEnOrden(audio, new RelojDeMemoria());
   const sinCortar = new AbortController().signal;
 
   const delJuego = voz.decir({ texto: 'Hola, Tommy', idioma: 'es' }, sinCortar);
@@ -41,7 +42,7 @@ test('una frase del host espera a que termine la del juego, sin cortarla', async
 
 test('una frase que se cancela mientras espera sale de la fila y nunca se dice', async () => {
   const audio = new AudioDeMemoria();
-  const voz = new VozEnOrden(audio);
+  const voz = new VozEnOrden(audio, new RelojDeMemoria());
   const sinCortar = new AbortController().signal;
   const cancelacion = new AbortController();
 
@@ -59,7 +60,7 @@ test('una frase que se cancela mientras espera sale de la fila y nunca se dice',
 
 test('al pausar, la frase del juego se corta y al reanudar se dice otra vez desde el principio', async () => {
   const audio = new AudioDeMemoria();
-  const voz = new VozEnOrden(audio);
+  const voz = new VozEnOrden(audio, new RelojDeMemoria());
   let termino = false;
   const frase = voz.decir({ texto: 'Vamos al mercado', idioma: 'es' }, new AbortController().signal).then(() => {
     termino = true;
@@ -82,7 +83,7 @@ test('al pausar, la frase del juego se corta y al reanudar se dice otra vez desd
 
 test('con el juego en pausa el host sí puede hablar, y la frase cortada del juego espera a que se reanude', async () => {
   const audio = new AudioDeMemoria();
-  const voz = new VozEnOrden(audio);
+  const voz = new VozEnOrden(audio, new RelojDeMemoria());
   const sinCortar = new AbortController().signal;
   void voz.decir({ texto: 'Buenos días', idioma: 'es' }, sinCortar);
   await dejarCorrer();
@@ -106,7 +107,7 @@ test('con el juego en pausa el host sí puede hablar, y la frase cortada del jue
 
 test('una frase del host no se corta al pausar', async () => {
   const audio = new AudioDeMemoria();
-  const voz = new VozEnOrden(audio);
+  const voz = new VozEnOrden(audio, new RelojDeMemoria());
   void voz.decirDelHost({ texto: 'tomato', idioma: 'en' }, new AbortController().signal);
   await dejarCorrer();
 
@@ -118,7 +119,7 @@ test('una frase del host no se corta al pausar', async () => {
 
 test('al destruir, terminan las frases que esperaban su turno', async () => {
   const audio = new AudioDeMemoria();
-  const voz = new VozEnOrden(audio);
+  const voz = new VozEnOrden(audio, new RelojDeMemoria());
   const sinCortar = new AbortController().signal;
   const primera = voz.decir({ texto: 'primera', idioma: 'es' }, sinCortar);
   const segunda = voz.decirDelHost({ texto: 'segunda', idioma: 'es' }, sinCortar);
@@ -129,4 +130,30 @@ test('al destruir, terminan las frases que esperaban su turno', async () => {
   expect(await segunda).toBe('dicho');
   expect(audio.estaDestruido).toBe(true);
   expect(textosDichos(audio)).toEqual(['primera']);
+});
+
+test('el tope de tiempo de una frase empieza a contar cuando le toca hablar, no mientras espera', async () => {
+  const audio = new AudioDeMemoria();
+  const reloj = new RelojDeMemoria();
+  const voz = new VozEnOrden(audio, reloj);
+  const sinCortar = new AbortController().signal;
+  void voz.decir({ texto: 'Una frase larga del juego', idioma: 'es' }, sinCortar);
+  let terminoLaDelHost = false;
+  void voz.decirDelHost({ texto: 'corn', idioma: 'en' }, sinCortar).then(() => {
+    terminoLaDelHost = true;
+  });
+  await dejarCorrer();
+
+  // La del juego dura 5 segundos; la del host espera todo ese tiempo detrás de ella.
+  await reloj.avanzar(5);
+  audio.terminarDeHablar();
+  await dejarCorrer();
+  expect(textosDichos(audio)).toEqual(['Una frase larga del juego', 'corn']);
+
+  // La del host todavía tiene sus 6 segundos completos: a los 5 sigue hablando.
+  await reloj.avanzar(5);
+  expect(terminoLaDelHost).toBe(false);
+  expect(audio.hayAlguienHablando).toBe(true);
+  await reloj.avanzar(1.1);
+  expect(terminoLaDelHost).toBe(true);
 });

@@ -10,7 +10,6 @@ import type { Idioma } from '../dominio/idioma.ts';
 import { VOLUMEN_MAXIMO, VOLUMEN_MINIMO } from '../dominio/volumenes.ts';
 import type { OpcionesDeSonido } from '../puertos/audio.ts';
 import type { AudioParaMinijuego, ContextoDeMinijuego } from '../puertos/minijuego.ts';
-import { decirSinEsperarDeMas } from './decir-sin-esperar-de-mas.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 
 /**
@@ -75,7 +74,8 @@ function crearAudio(senalDelMinijuego: AbortSignal, piezas: PiezasDeEscena): Aud
       direccionDeLaVoz = piezas.direccionDeAsset(clave);
     }
     try {
-      await decirSinEsperarDeMas({ texto, idioma, direccionDeLaVoz }, corte.signal, piezas);
+      // En el juego, `piezas.audio` es la fila de voces (voz-en-orden.ts): espera su turno y pone el tope de tiempo.
+      await piezas.audio.decir({ texto, idioma, direccionDeLaVoz }, corte.signal);
     } finally {
       senalDelMinijuego.removeEventListener('abort', cortar);
     }

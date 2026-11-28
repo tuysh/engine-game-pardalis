@@ -22,11 +22,10 @@ async function problemasDe(promesa: Promise<void>): Promise<readonly string[]> {
 }
 
 function crearVozDelHost(audio: AudioDeMemoria): { vozDelHost: VozDelHost; voz: VozEnOrden } {
-  const voz = new VozEnOrden(audio);
+  const voz = new VozEnOrden(audio, new RelojDeMemoria());
   const assets: Record<string, string> = { vo_bobby_corn: '/voz/vo_bobby_corn.mp3' };
   const vozDelHost = new VozDelHost({
     voz,
-    reloj: new RelojDeMemoria(),
     direccionDeAsset: (clave) => (Object.hasOwn(assets, clave) ? assets[clave] : undefined),
   });
   return { vozDelHost, voz };
