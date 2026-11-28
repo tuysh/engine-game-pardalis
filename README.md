@@ -107,6 +107,18 @@ juego.destruir();               // al salir de la página o desmontar el compone
 
 El motor no navega entre páginas ni guarda por su cuenta: avisa con eventos y el host decide.
 
+#### Volumen y voz del host
+
+```js
+juego.silenciado = true;                       // el botón de bocina: nada suena, y se recuerdan los volúmenes
+juego.volumen = 0.5;                           // volumen general, de 0 a 1
+juego.ajustarVolumenes({ musica: 0.3 });       // por canal: musica, voces o efectos
+await juego.decir('corn', { idioma: 'en' });   // el host dice algo con la voz del motor
+```
+
+`juego.decir` pasa por la misma fila que las líneas del juego: no se encima con ellas ni las corta, y se oye
+aunque el juego esté en pausa. Detalles en [`docs/DISENO-3.0.md`](docs/DISENO-3.0.md) §4.
+
 ### Un minijuego
 
 Es una función que recibe un elemento a pantalla completa, dibuja lo que quiera y promete un resultado.
@@ -130,7 +142,8 @@ export function Tortilleria({ elemento, assets, senal }) {
 El minijuego recibe además `audio` y `azar`. Como nada requiere leer, un minijuego habla mucho:
 `audio.decir` termina cuando acaba de hablar, así que dos frases se encadenan con `await`
 (`await audio.decir('¡Lechuga!', 'es'); await audio.decir('lettuce!', 'en');`), y `audio.tocarTono(880, 0.2)`
-da un «ding» sin grabar nada. Para sortear algo conviene `azar()` en lugar de `Math.random()`: con la opción
+da un «ding» sin grabar nada. `audio.tocar('sfx_atrapa', { tono: 1.2, volumen: 0.5 })` toca un sonido
+más agudo o más bajito: así un mismo sonido sube de nota en cada acierto seguido. Para sortear algo conviene `azar()` en lugar de `Math.random()`: con la opción
 `semilla` el minijuego sale igual cada vez.
 Un ejemplo completo: [`ejemplo/tortilleria.ts`](ejemplo/tortilleria.ts).
 

@@ -145,6 +145,26 @@ Solo `meta` es obligatoria. **Una clave que el motor no conoce es un error**: as
 - Un NPC del mapa con `id: "tortu"` se dibuja con el personaje `tortu`.
 - Los dibujos miran **a la derecha**: para mirar a la izquierda, el motor voltea la figura como un papel.
 
+#### Voz de cada personaje
+
+Mientras no haya voces grabadas, cada línea se dice con la voz sintetizada del dispositivo. Para que cada
+personaje suene distinto, `voz` le cambia el tono y la velocidad (es opcional, y no cambia las voces grabadas):
+
+```json
+"personajes": {
+  "mama":  { "idioma": "es", "sprite": "spr_mama",  "voz": { "tono": 0.9, "velocidad": 0.95 } },
+  "pardi": { "idioma": "es", "sprite": "spr_pardi", "voz": { "tono": 1.4, "velocidad": 1.05 } },
+  "bobby": { "idioma": "en", "sprite": "spr_bobby", "voz": { "tono": 1.2 } }
+}
+```
+
+- `tono`: de `0.5` (más grave) a `2` (más agudo). `velocidad`: de `0.5` (más despacio) a `2` (más rápido).
+  En los dos, `1` es la voz normal, y es lo que vale si no se escribe.
+- La traducción (`trad`) de una línea se dice con la voz normal, no con la del personaje.
+- El motor elige, de las voces del dispositivo, una que hable el idioma del personaje: para español prefiere
+  la de México, luego otra de América y luego cualquier español; para inglés, la de Estados Unidos y luego
+  cualquier inglés. Si el dispositivo no tiene ninguna de ese idioma, solo pide el acento.
+
 ### `jugador` y `mundo`
 
 | Campo | Por defecto | Qué es |
