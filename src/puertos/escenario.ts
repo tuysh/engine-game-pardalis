@@ -113,6 +113,20 @@ export interface Escenario {
   ponerDibujoDePersonaje(id: string, imagen: ImagenDeEscena, opciones: { readonly repite: boolean }): Promise<void>;
 
   /**
+   * Muestra u oculta un objeto del decorado. `indice` es su lugar en `Escenografia.decorado` del último `montar`.
+   * Mientras está oculto no se puede tocar. Si no hay un objeto en ese lugar, no hace nada.
+   */
+  cambiarVisibilidadDelDecorado(indice: number, opciones: { readonly esVisible: boolean }): void;
+
+  /**
+   * Cambia el dibujo de un objeto del decorado por otra imagen o animación, en la misma huella (una familia que
+   * levanta los platos). `indice` es como en `cambiarVisibilidadDelDecorado`. Termina cuando el dibujo nuevo ya
+   * se ve. Una animación empieza en su primer cuadro; con `repite` vuelve a empezar al terminar y, sin él,
+   * se queda en su último cuadro.
+   */
+  ponerDibujoDeDecorado(indice: number, imagen: ImagenDeEscena, opciones: { readonly repite: boolean }): Promise<void>;
+
+  /**
    * Descarga por adelantado imágenes que se usarán más tarde (las animaciones de una cinemática,
    * un personaje que todavía no entra), para que aparezcan sin demora cuando les toque.
    * Se llama una vez por lugar, cuando ya tiene su escenografía y sus personajes: lo que el escenario
@@ -141,6 +155,13 @@ export interface Escenario {
    * No espera a que termine: el efecto se anima solo en los cuadros siguientes y luego se quita.
    */
   reproducirEfecto(nombre: string, punto: Punto): void;
+
+  /**
+   * Dice qué personaje es el jugador (`undefined` = el nivel no tiene). Lo `parado` del decorado que quede
+   * entre la cámara y él (un árbol, alguien parado cerca de la cámara) se vuelve transparente mientras lo tapa.
+   * Sigue valiendo al montar otra escenografía, hasta que se llame otra vez.
+   */
+  marcarJugador(id: string | undefined): void;
 
   /**
    * Coloca la cámara: apunta a un punto del piso desde donde dicen los ajustes. La cámara salta ahí;

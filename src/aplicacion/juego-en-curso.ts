@@ -24,6 +24,7 @@ import type { NivelPorJugar } from './leer-nivel-por-jugar.ts';
 import type { AvisosDelNivel, NivelEnJuego } from './nivel-en-juego.ts';
 import { PartidaEnCurso } from './partida-en-curso.ts';
 import type { PiezasDelJuegoEnCurso } from './piezas-del-juego-en-curso.ts';
+import type { VocesDelNivel } from './voces-del-nivel.ts';
 
 /** Lo que tarda la pantalla en cerrarse a negro cuando un nivel sale hacia otro. */
 const DURACION_DEL_CIERRE_ENTRE_NIVELES_EN_SEGUNDOS = 0.4;
@@ -142,6 +143,15 @@ export class JuegoEnCurso {
     return this.nivelActual.enJuego.reproducirCinematica(idDeCinematica);
   }
 
+  /**
+   * Las voces del nivel que se está jugando (voces-del-nivel.ts). Cada nivel trae las suyas, así que sus avisos
+   * vuelven a salir al cambiar de nivel. `undefined` = no hay un nivel en juego (mientras se pasa de uno a otro).
+   */
+  vocesDelNivel(): VocesDelNivel | undefined {
+    if (this.nivelActual === undefined) return undefined;
+    return this.nivelActual.enJuego.voces;
+  }
+
   /** Salta la cinemática o cierra el diálogo en curso. */
   interrumpir(): void {
     if (this.nivelActual !== undefined) {
@@ -232,8 +242,18 @@ export class JuegoEnCurso {
       alCambiarElEstado: (cambios, estado) => {
         avisos.alCambiarElEstado({ nivel: idDelNivel, cambios, variables: estado.variables });
       },
+      alEmpezarDialogo: (dialogo) => avisos.alEmpezarDialogo(dialogo),
+      alTerminarDialogo: (dialogo) => avisos.alTerminarDialogo(dialogo),
       alEmpezarMinijuego: (nombre) => avisos.alEmpezarMinijuego(nombre),
-      alTerminarMinijuego: (nombre) => avisos.alTerminarMinijuego(nombre),
+      alTerminarMinijuego: (nombre, cierre) => {
+        avisos.alTerminarMinijuego(nombre, cierre);
+        // Lo que otorga un minijuego no siempre cumple un objetivo (un premio, el dinero de un antojo):
+        // si no se guardara aquí, recargar la página lo perdería. Con o sin éxito: también se cobra al no ganar.
+        const cambioElEstado = Object.keys(cierre.cambios).length > 0;
+        if (cambioElEstado) {
+          avisos.alGuardar(this.leerPartida());
+        }
+      },
     };
   }
 

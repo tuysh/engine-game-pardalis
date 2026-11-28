@@ -26,7 +26,7 @@ export interface LugaresDeInteraccion {
 
 const CLASES_DE_INTERACCION = 'inicioJugador, punto, salida, zona';
 
-/** Cada objeto de `npcs` es un personaje: su posición, la propiedad `id` y, opcional, `mira`. */
+/** Cada objeto de `npcs` es un personaje: su posición, la propiedad `id` y, opcionales, `mira` y `anima`. */
 export function convertirNpcs(capa: CapaDeTiled, conversion: Conversion): Record<string, LugarDePersonaje> {
   const npcs: Record<string, LugarDePersonaje> = {};
   if (!esCapaDeObjetos(capa, conversion)) return npcs;
@@ -45,6 +45,7 @@ export function convertirNpcs(capa: CapaDeTiled, conversion: Conversion): Record
       descripcion: objeto.descripcion,
       posicion: posicionEnMetros(objeto, conversion),
       mira: leerMira(objeto, capa, conversion),
+      dibujoInicial: textoDePropiedad(objeto.propiedades, 'anima'),
     };
   }
   return npcs;
@@ -62,6 +63,7 @@ export function convertirInteraccion(capa: CapaDeTiled, conversion: Conversion):
           descripcion: objeto.descripcion,
           posicion: posicionEnMetros(objeto, conversion),
           mira: leerMira(objeto, capa, conversion),
+          dibujoInicial: textoDePropiedad(objeto.propiedades, 'anima'),
         });
         break;
       case 'punto':

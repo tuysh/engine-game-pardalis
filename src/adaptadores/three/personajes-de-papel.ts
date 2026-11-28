@@ -169,6 +169,11 @@ export class PersonajesDePapel {
     this.piezas.animaciones.animar(hojaNueva, texturas, ritmo);
   }
 
+  /** La hoja (el dibujo) de un personaje, o `undefined` si no está en el escenario. */
+  buscarHoja(id: string): Mesh | undefined {
+    return this.personajes.get(id)?.hoja;
+  }
+
   /** Dónde pisa un personaje y cuánto mide de alto, para saber dónde queda su cabeza. */
   buscarLugarYAltura(id: string): { readonly dondePisa: Punto; readonly altoEnMetros: number } | undefined {
     const personaje = this.personajes.get(id);

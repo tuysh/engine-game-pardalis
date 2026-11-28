@@ -3,36 +3,44 @@
     "id": "barrio",
     "titulo": "El barrio",
     "personajes": {
-      "tommy": { "idioma": "en", "sprite": "spr_tommy" },
-      "tortu": { "idioma": "es", "sprite": "spr_tortu" }
+      "tommy": { "idioma": "en", "sprite": "spr_tommy", "voz": { "tono": 1.4, "velocidad": 1.05 } },
+      "tortu": { "idioma": "es", "sprite": "spr_tortu", "voz": { "tono": 0.7, "velocidad": 0.9 } },
+      "canelo": { "idioma": "es", "sprite": "spr_canelo" }
     }
   },
-  "jugador": { "personaje": "tommy" },
+  "jugador": { "personaje": "tommy", "acompanante": "canelo", "distanciaDelAcompanante": 1.1 },
   "mundo": {
     "planos": {
       "plano_puesto": { "mira": "tortu", "distancia": 5.5, "altura": 2.4, "giro": -14 },
-      "plano_salida": { "mira": "junto_a_la_salida", "distancia": 7, "altura": 3, "giro": 10 }
+      "plano_salida": { "mira": "junto_a_la_salida", "distancia": 7, "altura": 3, "giro": 10 },
+      "plano_lejos": { "mira": "arbol", "distancia": 13, "altura": 4, "giro": 0 }
     }
   },
   "estado": {
     "objetivos": ["tortillas"],
-    "lista": { "tortillas": "las tortillas" }
+    "variables": ["salsa", "visitas"],
+    "lista": { "tortillas": "el kilo de tortillas" }
   },
   "secuencias": {
     "aun_no_item": [
       { "dice": "tortu", "texto": "¡Otro día lo intentamos!", "audio": "vo_tortu_otro_dia" }
     ],
     "bloquea_salida": [
-      { "dice": "tortu", "texto": "¡Espérate! Te faltan {faltan}.", "audio": "vo_tortu_faltan" }
+      { "dice": "tortu", "texto": "¡Espérate! Te {falta_o_faltan} {faltan}.", "audio": "vo_tortu_faltan" }
     ]
   },
   "npcs": {
     "tortu": {
+      "senal": { "visibleCuando": "no tengo tortillas" },
       "dialogo": [
         {
           "cuando": "tengo tortillas",
           "dice": [
-            { "dice": "tortu", "texto": "¡Que te aprovechen!", "audio": "vo_tortu_provecho" }
+            { "dice": "tortu", "texto": "¡Que te aprovechen!", "audio": "vo_tortu_provecho" },
+            { "pon": { "visitas": { "suma": 1 } } },
+            { "cuando": "salsa = verde", "dice": [
+              { "dice": "tortu", "texto": "¡Visita número {visitas}! Y con salsa verde, como te gusta." }
+            ] }
           ]
         },
         {
@@ -52,10 +60,25 @@
       "alVolver": {
         "siLogrado": [
           { "efecto": "magia" },
+          { "pon": { "salsa": "verde" } },
           { "dice": "tommy", "texto": "Thank you!", "trad": "¡Gracias!", "audio": "vo_tommy_gracias" }
         ],
         "siNo": "aun_no_item"
       }
+    }
+  },
+  "interactivos": {
+    "arbol": {
+      "dialogo": [
+        {
+          "dice": [
+            { "camara": "plano_lejos", "duracion": 1 },
+            { "efecto": "confeti" },
+            { "dice": "tommy", "texto": "A big tree!", "trad": "¡Un árbol grandote!", "audio": "vo_tommy_arbol" },
+            { "camara": "jugador", "duracion": 1 }
+          ]
+        }
+      ]
     }
   },
   "cinematicas": {
@@ -64,13 +87,20 @@
       "pasos": [
         { "fundido": "abrir", "duracion": 0.8 },
         { "camara": "plano_puesto", "duracion": 2 },
-        { "dice": "tortu", "texto": "¡Tortillas calientitas!", "audio": "vo_tortu_pregon" },
+        {
+          "dice": "tortu",
+          "texto": "¡Tortillas calientitas, recién salidas del comal! ¡Pásele, pásele, que se acaban!",
+          "en": "corn",
+          "es": "maíz",
+          "audio": "vo_tortu_pregon"
+        },
         { "camara": "jugador", "duracion": 1.5 }
       ]
     },
     "camino_a_casa": {
       "inicia": { "objetivo": "tortillas" },
       "pasos": [
+        { "efecto": "destello" },
         { "camara": "plano_salida", "duracion": 1.5 },
         { "espera": 1.2 },
         { "camara": "jugador", "duracion": 1.5 }

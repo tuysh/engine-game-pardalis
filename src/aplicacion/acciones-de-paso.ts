@@ -15,6 +15,7 @@ import type {
   PasoDeAnimacion,
   PasoDeAparicion,
   PasoDeCamara,
+  PasoDeEfecto,
   PasoDeFundido,
   PasoDeLinea,
   PasoDeMirada,
@@ -23,13 +24,14 @@ import type { ResultadoDeMinijuego } from '../puertos/minijuego.ts';
 
 /** Las acciones de un diálogo: lo que pasa entre el jugador y quien le habla. */
 export interface AccionesDeDialogo {
-  /** Muestra y dice una línea. `textoCompleto` es el texto con `{faltan}` y `{dinero}` ya reemplazados. */
+  /** Muestra y dice una línea. `textoCompleto` ya trae sus variables entre llaves reemplazadas. */
   decirLinea(linea: PasoDeLinea, textoCompleto: string, senal: AbortSignal): Promise<void>;
 
   /** Muestra la pregunta con esas opciones y devuelve la posición en la lista de la que eligió el jugador. */
   elegirOpcion(pregunta: string, opciones: readonly Opcion[], senal: AbortSignal): Promise<number>;
 
-  reproducirEfecto(nombre: string, senal: AbortSignal): Promise<void>;
+  /** Muestra y hace sonar un efecto (`magia`, `confeti`, `destello`). Termina cuando el efecto acabó. */
+  reproducirEfecto(efecto: PasoDeEfecto, senal: AbortSignal): Promise<void>;
 
   /** Lleva al personaje caminando hasta un punto del mapa. */
   caminar(personaje: string, punto: string, senal: AbortSignal): Promise<void>;
@@ -39,6 +41,8 @@ export interface AccionesDeDialogo {
   /**
    * Abre un minijuego del host y espera su resultado. Si el minijuego falla con un error,
    * debe entregar `{ exito: false }` en vez de rechazar: un error del host nunca castiga al jugador.
+   * Lo que el minijuego otorga se aplica al estado aquí, antes de avisar que se cerró:
+   * quien la llama ya no debe aplicarlo otra vez.
    */
   jugarMinijuego(nombre: string, config: unknown, senal: AbortSignal): Promise<ResultadoDeMinijuego>;
 

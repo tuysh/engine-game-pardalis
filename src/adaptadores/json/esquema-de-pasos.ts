@@ -115,8 +115,8 @@ const esquemaDeEleccion = z
   .transform((json): PasoDeEleccion => ({ tipo: 'elige', pregunta: json.elige, opciones: json.opciones }));
 
 const esquemaDeEfecto = z
-  .strictObject({ efecto: z.string().min(1) })
-  .transform((json): PasoDeEfecto => ({ tipo: 'efecto', nombre: json.efecto }));
+  .strictObject({ efecto: z.string().min(1), sonido: z.string().min(1).optional() })
+  .transform((json): PasoDeEfecto => ({ tipo: 'efecto', nombre: json.efecto, sonido: json.sonido }));
 
 const esquemaDeEstado = z
   .strictObject({ pon: z.record(z.string(), esquemaDeCambio) })

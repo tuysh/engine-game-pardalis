@@ -67,6 +67,12 @@ function revisarAssetsDePaso(paso: Paso, ruta: string, revision: RevisionDeAsset
       revisarSonido(paso.clave, `${ruta}.sonido`, revision);
       break;
 
+    case 'efecto':
+      if (paso.sonido !== undefined) {
+        revisarSonido(paso.sonido, `${ruta}.sonido`, revision);
+      }
+      break;
+
     case 'video':
       revisarVideo(paso.clavePorIdioma.es, `${ruta}.video`, revision);
       // Un video sin voces usa la misma clave en los dos idiomas: no hace falta revisarla dos veces.
@@ -75,7 +81,6 @@ function revisarAssetsDePaso(paso: Paso, ruta: string, revision: RevisionDeAsset
       }
       break;
 
-    case 'efecto':
     case 'pon':
     case 'juego':
     case 'camina':

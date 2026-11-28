@@ -2,7 +2,13 @@
 // Los objetos son estrictos: una clave que el motor no conoce es un error, para atrapar errores de dedo.
 
 import { z } from 'zod';
-import { AJUSTES_DEL_MUNDO_POR_DEFECTO, VELOCIDAD_DEL_JUGADOR_POR_DEFECTO } from '../../dominio/contenido.ts';
+import { TONO_MAXIMO, TONO_MINIMO, VELOCIDAD_MAXIMA, VELOCIDAD_MINIMA, VOZ_NORMAL } from '../../dominio/ajustes-de-voz.ts';
+import type { AjustesDeVoz } from '../../dominio/ajustes-de-voz.ts';
+import {
+  AJUSTES_DEL_MUNDO_POR_DEFECTO,
+  GROSORES_DE_FRANJAS,
+  VELOCIDAD_DEL_JUGADOR_POR_DEFECTO,
+} from '../../dominio/contenido.ts';
 import type {
   AjustesDeCamara,
   AjustesDelMundo,
@@ -14,14 +20,36 @@ import type {
   Plano,
   Rama,
   Salida,
+  SenalDePendiente,
 } from '../../dominio/contenido.ts';
 import { esquemaDeCinematicas } from './esquema-de-cinematicas.ts';
 import { esquemaDeCondicion } from './esquema-de-condicion.ts';
 import { esquemaDeLinea, esquemaDePaso, esquemaDePasosOSecuencia } from './esquema-de-pasos.ts';
 
+// Los mensajes nombran los límites y qué es lo normal, para que quien escribe el nivel sepa qué número poner.
+const MENSAJE_DEL_TONO = `el tono va de ${TONO_MINIMO} (más grave) a ${TONO_MAXIMO} (más agudo); 1 es la voz normal`;
+const MENSAJE_DE_LA_VELOCIDAD =
+  `la velocidad va de ${VELOCIDAD_MINIMA} (más despacio) a ${VELOCIDAD_MAXIMA} (más rápido); 1 es la voz normal`;
+
+const esquemaDeVoz = z
+  .strictObject({
+    tono: z
+      .number({ error: MENSAJE_DEL_TONO })
+      .min(TONO_MINIMO, { error: MENSAJE_DEL_TONO })
+      .max(TONO_MAXIMO, { error: MENSAJE_DEL_TONO })
+      .default(VOZ_NORMAL.tono),
+    velocidad: z
+      .number({ error: MENSAJE_DE_LA_VELOCIDAD })
+      .min(VELOCIDAD_MINIMA, { error: MENSAJE_DE_LA_VELOCIDAD })
+      .max(VELOCIDAD_MAXIMA, { error: MENSAJE_DE_LA_VELOCIDAD })
+      .default(VOZ_NORMAL.velocidad),
+  })
+  .transform((json): AjustesDeVoz => ({ tono: json.tono, velocidad: json.velocidad }));
+
 const esquemaDePersonaje = z.strictObject({
   idioma: z.enum(['es', 'en']),
   sprite: z.string().min(1),
+  voz: esquemaDeVoz.optional(),
 });
 
 const esquemaDeMeta = z.strictObject({
@@ -35,12 +63,14 @@ const esquemaDeJugador = z
     personaje: z.string().min(1),
     velocidad: z.number().positive().default(VELOCIDAD_DEL_JUGADOR_POR_DEFECTO),
     acompanante: z.string().min(1).optional(),
+    distanciaDelAcompanante: z.number().positive().optional(),
   })
   .transform(
     (json): Jugador => ({
       personaje: json.personaje,
       velocidadEnMetrosPorSegundo: json.velocidad,
       acompanante: json.acompanante,
+      distanciaDelAcompananteEnMetros: json.distanciaDelAcompanante,
     }),
   );
 
@@ -92,6 +122,7 @@ const esquemaDeMundo = z
     fondo: esquemaDeColor.default(AJUSTES_DEL_MUNDO_POR_DEFECTO.colorDeFondo),
     sonidos: z.strictObject({ musica: z.string().min(1).optional() }).prefault({}),
     planos: z.record(z.string(), esquemaDePlano).default({}),
+    franjas: z.enum(GROSORES_DE_FRANJAS).optional(),
   })
   .transform(
     (json): AjustesDelMundo => ({
@@ -100,6 +131,7 @@ const esquemaDeMundo = z
       colorDeFondo: json.fondo,
       sonidos: json.sonidos,
       planos: json.planos,
+      franjas: json.franjas,
     }),
   );
 
@@ -120,9 +152,14 @@ const esquemaDeAlVolver: z.ZodType<AlVolver> = z.strictObject({
   siNo: esquemaDePasosOSecuencia,
 });
 
+const esquemaDeSenalDePendiente: z.ZodType<SenalDePendiente> = z.strictObject({
+  visibleCuando: esquemaDeCondicion.optional(),
+});
+
 const esquemaDeInterlocutor: z.ZodType<Interlocutor> = z.strictObject({
   dialogo: z.array(esquemaDeRama),
   alVolver: esquemaDeAlVolver.optional(),
+  senal: esquemaDeSenalDePendiente.optional(),
 });
 
 const esquemaDeFlecha: z.ZodType<FlechaDeSalida> = z.strictObject({

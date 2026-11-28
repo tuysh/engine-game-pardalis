@@ -15,4 +15,17 @@ export interface Reloj {
    * Devuelve una función que cancela las llamadas.
    */
   enCadaCuadro(funcion: (segundos: number) => void): () => void;
+
+  /**
+   * `true` mientras el tiempo del juego está detenido: el host llamó a `juego.pausar()`, la página no se ve
+   * (`pausarAlOcultar`) o todavía no tocan el botón de inicio. Mientras tanto no vencen las esperas ni se llama
+   * a las funciones de `enCadaCuadro`.
+   */
+  readonly estaPausado: boolean;
+
+  /**
+   * Llama a `funcion` cada vez que el tiempo del juego se detiene (`true`) o vuelve a andar (`false`).
+   * Devuelve una función que deja de avisar.
+   */
+  alPausarOReanudar(funcion: (estaPausado: boolean) => void): () => void;
 }

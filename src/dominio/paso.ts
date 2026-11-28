@@ -10,6 +10,7 @@
 //                                                    reacciones: { bobby: 'bobby_feliz' }, esPensamiento: true }
 //   { "elige": "¿Cuál?", "opciones": [...] }       { tipo: 'elige', pregunta: '¿Cuál?', opciones: [...] }
 //   { "efecto": "magia" }                          { tipo: 'efecto', nombre: 'magia' }
+//   { "efecto": "destello", "sonido": "sfx_foto" } { tipo: 'efecto', nombre: 'destello', sonido: 'sfx_foto' }
 //   { "pon": { "globo": "rosa" } }                 { tipo: 'pon', valores: { globo: 'rosa' } }
 //   { "pon": { "dinero": { "resta": 10 } } }       { tipo: 'pon', valores: { dinero: { resta: 10 } } }
 //   { "juego": "Tortilleria", "config": {...} }    { tipo: 'juego', nombre: 'Tortilleria', config: {...} }
@@ -52,7 +53,7 @@ export interface PasoDeLinea {
   readonly tipo: 'linea';
   /** Id del personaje que habla (clave de `meta.personajes`). */
   readonly hablante: string;
-  /** Puede llevar `{faltan}` y `{dinero}`. */
+  /** Puede llevar variables entre llaves, como `{faltan}` o `{dinero}` (ver texto-con-variables.ts). */
   readonly texto: string;
   /** Traducción al idioma base, cuando el personaje habla en el otro idioma. */
   readonly traduccion?: string;
@@ -103,10 +104,12 @@ export interface PasoDeEleccion {
   readonly opciones: readonly Opcion[];
 }
 
-/** Un efecto visual con sonido, como `magia` o `confeti`. */
+/** Un efecto visual con sonido, como `magia`, `confeti` o `destello`. */
 export interface PasoDeEfecto {
   readonly tipo: 'efecto';
   readonly nombre: string;
+  /** Clave del sonido que acompaña al efecto (un obturador de cámara). `undefined` = suenan las notas del efecto. */
+  readonly sonido?: string;
 }
 
 /** Cambia variables del estado: les da un valor fijo, o le suma o le resta a su número. */
@@ -175,9 +178,13 @@ export interface PasoDeMirada {
   readonly hacia: string;
 }
 
-/** Cambia el dibujo de un personaje por una animación (o una imagen) de los assets. */
+/** Cambia el dibujo de un personaje, o de un objeto del decorado, por una animación (o una imagen) de los assets. */
 export interface PasoDeAnimacion {
   readonly tipo: 'anima';
+  /**
+   * Id de un personaje o, si ningún personaje se llama así, el `id` de un objeto del decorado del mapa
+   * (una familia sentada a la mesa que levanta los platos).
+   */
   readonly personaje: string;
   /** Clave de una animación o de una imagen. */
   readonly clave: string;
@@ -271,4 +278,4 @@ export type Paso =
 export const CAMARA_AL_JUGADOR = 'jugador';
 
 /** Los efectos que existen. Un paso `efecto` con otro nombre es un error de validación. */
-export const EFECTOS_DISPONIBLES: readonly string[] = ['magia', 'confeti'];
+export const EFECTOS_DISPONIBLES: readonly string[] = ['magia', 'confeti', 'destello'];

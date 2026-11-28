@@ -118,17 +118,15 @@ async function ejecutarEleccion(paso: PasoDeEleccion, ejecucion: EjecucionDePaso
 }
 
 async function ejecutarMinijuego(paso: PasoDeMinijuego, ejecucion: EjecucionDePasos): Promise<void> {
-  const { acciones, estado, senal } = ejecucion;
+  const { acciones, senal } = ejecucion;
   // Un minijuego necesita al jugador: en una escena que se salta no se abre.
   if (estaEnModoRapido(ejecucion)) return;
 
+  // Lo que el minijuego otorga ya quedó en el estado cuando `jugarMinijuego` termina: lo aplica la acción
+  // antes de avisar al host que el minijuego se cerró (ver jugar-minijuego.ts).
   const espera = await esperarOCancelar(acciones.jugarMinijuego(paso.nombre, paso.config, senal), senal);
   if (espera.tipo === 'cancelada') return;
   const resultado = espera.valor;
-
-  if (resultado.otorgar !== undefined) {
-    estado.aplicar(resultado.otorgar);
-  }
   if (ejecucion.alVolver === undefined) return;
 
   const loQueSigue = resultado.exito ? ejecucion.alVolver.siLogrado : ejecucion.alVolver.siNo;

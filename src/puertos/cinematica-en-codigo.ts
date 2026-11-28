@@ -95,7 +95,7 @@ export interface EscenaDeCinematica {
    * Igual que el paso `acompana` de un nivel.
    */
   acompana(personaje: string | null): void;
-  /** Un efecto visual con sonido: `'magia'` o `'confeti'`. */
+  /** Un efecto visual con sonido: `'magia'`, `'confeti'` o `'destello'` (un flash blanco de toda la pantalla). */
   efecto(nombre: string): Promise<void>;
   /** Ejecuta una secuencia de `secuencias` del nivel, por su nombre. */
   secuencia(nombre: string): Promise<void>;

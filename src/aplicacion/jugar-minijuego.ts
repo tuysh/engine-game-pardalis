@@ -5,9 +5,14 @@
 // - si lanza un error, cuenta como `{ exito: false }` y el diálogo sigue por el camino amable `siNo`;
 // - su resultado se limpia antes de usarse;
 // - si el diálogo se interrumpe y el minijuego no termina, su espacio se cierra de todos modos.
+//
+// Al cerrarse, el orden es siempre el mismo: se cierra su espacio, se aplica al estado lo que otorgó
+// (y con eso se avisa del cambio, el evento `estado`) y al final se avisa que terminó (el evento `minijuego`
+// con `fase: 'fin'`). Así el host, al volver a mostrar lo suyo, ya puede leer el estado nuevo y animar
+// lo que cambió, que llega en `cambios`.
 
 import { esObjetoPlano } from '../dominio/es-objeto-plano.ts';
-import type { CambioDeVariable } from '../dominio/estado.ts';
+import type { CambioDeVariable, VariablesDeEstado } from '../dominio/estado.ts';
 import type { ContextoDeMinijuego, Minijuego, ResultadoDeMinijuego } from '../puertos/minijuego.ts';
 import { crearContextoDeMinijuego } from './crear-contexto-de-minijuego.ts';
 import { esperarOCancelar } from './esperar-o-cancelar.ts';
@@ -19,6 +24,14 @@ export interface MinijuegoPorJugar {
   readonly nombre: string;
   /** Lo que el nivel le pasa al minijuego. */
   readonly config: unknown;
+}
+
+/** Cómo terminó un minijuego: lo que se avisa al cerrarse. */
+export interface CierreDeMinijuego {
+  /** `true` si el minijuego dijo que se logró. Un error o una interrupción cuentan como `false`. */
+  readonly exito: boolean;
+  /** Las variables que cambiaron por lo que otorgó el minijuego, con su valor nuevo. `{}` = ninguna. */
+  readonly cambios: VariablesDeEstado;
 }
 
 const SIN_EXITO: ResultadoDeMinijuego = { exito: false };
@@ -46,17 +59,25 @@ export async function jugarMinijuego(
   const elemento = piezas.interfaz.abrirEspacioDeMinijuego();
   // El sitio se entera de cuándo empieza y cuándo termina, para esconder lo que tenga encima del juego.
   piezas.alEmpezarMinijuego(porJugar.nombre);
+  let resultado = SIN_EXITO;
+  let cambios: VariablesDeEstado = {};
   try {
     const contexto = crearContextoDeMinijuego({ elemento, config: porJugar.config, senal: cierre.signal }, piezas);
     const espera = await esperarOCancelar(llamarSinQueFalle(minijuego, contexto, porJugar.nombre), senal);
-    if (espera.tipo === 'cancelada') return SIN_EXITO;
-    return espera.valor;
+    if (espera.tipo === 'termino') {
+      resultado = espera.valor;
+    }
   } finally {
     senal.removeEventListener('abort', alInterrumpir);
     cierre.abort();
     piezas.interfaz.cerrarEspacioDeMinijuego();
-    piezas.alTerminarMinijuego(porJugar.nombre);
+    // Un minijuego interrumpido no otorga nada: `resultado` sigue siendo SIN_EXITO.
+    if (resultado.otorgar !== undefined) {
+      cambios = piezas.estado.aplicar(resultado.otorgar);
+    }
+    piezas.alTerminarMinijuego(porJugar.nombre, { exito: resultado.exito, cambios });
   }
+  return resultado;
 }
 
 /** Llama al minijuego. Si lanza un error o rechaza, lo anota en la consola y responde que no hubo éxito. */

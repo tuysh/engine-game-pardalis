@@ -29,18 +29,33 @@ test('una cinemática llega como el evento "cinematica" dos veces: al empezar y 
   ]);
 });
 
-test('un minijuego llega como el evento "minijuego" dos veces: al empezar y al terminar', () => {
+test('un minijuego llega como el evento "minijuego" dos veces: al empezar y al terminar, con cómo terminó', () => {
   const emisor = new EmisorDeEventos();
   const avisos: unknown[] = [];
   emisor.on('minijuego', (aviso) => avisos.push(aviso));
 
   const avisosDelJuego = crearAvisosParaElHost(emisor);
   avisosDelJuego.alEmpezarMinijuego('Tortilleria');
-  avisosDelJuego.alTerminarMinijuego('Tortilleria');
+  avisosDelJuego.alTerminarMinijuego('Tortilleria', { exito: true, cambios: { tortillas: true } });
 
   expect(avisos).toEqual([
     { nombre: 'Tortilleria', fase: 'inicio' },
-    { nombre: 'Tortilleria', fase: 'fin' },
+    { nombre: 'Tortilleria', fase: 'fin', exito: true, cambios: { tortillas: true } },
+  ]);
+});
+
+test('un diálogo llega como el evento "dialogo" dos veces: al empezar y al terminar, con su origen', () => {
+  const emisor = new EmisorDeEventos();
+  const avisos: unknown[] = [];
+  emisor.on('dialogo', (aviso) => avisos.push(aviso));
+
+  const avisosDelJuego = crearAvisosParaElHost(emisor);
+  avisosDelJuego.alEmpezarDialogo({ origen: 'npc', id: 'tortu' });
+  avisosDelJuego.alTerminarDialogo({ origen: 'npc', id: 'tortu' });
+
+  expect(avisos).toEqual([
+    { fase: 'inicio', origen: 'npc', id: 'tortu' },
+    { fase: 'fin', origen: 'npc', id: 'tortu' },
   ]);
 });
 

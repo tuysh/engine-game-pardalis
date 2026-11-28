@@ -3,13 +3,14 @@
     "id": "casa",
     "titulo": "La casa",
     "personajes": {
-      "tommy": { "idioma": "en", "sprite": "spr_tommy" },
-      "mama": { "idioma": "es", "sprite": "spr_mama" }
+      "tommy": { "idioma": "en", "sprite": "spr_tommy", "voz": { "tono": 1.4, "velocidad": 1.05 } },
+      "mama": { "idioma": "es", "sprite": "spr_mama", "voz": { "tono": 0.85, "velocidad": 0.95 } }
     }
   },
   "mundo": {
     "camara": { "distancia": 9, "altura": 3.6, "giro": 0 },
     "fondo": "#3b2a20",
+    "franjas": "delgadas",
     "planos": {
       "plano_tele": { "mira": "frente_tele", "distancia": 5.5, "altura": 2.2, "giro": 18 },
       "plano_sala": { "mira": "centro_sala", "distancia": 8, "altura": 3.2, "giro": 0 },
@@ -21,7 +22,6 @@
       "inicia": "alEntrar",
       "pasos": [
         { "camara": "plano_tele" },
-        { "anima": "tommy", "con": "tommy_viendo_tele", "repite": true },
         { "fundido": "abrir", "duracion": 1 },
         { "espera": 2 },
         {
@@ -39,6 +39,9 @@
         { "mira": "tommy", "hacia": "mama" },
         { "anima": "tommy", "con": "spr_tommy", "repite": true },
         { "dice": "tommy", "texto": "Yes, mom!", "trad": "¡Sí, mamá!", "audio": "vo_tommy_si" },
+        { "camara": "plano_tele", "duracion": 1 },
+        { "anima": "tele", "con": "tele_apagada", "repite": true },
+        { "espera": 1 },
         { "fundido": "cerrar", "duracion": 0.8 },
         { "sale": "barrio" }
       ]

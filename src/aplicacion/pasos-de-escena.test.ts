@@ -48,7 +48,17 @@ const SALA: Nivel = {
     anchoEnMetros: 10,
     profundidadEnMetros: 4,
     telones: [],
-    decorado: [],
+    // La mesa de la familia lleva id solo para que un paso "anima" la nombre: no tiene diálogo.
+    decorado: [
+      {
+        descripcion: 'objeto #7 "Mesa"',
+        clase: 'parado',
+        asset: 'spr_abuela',
+        huella: { x: 4, y: 1, ancho: 2, alto: 0.5 },
+        alturaEnMetros: 0,
+        id: 'mesa_familia',
+      },
+    ],
     npcs: { mama: { descripcion: 'mamá', posicion: { x: 6, y: 2 }, mira: 'derecha' } },
     iniciosDelJugador: [{ descripcion: 'inicio', posicion: { x: 2, y: 3 }, mira: 'derecha' }],
     puntos: { puerta: { x: 9, y: 2 }, ventana: { x: 1, y: 1 } },
@@ -114,6 +124,8 @@ async function empezarConPasos(pasos: readonly Paso[], idiomaBase: Idioma = 'es'
       },
       alEmpezarCinematica: () => {},
       alTerminarCinematica: () => {},
+      alEmpezarDialogo: () => {},
+      alTerminarDialogo: () => {},
       alCambiarElEstado: () => {},
       alEmpezarMinijuego: () => {},
       alTerminarMinijuego: () => {},
@@ -158,6 +170,38 @@ test('"anima" con repetir deja al personaje con el dibujo nuevo y la escena sigu
 
   expect(escenario.dibujos.get('tommy')?.repite).toBe(true);
   expect(interfaz.globo?.texto).toBe('¡Hola, mijo!');
+});
+
+test('"anima" con el id de un objeto del decorado le cambia el dibujo y luego le devuelve el suyo', async () => {
+  const { escenario, reloj } = await empezarConPasos([
+    { tipo: 'anima', personaje: 'mesa_familia', clave: 'tommy_saluda', repite: false },
+  ]);
+
+  expect(escenario.dibujosDelDecorado.get(0)?.imagen.direcciones).toHaveLength(4);
+  expect(escenario.dibujosDelDecorado.get(0)?.repite).toBe(false);
+  await reloj.avanzar(1);
+
+  expect(escenario.dibujosDelDecorado.get(0)?.imagen.direcciones).toEqual(['/niveles/casa/img/spr_abuela.svg']);
+  // Sin diálogo en "interactivos", el objeto no se puede tocar.
+  expect(escenario.escenografia?.decorado[0]?.id).toBeUndefined();
+});
+
+test('al saltar la escena, el objeto del decorado queda con el dibujo que se repite y el destello se omite', async () => {
+  const { escenario, interfaz, reloj } = await empezarConPasos([
+    { tipo: 'espera', esperaEnSegundos: 5 },
+    { tipo: 'efecto', nombre: 'destello' },
+    { tipo: 'anima', personaje: 'mesa_familia', clave: 'tommy_saluda', repite: false },
+    { tipo: 'anima', personaje: 'mesa_familia', clave: 'spr_mama', repite: true },
+  ]);
+
+  interfaz.simularToqueEnSaltar();
+  await reloj.avanzar(0.1);
+
+  expect(interfaz.opacidadMaximaDelDestello).toBe(0);
+  expect(escenario.dibujosDelDecorado.get(0)).toEqual({
+    imagen: expect.objectContaining({ direcciones: ['/niveles/casa/img/spr_mama.svg'] }),
+    repite: true,
+  });
 });
 
 test('"aparece" mete al personaje en su punto y "desaparece" lo saca', async () => {
@@ -251,4 +295,49 @@ test('"fundido" oscurece y aclara la pantalla en el tiempo que dice', async () =
   expect(interfaz.opacidadDelFundido).toBe(0.5);
   await reloj.avanzar(0.5);
   expect(interfaz.opacidadDelFundido).toBe(0);
+});
+
+test('quien lleva "anima" en el mapa empieza con ese dibujo, y su sprite se descarga para cuando vuelva a él', async () => {
+  const nivel: Nivel = {
+    ...SALA,
+    mundo: {
+      ...SALA.mundo,
+      npcs: { mama: { descripcion: 'mamá', posicion: { x: 6, y: 2 }, mira: 'derecha', dibujoInicial: 'tommy_saluda' } },
+    },
+  };
+  const escenario = new EscenarioDeMemoria();
+  const ubicacion = { direccionDelNivel: '/niveles/casa/nivel.json', cargador: new CargadorDeMemoria({}) };
+
+  await jugarNivel(
+    { nivel, ubicacion, idiomaBase: 'es', minijuegos: {} },
+    {
+      escenario,
+      interfaz: new InterfazDeMemoria(),
+      audio: new AudioDeMemoria(),
+      video: new VideoDeMemoria(),
+      controles: new ControlesDeMemoria(),
+      reloj: new RelojDeMemoria(),
+      azar: () => 0,
+    },
+    {
+      alCumplirObjetivo: () => {},
+      alVerPalabra: () => {},
+      alSalir: () => {},
+      alFallar: (error) => {
+        throw error;
+      },
+      alEmpezarCinematica: () => {},
+      alTerminarCinematica: () => {},
+      alCambiarElEstado: () => {},
+      alEmpezarMinijuego: () => {},
+      alTerminarMinijuego: () => {},
+      alEmpezarDialogo: () => {},
+      alTerminarDialogo: () => {},
+    },
+  );
+
+  expect(escenario.dibujosAlEntrar.get('mama')?.direcciones[0]).toBe('/niveles/casa/img/tommy_saluda_1.svg');
+  expect(escenario.dibujosAlEntrar.get('tommy')?.direcciones[0]).toBe('/niveles/casa/img/spr_tommy.svg');
+  const precargadas = escenario.imagenesPrecargadas.map((imagen) => imagen.direcciones[0]);
+  expect(precargadas).toContain('/niveles/casa/img/spr_mama.svg');
 });

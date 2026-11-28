@@ -41,8 +41,8 @@ function crearAccionesFalsas(bitacora: string[], respuestas: Respuestas = {}): A
       bitacora.push(`pregunta: ${pregunta} (${opciones.length} opciones)`);
       return respuestas.opcionElegida ?? 0;
     },
-    async reproducirEfecto(nombre) {
-      bitacora.push(`efecto: ${nombre}`);
+    async reproducirEfecto(efecto) {
+      bitacora.push(`efecto: ${efecto.nombre}`);
     },
     async caminar(personaje, punto) {
       bitacora.push(`${personaje} camina a ${punto}`);
@@ -150,6 +150,30 @@ test('el texto de una línea se completa con el estado de ese momento', async ()
   });
 
   expect(bitacora).toEqual(['tortu: Te faltan las tortillas.', 'tortu: Te faltan .']);
+});
+
+test('una línea muestra el número de una variable y una condición reacciona al texto que guarda otra', async () => {
+  const bitacora: string[] = [];
+  const pasos: Paso[] = [
+    { tipo: 'pon', valores: { globo: { suma: 3 } } },
+    { tipo: 'linea', hablante: 'tortu', texto: 'Llevas {globo} globos.' },
+    { tipo: 'pon', valores: { globo: 'rosa' } },
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('globo = azul'), pasos: [] },
+    {
+      tipo: 'condicional',
+      condicion: leerCondicionDeTexto('globo = rosa'),
+      pasos: [{ tipo: 'linea', hablante: 'tortu', texto: '¡Qué bonito tu globo rosa!' }],
+    },
+  ];
+
+  await ejecutarPasos(pasos, {
+    contenido: CONTENIDO,
+    estado: crearEstado(),
+    acciones: crearAccionesFalsas(bitacora),
+    senal: new AbortController().signal,
+  });
+
+  expect(bitacora).toEqual(['tortu: Llevas 3 globos.', 'tortu: ¡Qué bonito tu globo rosa!']);
 });
 
 test('"pon" cambia el estado', async () => {
@@ -277,7 +301,7 @@ const AL_VOLVER: AlVolver = {
   siNo: { tipo: 'pasos', pasos: [{ tipo: 'linea', hablante: 'tortu', texto: '¡Otro día lo intentamos!' }] },
 };
 
-test('tras un minijuego con éxito se aplica lo que otorga y sigue "siLogrado"', async () => {
+test('tras un minijuego con éxito sigue "siLogrado"', async () => {
   const bitacora: string[] = [];
   const estado = crearEstado();
   const resultadoDelMinijuego = { exito: true, otorgar: { tortillas: true } };
@@ -290,7 +314,9 @@ test('tras un minijuego con éxito se aplica lo que otorga y sigue "siLogrado"',
     alVolver: AL_VOLVER,
   });
 
-  expect(valorDe(estado.actual, 'tortillas')).toBe(true);
+  // Lo que otorga lo aplica la acción `jugarMinijuego` (ver jugar-minijuego.test.ts), no el ejecutor:
+  // así no se aplica dos veces.
+  expect(valorDe(estado.actual, 'tortillas')).toBeUndefined();
   expect(bitacora).toEqual(['minijuego: Tortilleria', 'tommy: Thank you!']);
 });
 

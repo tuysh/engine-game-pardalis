@@ -3,17 +3,25 @@
 // dentro de un «shadow root» (docs/DISENO-3.0.md §9.4). Su apariencia está en estilos-de-la-interfaz.ts.
 //
 // Este archivo junta las piezas (cada una en su archivo) y atiende lo que es de todas: los toques
-// para seguir un diálogo, el teclado y el espacio de los minijuegos.
+// para seguir un diálogo, el teclado y el espacio de los minijuegos. Tras un toque que cierra la última línea,
+// la capa de toque se queda un momento (espera-para-volver-a-hablar.ts) para que un doble toque no empiece
+// otra plática.
 //
 // Se verifica a mano en la demo; no tiene pruebas automáticas porque necesita un navegador.
 
+import type { GrosorDeFranjas } from '../../dominio/contenido.ts';
 import type { LugarEnPantalla } from '../../puertos/escenario.ts';
 import type { GloboPorMostrar, Interfaz, OpcionPorMostrar } from '../../puertos/interfaz.ts';
 import { crearBotonConDibujo, crearConTexto, crearDibujo, crearOculto } from './elementos.ts';
+import { EsperaParaVolverAHablar } from './espera-para-volver-a-hablar.ts';
 import { ESTILOS_DE_LA_INTERFAZ } from './estilos-de-la-interfaz.ts';
+import { altoDeLaFranjaEnCss, proporcionDeLaFranja } from './franjas-de-cine.ts';
 import { GloboDeDialogo } from './globo-de-dialogo.ts';
 import { SenalEnPantalla } from './senal-en-pantalla.ts';
+import { SenalesDePendientes } from './senales-de-pendientes.ts';
 import { TarjetasDeOpciones } from './tarjetas-de-opciones.ts';
+import { queHaceLaTeclaConTarjetas } from './tecla-con-tarjetas.ts';
+import { esTeclaDeUnCampo, esTeclaDeUnControl } from './tecla-de-un-control.ts';
 
 /** Cuánto crece todo en el modo proyección, para que se lea desde el fondo del salón. */
 const ESCALA_NORMAL = 1;
@@ -39,15 +47,25 @@ export class InterfazDelNavegador implements Interfaz {
   private readonly opciones = new TarjetasDeOpciones();
   private readonly flecha = new SenalEnPantalla('flecha');
   private readonly aviso = new SenalEnPantalla('aviso');
+  private readonly senalesDePendientes = new SenalesDePendientes();
   private readonly capaDeToque = crearOculto('div', 'capa-de-toque');
   private readonly fundido = crearOculto('div', 'fundido');
+  private readonly destello = crearOculto('div', 'destello');
   private readonly franjas = crearOculto('div', 'franjas');
+  /** Qué parte del alto ocupa cada franja mientras se ven. */
+  private proporcionDeLaFranja = 0;
   private readonly panelDeSaltar = crearOculto('div', 'panel-de-saltar');
   private readonly panelDeInicio = crearOculto('div', 'inicio');
   /** El marco que sostiene a pantalla completa el espacio del minijuego abierto. `undefined` = no hay ninguno. */
   private marcoDeMinijuego: HTMLElement | undefined;
   private funcionesParaSeguir: (() => void)[] = [];
+  /** Cuándo un toque o una tecla siguió el diálogo: la capa de toque se queda un momento después. */
+  private readonly esperaParaVolverAHablar = new EsperaParaVolverAHablar();
+  /** El temporizador que esconderá la capa de toque. `undefined` = no hay ninguno pendiente. */
+  private temporizadorDeLaCapa: ReturnType<typeof setTimeout> | undefined;
   private funcionesDeEleccion: ((posicion: number) => void)[] = [];
+  /** Cuándo salieron las tarjetas o `Enter` enfocó una (`performance.now()`): ver `tecla-con-tarjetas.ts`. */
+  private momentoDelUltimoCambioDeLasTarjetas = 0;
   private estaDestruida = false;
 
   /** Pone la capa de la interfaz dentro de `elemento`, encima de lo que ya tenga. */
@@ -66,8 +84,10 @@ export class InterfazDelNavegador implements Interfaz {
     raiz.append(
       estilos,
       this.flecha.elemento,
+      this.senalesDePendientes.elemento,
       this.aviso.elemento,
       this.fundido,
+      this.destello,
       this.franjas,
       this.capaDeToque,
       this.globo.elemento,
@@ -86,20 +106,33 @@ export class InterfazDelNavegador implements Interfaz {
   }
 
   apuntarGlobo(lugar: LugarEnPantalla | undefined): void {
-    this.globo.apuntar(lugar, { ancho: this.anfitrion.clientWidth, alto: this.anfitrion.clientHeight });
+    const alto = this.anfitrion.clientHeight;
+    let altoDeUnaFranja = 0;
+    if (!this.franjas.hidden) {
+      altoDeUnaFranja = alto * this.proporcionDeLaFranja;
+    }
+    this.globo.apuntar(lugar, {
+      ancho: this.anfitrion.clientWidth,
+      alto,
+      ocupadoArribaEnPuntos: altoDeUnaFranja,
+      ocupadoAbajoEnPuntos: altoDeUnaFranja,
+    });
   }
 
   alTocarParaSeguir(funcion: () => void): () => void {
     this.funcionesParaSeguir.push(funcion);
+    this.olvidarElTemporizadorDeLaCapa();
     this.capaDeToque.hidden = false;
     return () => {
       this.funcionesParaSeguir = this.funcionesParaSeguir.filter((registrada) => registrada !== funcion);
-      this.capaDeToque.hidden = this.funcionesParaSeguir.length === 0;
+      if (this.funcionesParaSeguir.length > 0) return;
+      this.esconderLaCapaCuandoDescanse();
     };
   }
 
   mostrarOpciones(pregunta: string, opciones: readonly OpcionPorMostrar[]): void {
     this.opciones.mostrar(pregunta, opciones, (posicion) => this.avisarEleccion(posicion));
+    this.momentoDelUltimoCambioDeLasTarjetas = performance.now();
   }
 
   resaltarOpcion(posicion: number | undefined): void {
@@ -134,6 +167,10 @@ export class InterfazDelNavegador implements Interfaz {
     this.flecha.ocultar();
   }
 
+  ponerSenalesDePendientes(lugares: readonly LugarEnPantalla[]): void {
+    this.senalesDePendientes.poner(lugares);
+  }
+
   mostrarAviso(): void {
     if (this.aviso.estaVisible) return;
     this.aviso.mostrar([crearDibujo(TRAZO_DE_GLOBITO)]);
@@ -152,7 +189,14 @@ export class InterfazDelNavegador implements Interfaz {
     this.fundido.hidden = opacidad <= 0;
   }
 
-  mostrarFranjasDeCine(alSaltar: (() => void) | undefined): void {
+  ponerDestello(opacidad: number): void {
+    this.destello.style.opacity = String(opacidad);
+    this.destello.hidden = opacidad <= 0;
+  }
+
+  mostrarFranjasDeCine(alSaltar: (() => void) | undefined, grosor: GrosorDeFranjas): void {
+    this.proporcionDeLaFranja = proporcionDeLaFranja(grosor);
+    this.franjas.style.setProperty('--alto-de-la-franja', altoDeLaFranjaEnCss(grosor));
     this.franjas.hidden = false;
     this.panelDeSaltar.replaceChildren();
     if (alSaltar === undefined) return;
@@ -231,8 +275,34 @@ export class InterfazDelNavegador implements Interfaz {
     document.removeEventListener('keydown', this.alOprimirUnaTecla);
     this.funcionesParaSeguir = [];
     this.funcionesDeEleccion = [];
+    this.olvidarElTemporizadorDeLaCapa();
     this.cerrarEspacioDeMinijuego();
     this.anfitrion.remove();
+  }
+
+  /**
+   * Esconde la capa de toque, pero si un toque (o una tecla) acaba de cerrar la línea, primero espera a que
+   * pase el descanso de `EsperaParaVolverAHablar`. Así el segundo toque de un doble toque cae en la capa, que
+   * ya no sigue nada, y no en el escenario, donde haría hablar otra vez a quien quedó debajo del dedo (o
+   * caminar al jugador). Si la línea se cerró sola, al terminar la voz, la capa se esconde de inmediato.
+   */
+  private esconderLaCapaCuandoDescanse(): void {
+    this.olvidarElTemporizadorDeLaCapa();
+    const faltan = this.esperaParaVolverAHablar.milisegundosQueFaltan(performance.now());
+    if (faltan <= 0) {
+      this.capaDeToque.hidden = true;
+      return;
+    }
+    this.temporizadorDeLaCapa = setTimeout(() => {
+      this.temporizadorDeLaCapa = undefined;
+      this.capaDeToque.hidden = this.funcionesParaSeguir.length === 0;
+    }, faltan);
+  }
+
+  private olvidarElTemporizadorDeLaCapa(): void {
+    if (this.temporizadorDeLaCapa === undefined) return;
+    clearTimeout(this.temporizadorDeLaCapa);
+    this.temporizadorDeLaCapa = undefined;
   }
 
   private avisarEleccion(posicion: number): void {
@@ -245,27 +315,60 @@ export class InterfazDelNavegador implements Interfaz {
   // Estas dos funciones se guardan como propiedades (y no como métodos) para poder quitarlas
   // después con `removeEventListener`, que necesita exactamente la misma función que se registró.
   private readonly alTocarLaCapa = (): void => {
+    if (this.funcionesParaSeguir.length > 0) {
+      this.esperaParaVolverAHablar.anotarQueSeSiguioElDialogo(performance.now());
+    }
     for (const funcion of [...this.funcionesParaSeguir]) {
       funcion();
     }
   };
 
-  /** Con teclado: Enter o la barra espaciadora siguen el diálogo, y las teclas 1 a 9 eligen una tarjeta. */
+  /**
+   * Con teclado: Enter o la barra espaciadora siguen el diálogo, y las teclas 1 a 9 eligen una tarjeta.
+   * Las tarjetas son botones: con una enfocada, Enter o la barra la eligen solas, sin pasar por aquí.
+   * Con las tarjetas a la vista y el foco en ningún lado, Enter, la barra o Tab enfocan una (`tecla-con-tarjetas.ts`).
+   */
   private readonly alOprimirUnaTecla = (evento: KeyboardEvent): void => {
     if (this.opciones.cantidad > 0) {
-      const numero = Number(evento.key);
-      const esUnaTarjeta = Number.isInteger(numero) && numero >= 1 && numero <= this.opciones.cantidad;
-      if (esUnaTarjeta) {
-        evento.preventDefault();
-        this.avisarEleccion(numero - 1);
-      }
+      this.atenderTeclaConTarjetas(evento);
       return;
     }
 
+    // Enter o la barra espaciadora en un botón (del host, de un minijuego o el de saltar) oprimen ese botón:
+    // cancelarlas para seguir el diálogo lo dejaría sin funcionar con teclado.
+    if (esTeclaDeUnControl(evento.composedPath())) return;
     const hayAlguienEscuchando = this.funcionesParaSeguir.length > 0;
     if (hayAlguienEscuchando && (evento.key === 'Enter' || evento.key === ' ')) {
       evento.preventDefault();
+      // `repeat` llega mientras la tecla se queda oprimida: dejarla así no debe ir saltando una línea tras otra.
+      if (evento.repeat) return;
       this.alTocarLaCapa();
     }
   };
+
+  private atenderTeclaConTarjetas(evento: KeyboardEvent): void {
+    const enfocado = document.activeElement;
+    const camino = evento.composedPath();
+    const accion = queHaceLaTeclaConTarjetas({
+      tecla: evento.key,
+      repetida: evento.repeat,
+      conMayusculas: evento.shiftKey,
+      cantidad: this.opciones.cantidad,
+      esDeUnControl: esTeclaDeUnControl(camino),
+      esDeUnCampo: esTeclaDeUnCampo(camino),
+      nadaTieneElFoco: enfocado === null || enfocado === document.body,
+      milisegundosDesdeElUltimoCambio: performance.now() - this.momentoDelUltimoCambioDeLasTarjetas,
+    });
+    if (accion.tipo === 'dejar') return;
+    evento.preventDefault();
+    if (accion.tipo === 'elegir') {
+      this.avisarEleccion(accion.posicion);
+      return;
+    }
+    if (accion.tipo === 'enfocar') {
+      this.opciones.enfocar(accion.posicion);
+      // Solo `Enter` y la barra descansan tras enfocar: `Tab` es para moverse, no se oprime de más.
+      if (evento.key !== 'Tab') this.momentoDelUltimoCambioDeLasTarjetas = performance.now();
+    }
+  }
 }

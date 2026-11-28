@@ -60,3 +60,24 @@ test('un mapa sin suelo, telones ni decorado no tiene nada que revisar', () => {
 
   expect(diagnostico).toEqual({ errores: [], advertencias: [] });
 });
+
+test('el dibujo con que empieza un personaje (propiedad "anima") debe ser una imagen del nivel', () => {
+  const diagnostico = crearDiagnostico();
+  const mundo: Mundo = {
+    ...MUNDO,
+    telones: [],
+    decorado: [],
+    npcs: {
+      tommy: { descripcion: 'objeto #3 "Tommy"', posicion: { x: 2, y: 2 }, mira: 'derecha', dibujoInicial: 'tommy_sentado' },
+      mama: { descripcion: 'objeto #4 "Mamá"', posicion: { x: 4, y: 2 }, mira: 'derecha', dibujoInicial: 'suelo_barrio' },
+    },
+    iniciosDelJugador: [{ descripcion: 'objeto #5', posicion: { x: 1, y: 2 }, mira: 'derecha', dibujoInicial: 'vo_hola' }],
+  };
+
+  revisarAssetsDelMundo(mundo, ASSETS, diagnostico);
+
+  expect(diagnostico.errores).toEqual([
+    'mapa: objeto #3 "Tommy" (npc), propiedad "anima": no existe la imagen "tommy_sentado" en los assets del nivel',
+    'mapa: objeto #5 (inicioJugador), propiedad "anima": "vo_hola" es un asset de tipo audio, y aquí va una imagen',
+  ]);
+});

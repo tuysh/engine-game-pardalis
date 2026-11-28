@@ -11,6 +11,7 @@ import { caminarEnEscena } from './caminar-en-escena.ts';
 import { EstadoEnJuego } from './estado-en-juego.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { Reparto } from './reparto.ts';
+import { VocesDelNivel } from './voces-del-nivel.ts';
 
 const IMAGEN: ImagenDeEscena = {
   direcciones: ['spr.svg'],
@@ -52,6 +53,8 @@ async function crearEscena() {
     estado: new EstadoEnJuego(crearEstadoDeNivel({ objetivos: [], variables: [], lista: {} }), () => {}),
     minijuegos: {},
     direccionDeAsset: () => undefined,
+    cuadrosDeAsset: () => undefined,
+    voces: new VocesDelNivel({ personajes: {}, direccionDeAsset: () => undefined }),
     azar: () => 0,
     imagenDeAsset: (clave) => ({
       direcciones: [`/img/${clave}.svg`],

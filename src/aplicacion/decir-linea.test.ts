@@ -5,7 +5,7 @@ import { EscenarioDeMemoria } from '../adaptadores/memoria/escenario-de-memoria.
 import { InterfazDeMemoria } from '../adaptadores/memoria/interfaz-de-memoria.ts';
 import { RelojDeMemoria } from '../adaptadores/memoria/reloj-de-memoria.ts';
 import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from '../dominio/contenido.ts';
-import type { Contenido } from '../dominio/contenido.ts';
+import type { Contenido, Personaje } from '../dominio/contenido.ts';
 import { crearEstadoDeNivel } from '../dominio/estado.ts';
 import type { PalabraDeVocabulario, PasoDeLinea } from '../dominio/paso.ts';
 import type { ImagenDeEscena } from '../puertos/escenario.ts';
@@ -13,6 +13,8 @@ import { decirLinea } from './decir-linea.ts';
 import { EstadoEnJuego } from './estado-en-juego.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { Reparto } from './reparto.ts';
+import { VocesDelNivel } from './voces-del-nivel.ts';
+import { VozEnOrden } from './voz-en-orden.ts';
 
 const CONTENIDO: Contenido = {
   meta: {
@@ -62,6 +64,8 @@ async function crearEscena() {
     estado: new EstadoEnJuego(crearEstadoDeNivel({ objetivos: [], variables: [], lista: {} }), () => {}),
     minijuegos: {},
     direccionDeAsset: (clave) => (clave === 'vo_tortu_hola' ? '/voz/vo_tortu_hola.mp3' : undefined),
+    cuadrosDeAsset: () => undefined,
+    voces: new VocesDelNivel({ personajes: {}, direccionDeAsset: () => undefined }),
     azar: () => 0,
     imagenDeAsset: (clave) => ({
       direcciones: [`/img/${clave}.svg`],
@@ -86,21 +90,47 @@ test('muestra el globo sobre quien habla y dice el texto con su voz grabada', as
 
   void decirLinea({ paso: HOLA, textoCompleto: '¡Hola!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
 
-  expect(interfaz.globo).toEqual({ texto: '¡Hola!', traduccion: undefined, palabra: undefined });
+  expect(interfaz.globo).toEqual({ texto: '¡Hola!', idioma: 'es', traduccion: undefined, palabra: undefined });
   expect(interfaz.lugarDelGlobo).toEqual({ x: 5, y: 2 });
   expect(audio.frasesDichas).toEqual([{ texto: '¡Hola!', idioma: 'es', direccionDeLaVoz: '/voz/vo_tortu_hola.mp3' }]);
 });
 
 test('un toque cierra la línea: se quita el globo y se calla la voz', async () => {
-  const { piezas, interfaz, audio } = await crearEscena();
+  const { piezas, interfaz, audio, reloj } = await crearEscena();
 
   const linea = decirLinea({ paso: HOLA, textoCompleto: '¡Hola!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(0.5);
   interfaz.simularToqueParaSeguir();
   await linea;
 
   expect(interfaz.globo).toBeUndefined();
   expect(audio.hayAlguienHablando).toBe(false);
   expect(interfaz.hayQuienEscuchaToques).toBe(false);
+});
+
+test('un toque que llega apenas empieza la línea no la cierra: un doble toque no se salta lo que se dice', async () => {
+  const { piezas, interfaz, audio, reloj } = await crearEscena();
+  let termino = false;
+
+  void decirLinea({ paso: HOLA, textoCompleto: '¡Hola!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas).then(() => {
+    termino = true;
+  });
+  await reloj.avanzar(0.1);
+  interfaz.simularToqueParaSeguir();
+  await reloj.avanzar(0);
+
+  expect(termino).toBe(false);
+  expect(interfaz.globo?.texto).toBe('¡Hola!');
+  expect(audio.hayAlguienHablando).toBe(true);
+  // El toque temprano sigue atrapado por la capa de toque: no se va al mapa.
+  expect(interfaz.hayQuienEscuchaToques).toBe(true);
+
+  await reloj.avanzar(0.5);
+  interfaz.simularToqueParaSeguir();
+  await reloj.avanzar(0);
+
+  expect(termino).toBe(true);
+  expect(interfaz.globo).toBeUndefined();
 });
 
 test('si nadie toca, la línea se cierra sola un momento después de que termina la voz', async () => {
@@ -193,7 +223,10 @@ test('en un dispositivo sin voz, el globo se queda el tiempo que tomaría leerlo
 });
 
 test('si la voz sintetizada nunca avisa que terminó, la línea se cierra sola al pasar un tiempo holgado', async () => {
-  const { piezas, interfaz, audio, reloj } = await crearEscena();
+  const escena = await crearEscena();
+  const { interfaz, audio, reloj } = escena;
+  // El tope de tiempo lo pone la fila de voces, como en el juego (crear.ts).
+  const piezas: PiezasDeEscena = { ...escena.piezas, audio: new VozEnOrden(audio, reloj) };
   const sinVozGrabada: PasoDeLinea = { tipo: 'linea', hablante: 'tortu', texto: '¡Hola!' };
   let termino = false;
 
@@ -224,12 +257,13 @@ test('una voz grabada se espera completa, dure lo que dure', async () => {
 });
 
 test('con una pose, quien habla cambia de dibujo mientras dura la línea y al terminar vuelve al que tenía', async () => {
-  const { piezas, interfaz, escenario } = await crearEscena();
+  const { piezas, interfaz, escenario, reloj } = await crearEscena();
   const sorpresa: PasoDeLinea = { tipo: 'linea', hablante: 'tortu', texto: '¡Ay!', pose: 'tortu_sorpresa' };
 
   const linea = decirLinea({ paso: sorpresa, textoCompleto: '¡Ay!', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
   expect(escenario.dibujos.get('tortu')?.imagen.direcciones).toEqual(['/img/tortu_sorpresa.svg']);
 
+  await reloj.avanzar(0.5);
   interfaz.simularToqueParaSeguir();
   await linea;
 
@@ -237,7 +271,7 @@ test('con una pose, quien habla cambia de dibujo mientras dura la línea y al te
 });
 
 test('quien escucha puede reaccionar con otro dibujo, y quien no está en el escenario no cambia nada', async () => {
-  const { piezas, interfaz, escenario, reparto } = await crearEscena();
+  const { piezas, interfaz, escenario, reparto, reloj } = await crearEscena();
   // Tommy sí está en el escenario y escucha; "pancho" no está.
   await reparto.agregar({ id: 'tommy', imagen: IMAGEN, posicion: { x: 3, y: 2 }, mira: 'derecha', sePuedeTocar: false });
   const linea: PasoDeLinea = {
@@ -252,6 +286,7 @@ test('quien escucha puede reaccionar con otro dibujo, y quien no está en el esc
   expect(escenario.dibujos.has('pancho')).toBe(false);
   expect(escenario.dibujos.has('tortu')).toBe(false);
 
+  await reloj.avanzar(0.5);
   interfaz.simularToqueParaSeguir();
   await dicha;
 
@@ -277,4 +312,23 @@ test('un pensamiento se muestra en un globo de pensamiento', async () => {
   void decirLinea({ paso: duda, textoCompleto: '¿Y si llueve?', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
 
   expect(interfaz.globo?.esPensamiento).toBe(true);
+});
+
+test('la frase lleva el tono y la velocidad de quien habla; su traducción se dice con la voz normal', async () => {
+  const { piezas, audio } = await crearEscena();
+  const personajes: Record<string, Personaje> = {
+    tortu: { idioma: 'es', sprite: 'spr_tortu' },
+    bobby: { idioma: 'en', sprite: 'spr_bobby', voz: { tono: 1.3, velocidad: 1.05 } },
+  };
+  const conBobby = { ...piezas, contenido: { ...CONTENIDO, meta: { ...CONTENIDO.meta, personajes } } };
+  const paso: PasoDeLinea = { tipo: 'linea', hablante: 'bobby', texto: 'Corn!', traduccion: '¡Maíz!' };
+
+  void decirLinea({ paso, textoCompleto: 'Corn!', seCierraConUnToque: true }, SIN_INTERRUMPIR, conBobby);
+  audio.terminarDeHablar();
+  await new Promise((seguir) => setTimeout(seguir, 0));
+
+  expect(audio.frasesDichas).toEqual([
+    { texto: 'Corn!', idioma: 'en', direccionDeLaVoz: undefined, voz: { tono: 1.3, velocidad: 1.05 } },
+    { texto: '¡Maíz!', idioma: 'es' },
+  ]);
 });

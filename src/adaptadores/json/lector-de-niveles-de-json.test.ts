@@ -64,6 +64,18 @@ test('el jugador y el mundo se leen con sus unidades, y lo que falta toma su val
   });
 });
 
+test('jugador.distanciaDelAcompanante se lee en metros y debe ser un número positivo', () => {
+  const lectura = new LectorDeNivelesDeJson().leerContenido({
+    meta: META,
+    jugador: { personaje: 'tortu', acompanante: 'tortu', distanciaDelAcompanante: 1.4 },
+  });
+  if (lectura.tipo !== 'leido') throw new Error(`no se pudo leer: ${lectura.errores.join('; ')}`);
+  expect(lectura.valor.jugador?.distanciaDelAcompananteEnMetros).toBe(1.4);
+
+  const errores = erroresDe({ meta: META, jugador: { personaje: 'tortu', distanciaDelAcompanante: 0 } });
+  expect(errores).toEqual(['jugador.distanciaDelAcompanante: Demasiado pequeño: se esperaba que número fuera >0']);
+});
+
 test('una línea se convierte con su hablante, traducción, audio y tarjeta de vocabulario', () => {
   const pasos = leerPasos([
     { dice: 'tortu', texto: '¡Cuidado!', trad: 'Careful!', en: 'hot', es: 'caliente', audio: 'vo_tortu_caliente' },
@@ -422,4 +434,82 @@ test('el jugador puede traer acompañante, y el paso "acompana" lo cambia o lo q
     { tipo: 'acompana', personaje: 'bobby' },
     { tipo: 'acompana', personaje: undefined },
   ]);
+});
+
+test('la voz de un personaje se lee con su tono y su velocidad, y lo que falta queda en 1', () => {
+  const lectura = new LectorDeNivelesDeJson().leerContenido({
+    meta: {
+      id: 'mercado',
+      titulo: 'El mercado',
+      personajes: {
+        mama: { idioma: 'es', sprite: 'spr_mama', voz: { tono: 0.9, velocidad: 0.95 } },
+        bobby: { idioma: 'en', sprite: 'spr_bobby', voz: { tono: 1.3 } },
+      },
+    },
+  });
+
+  if (lectura.tipo !== 'leido') throw new Error(`no se pudo leer: ${lectura.errores.join('; ')}`);
+  expect(lectura.valor.meta.personajes['mama']!.voz).toEqual({ tono: 0.9, velocidad: 0.95 });
+  expect(lectura.valor.meta.personajes['bobby']!.voz).toEqual({ tono: 1.3, velocidad: 1 });
+});
+
+test('un tono o una velocidad fuera de sus límites dice cuáles son y qué es lo normal', () => {
+  const errores = erroresDe({
+    meta: {
+      id: 'mercado',
+      titulo: 'El mercado',
+      personajes: {
+        pardi: { idioma: 'es', sprite: 'spr_pardi', voz: { tono: 3, velocidad: 'rápido' } },
+        bobby: { idioma: 'en', sprite: 'spr_bobby', voz: { tono: 1.2, volumen: 1 } },
+      },
+    },
+  });
+
+  expect(errores).toEqual([
+    'meta.personajes.pardi.voz.tono: el tono va de 0.5 (más grave) a 2 (más agudo); 1 es la voz normal',
+    'meta.personajes.pardi.voz.velocidad: la velocidad va de 0.5 (más despacio) a 2 (más rápido); 1 es la voz normal',
+    'meta.personajes.bobby.voz: Llave desconocida: "volumen"',
+  ]);
+});
+
+test('mundo.franjas acepta "normales", "delgadas" y "ninguna"; otro valor es error', () => {
+  const lector = new LectorDeNivelesDeJson();
+  const delgadas = lector.leerContenido({ meta: META, mundo: { franjas: 'delgadas' } });
+  if (delgadas.tipo !== 'leido') throw new Error(`no se pudo leer: ${delgadas.errores.join('; ')}`);
+  expect(delgadas.valor.mundo.franjas).toBe('delgadas');
+
+  const gruesas = lector.leerContenido({ meta: META, mundo: { franjas: 'gruesas' } });
+  expect(gruesas.tipo).toBe('invalido');
+  if (gruesas.tipo !== 'invalido') return;
+  expect(gruesas.errores).toEqual(['mundo.franjas: Opción inválida: se esperaba una de "normales"|"delgadas"|"ninguna"']);
+});
+
+test('un paso "efecto" puede nombrar el sonido que lo acompaña', () => {
+  const lectura = new LectorDeNivelesDeJson().leerContenido({
+    meta: META,
+    secuencias: { foto: [{ efecto: 'destello', sonido: 'sfx_foto' }, { efecto: 'magia' }] },
+  });
+
+  if (lectura.tipo !== 'leido') throw new Error(`no se pudo leer: ${lectura.errores.join('; ')}`);
+  expect(lectura.valor.secuencias['foto']).toEqual([
+    { tipo: 'efecto', nombre: 'destello', sonido: 'sfx_foto' },
+    { tipo: 'efecto', nombre: 'magia' },
+  ]);
+});
+
+test('un NPC puede llevar "senal" con su visibleCuando; otra clave dentro de "senal" es error', () => {
+  const lector = new LectorDeNivelesDeJson();
+  const lectura = lector.leerContenido({
+    meta: META,
+    npcs: { tortu: { dialogo: [], senal: { visibleCuando: 'no tengo tortillas' } } },
+  });
+  if (lectura.tipo !== 'leido') throw new Error(`no se pudo leer: ${lectura.errores.join('; ')}`);
+  expect(lectura.valor.npcs['tortu']?.senal).toEqual({
+    visibleCuando: { tipo: 'no', condicion: { tipo: 'variable', nombre: 'tortillas' } },
+  });
+
+  const conError = lector.leerContenido({ meta: META, npcs: { tortu: { dialogo: [], senal: { cuando: 'x' } } } });
+  expect(conError.tipo).toBe('invalido');
+  if (conError.tipo !== 'invalido') return;
+  expect(conError.errores).toEqual(['npcs.tortu.senal: Llave desconocida: "cuando"']);
 });

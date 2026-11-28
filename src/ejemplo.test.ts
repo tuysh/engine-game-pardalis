@@ -23,7 +23,7 @@ test('las únicas advertencias del barrio son por voces que todavía no se graba
 
   const resultado = await validarNivel(rutaDelNivel, { minijuegos: ['Tortilleria'] });
 
-  expect(resultado.advertencias).toHaveLength(7);
+  expect(resultado.advertencias).toHaveLength(8);
   for (const advertencia of resultado.advertencias) {
     expect(advertencia).toEndWith('; se usará voz sintetizada');
   }
@@ -48,8 +48,8 @@ test('las únicas advertencias de la casa son por voces y sonidos que todavía n
   const resultado = await validarNivel(rutaDelNivel, {});
 
   expect(resultado.advertencias).toEqual([
-    'cinematicas.intro.pasos[4].juntos[1].sonido: no existe el audio "puerta_abre"; no sonará',
-    'cinematicas.intro.pasos[9].audio: no existe la voz "vo_mama_tortillas"; se usará voz sintetizada',
-    'cinematicas.intro.pasos[12].audio: no existe la voz "vo_tommy_si"; se usará voz sintetizada',
+    'cinematicas.intro.pasos[3].juntos[1].sonido: no existe el audio "puerta_abre"; no sonará',
+    'cinematicas.intro.pasos[8].audio: no existe la voz "vo_mama_tortillas"; se usará voz sintetizada',
+    'cinematicas.intro.pasos[11].audio: no existe la voz "vo_tommy_si"; se usará voz sintetizada',
   ]);
 });

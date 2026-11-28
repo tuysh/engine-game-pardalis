@@ -1,5 +1,6 @@
 // Cruza el mapa con los assets del nivel: revisa que exista la imagen del suelo,
-// la de cada telón y la de cada objeto del decorado. Una imagen que falta es un error.
+// la de cada telón, la de cada objeto del decorado y el dibujo con que empieza un personaje (`anima`).
+// Una imagen que falta es un error.
 
 import type { AssetsDeNivel } from './assets-de-nivel.ts';
 import type { Diagnostico } from './diagnostico.ts';
@@ -15,6 +16,18 @@ export function revisarAssetsDelMundo(mundo: Mundo, assets: AssetsDeNivel, diagn
   }
   for (const objeto of mundo.decorado) {
     anotarSiHayProblema(objeto.asset, `${objeto.descripcion} (decorado)`, assets, diagnostico);
+  }
+  for (const id of Object.keys(mundo.npcs)) {
+    const npc = mundo.npcs[id]!; // `id` viene de `Object.keys`, así que existe
+    if (npc.dibujoInicial !== undefined) {
+      anotarSiHayProblema(npc.dibujoInicial, `${npc.descripcion} (npc), propiedad "anima"`, assets, diagnostico);
+    }
+  }
+  for (const inicio of mundo.iniciosDelJugador) {
+    if (inicio.dibujoInicial !== undefined) {
+      const donde = `${inicio.descripcion} (inicioJugador), propiedad "anima"`;
+      anotarSiHayProblema(inicio.dibujoInicial, donde, assets, diagnostico);
+    }
   }
 }
 

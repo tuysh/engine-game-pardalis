@@ -80,7 +80,8 @@ juego.on('guardar', (partida) => localStorage.setItem('pardalis:partida', JSON.s
 ```
 
 Con eso el juego muestra el botón de jugar, reproduce la intro de la casa, pasa al barrio y avisa cada vez
-que conviene guardar. Solo `nivel` es obligatoria, y una opción en `null` cuenta igual que no ponerla
+que conviene guardar (objetivo cumplido, fin de cinemática, cambio de nivel o un minijuego que cambió el estado).
+Solo `nivel` es obligatoria, y una opción en `null` cuenta igual que no ponerla
 (por eso funciona el `JSON.parse` de arriba cuando todavía no hay partida guardada).
 Todo lo que el paquete ofrece son esa función, el objeto `juego` que entrega y `ErrorDeEscenario`;
 lo demás son tipos. Cada uno trae su explicación al pasar el cursor en el editor, y los que se usan
@@ -92,13 +93,14 @@ llamándolos (`crearEscenario`, `juego.on`, `Minijuego`, `CinematicaEnCodigo`) t
 juego.on('objetivo', (id) => marcarEnLaLista(id));          // devuelve una función que deja de escuchar
 juego.on('palabra', ({ en, es }) => anotarPalabra(en, es));
 juego.on('cinematica', ({ fase }) => ocultarMenu(fase === 'inicio'));
-juego.on('minijuego', ({ fase }) => ocultarMenu(fase === 'inicio'));
+juego.on('dialogo', ({ fase }) => ocultarMenu(fase === 'inicio'));      // un NPC, un interactivo o un comentario
+juego.on('minijuego', ({ fase }) => ocultarMenu(fase === 'inicio'));   // el 'fin' trae { exito, cambios }
 juego.on('estado', ({ variables }) => pintarMonedero(variables.dinero));   // cada vez que cambia una variable
 pintarMonedero(juego.estado.obtener('dinero'));                            // y para leerlo cuando haga falta
 juego.on('salida', (destino) => irA(destino));              // un destino que no es un nivel: decide el host
 juego.on('error', (error) => console.error(error.problemas));
 
-juego.pausar();                 // y juego.reanudar()
+juego.pausar();                 // y juego.reanudar(); al cambiar de pestaña se pausa solo (pausarAlOcultar)
 juego.proyeccion = true;        // modo salón de clases: todo más grande
 await juego.cargar('barrio');   // cambia de nivel en el mismo lienzo
 await juego.reproducir('intro');
@@ -106,6 +108,21 @@ juego.destruir();               // al salir de la página o desmontar el compone
 ```
 
 El motor no navega entre páginas ni guarda por su cuenta: avisa con eventos y el host decide.
+
+#### Volumen y voz del host
+
+```js
+juego.silenciado = true;                       // el botón de bocina: nada suena, y se recuerdan los volúmenes
+juego.volumen = 0.5;                           // volumen general, de 0 a 1
+juego.ajustarVolumenes({ musica: 0.3 });       // por canal: musica, voces o efectos
+await juego.decir('corn', { idioma: 'en' });   // el host dice algo con la voz del motor
+await juego.decir('corn', { idioma: 'en', quien: 'bobby' });   // con la voz de Bobby (meta.personajes)
+juego.callar();                                // calla lo que dice el host; las líneas del juego siguen
+```
+
+`juego.decir` pasa por la misma fila que las líneas del juego: no se encima con ellas ni las corta, y se oye
+aunque el juego esté en pausa. Con `quien` usa la voz de ese personaje del nivel, como sus líneas; si además se
+da `voz`, gana `voz`. Detalles en [`docs/DISENO-3.0.md`](docs/DISENO-3.0.md) §4.
 
 ### Un minijuego
 
@@ -129,9 +146,17 @@ export function Tortilleria({ elemento, assets, senal }) {
 
 El minijuego recibe además `audio` y `azar`. Como nada requiere leer, un minijuego habla mucho:
 `audio.decir` termina cuando acaba de hablar, así que dos frases se encadenan con `await`
-(`await audio.decir('¡Lechuga!', 'es'); await audio.decir('lettuce!', 'en');`), y `audio.tocarTono(880, 0.2)`
-da un «ding» sin grabar nada. Para sortear algo conviene `azar()` en lugar de `Math.random()`: con la opción
+(`await audio.decir('¡Lechuga!', 'es'); await audio.decir('lettuce!', 'en');`). El cuarto argumento es quién lo
+dice: `audio.decir('lettuce!', 'en', 'vo_bobby_lettuce', 'bobby')` usa la voz de Bobby de `meta.personajes`
+(sin voz grabada, la clave va en `undefined`). `audio.tocarTono(880, 0.2)`
+da un «ding» sin grabar nada. `audio.tocar('sfx_atrapa', { tono: 1.2, volumen: 0.5 })` toca un sonido
+más agudo o más bajito: así un mismo sonido sube de nota en cada acierto seguido. Para sortear algo conviene `azar()` en lugar de `Math.random()`: con la opción
 `semilla` el minijuego sale igual cada vez.
+Los personajes se animan como en el escenario, con el ritmo y la secuencia de `assets.config.json`:
+`const tepo = assets.animar(img, 'spr_tepo')` lo hace parpadear y `tepo.cambiar('tepo_habla')` le mueve la boca
+(detalles en [`docs/DISENO-3.0.md`](docs/DISENO-3.0.md) §6).
+Lo que se mueve solo se mueve con `enCadaCuadro((segundos) => …)`, el reloj del juego: así se queda quieto
+cuando el host pausa el juego o la página no se ve. Para lo demás están `pausado` y `alPausarOReanudar`.
 Un ejemplo completo: [`ejemplo/tortilleria.ts`](ejemplo/tortilleria.ts).
 
 ### Una cinemática en código

@@ -11,6 +11,7 @@ import { elegirOpcion } from './elegir-opcion.ts';
 import { EstadoEnJuego } from './estado-en-juego.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { Reparto } from './reparto.ts';
+import { VocesDelNivel } from './voces-del-nivel.ts';
 
 const OPCIONES: Opcion[] = [
   { imagen: 'img_rosa', texto: 'El rosa', audio: 'vo_rosa', alElegir: { tipo: 'pasos', pasos: [] } },
@@ -45,6 +46,8 @@ function crearEscena() {
     estado: new EstadoEnJuego(crearEstadoDeNivel({ objetivos: [], variables: [], lista: {} }), () => {}),
     minijuegos: {},
     direccionDeAsset: (clave) => `/assets/${clave}`,
+    cuadrosDeAsset: () => undefined,
+    voces: new VocesDelNivel({ personajes: {}, direccionDeAsset: () => undefined }),
     azar: () => 0,
     imagenDeAsset: (clave) => ({
       direcciones: [`/img/${clave}.svg`],
@@ -76,8 +79,9 @@ test('muestra la pregunta y una tarjeta por opción, con la dirección de su ima
   expect(interfaz.opciones).toEqual({
     pregunta: '¿Cuál quieres?',
     opciones: [
-      { texto: 'El rosa', traduccion: undefined, direccionDeLaImagen: '/assets/img_rosa' },
-      { texto: 'El azul', traduccion: undefined, direccionDeLaImagen: '/assets/img_azul' },
+      // El texto de una opción está en el idioma del sitio, que es como se lee en voz alta.
+      { texto: 'El rosa', idioma: 'es', traduccion: undefined, direccionDeLaImagen: '/assets/img_rosa' },
+      { texto: 'El azul', idioma: 'es', traduccion: undefined, direccionDeLaImagen: '/assets/img_azul' },
     ],
   });
 });

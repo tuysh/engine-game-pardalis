@@ -7,7 +7,7 @@
 // tocar un lugar (o pedir hablar con alguien) hace que no cuente la dirección que ya estaba oprimida,
 // hasta que el jugador la suelte y oprima otra vez.
 
-import { avanzarEnDireccion, avanzarHacia } from '../dominio/caminar.ts';
+import { avanzarConElTeclado, avanzarHacia } from '../dominio/caminar.ts';
 import type { Avance } from '../dominio/caminar.ts';
 import type { Punto } from '../dominio/geometria.ts';
 import { buscarCamino } from '../dominio/buscar-camino.ts';
@@ -88,9 +88,7 @@ export class Exploracion {
     if (hayDireccionDelTeclado && !this.laDireccionOprimidaEsAnteriorALaOrden) {
       // El teclado manda: se olvida el lugar tocado y lo que hubiera que hacer al llegar.
       this.detener();
-      const distanciaEnMetros = this.piezas.velocidadEnMetrosPorSegundo * segundos;
-      const haciaDonde = avanzarEnDireccion(this.posicion, direccionDelTeclado, distanciaEnMetros);
-      this.darUnPaso(haciaDonde, segundos);
+      this.darUnPasoConElTeclado(direccionDelTeclado, segundos);
     } else if (this.ruta.length > 0) {
       this.seguirLaRuta(segundos);
     }
@@ -118,9 +116,19 @@ export class Exploracion {
   private darUnPaso(destino: Punto, segundos: number): Avance {
     const distanciaEnMetros = this.piezas.velocidadEnMetrosPorSegundo * segundos;
     const avance = avanzarHacia(this.posicion, destino, distanciaEnMetros, this.piezas.caminos.terreno);
-
-    this.piezas.reparto.mirarHacia(this.piezas.idDelJugador, avance.posicion);
-    this.piezas.reparto.mover(this.piezas.idDelJugador, avance.posicion);
+    this.moverAlJugador(avance.posicion);
     return avance;
+  }
+
+  /** Con el teclado se desliza por lo que estorba y rodea lo pequeño (ver `avanzarConElTeclado`). */
+  private darUnPasoConElTeclado(direccion: Punto, segundos: number): void {
+    const distanciaEnMetros = this.piezas.velocidadEnMetrosPorSegundo * segundos;
+    const avance = avanzarConElTeclado(this.posicion, direccion, distanciaEnMetros, this.piezas.caminos.terreno);
+    this.moverAlJugador(avance.posicion);
+  }
+
+  private moverAlJugador(posicion: Punto): void {
+    this.piezas.reparto.mirarHacia(this.piezas.idDelJugador, posicion);
+    this.piezas.reparto.mover(this.piezas.idDelJugador, posicion);
   }
 }

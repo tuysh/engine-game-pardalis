@@ -17,7 +17,10 @@ import type { PanelDeDepuracion } from '../puertos/panel-de-depuracion.ts';
 import type { Reloj } from '../puertos/reloj.ts';
 import type { Video } from '../puertos/video.ts';
 import type { UbicacionDeAssets } from './direccion-de-asset.ts';
+import type { DialogoDelNivel } from './conversacion.ts';
 import type { FundidoDePantalla } from './fundido-de-pantalla.ts';
+import type { CierreDeMinijuego } from './jugar-minijuego.ts';
+import type { VocesDelNivel } from './voces-del-nivel.ts';
 
 /** Lo que hace falta para el modo depuración (docs/DISENO-3.0.md §9.3). */
 export interface HerramientasDeDepuracion {
@@ -77,12 +80,19 @@ export interface AvisosDelNivel {
   alEmpezarCinematica(id: string): void;
   /** Terminó una cinemática: completa, saltada o con error. */
   alTerminarCinematica(id: string): void;
+  /** Empezó un diálogo con un NPC o un interactivo, el de una salida cerrada, o un comentario de zona. */
+  alEmpezarDialogo(dialogo: DialogoDelNivel): void;
+  /** Terminó ese diálogo: completo, interrumpido o con error. Nunca se enciman dos. */
+  alTerminarDialogo(dialogo: DialogoDelNivel): void;
   /** Alguna variable cambió de valor. `cambios` trae solo las que cambiaron; `estado` es el estado ya cambiado. */
   alCambiarElEstado(cambios: VariablesDeEstado, estado: EstadoDeNivel): void;
   /** Se abrió un minijuego. El dato es el nombre con el que el host lo registró. */
   alEmpezarMinijuego(nombre: string): void;
-  /** El minijuego se cerró: terminó, falló o se interrumpió. */
-  alTerminarMinijuego(nombre: string): void;
+  /**
+   * El minijuego se cerró: terminó, falló o se interrumpió. Lo que otorgó ya está en el estado
+   * (y ya se avisó con `alCambiarElEstado`); `cierre.cambios` dice qué cambió.
+   */
+  alTerminarMinijuego(nombre: string, cierre: CierreDeMinijuego): void;
 }
 
 /** Un nivel que se está jugando. */
@@ -98,6 +108,8 @@ export interface NivelEnJuego {
    * y rechaza con `ErrorDeEscenario` si el nivel no tiene una con ese id.
    */
   reproducirCinematica(id: string): Promise<void>;
+  /** Las voces del nivel: con ellas `juego.decir` usa la voz grabada o la de un personaje. */
+  readonly voces: VocesDelNivel;
   /** Deja de atender toques y de dibujar, y termina lo que esté en curso. No destruye el escenario. */
   terminar(): void;
 }

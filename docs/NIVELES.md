@@ -52,7 +52,7 @@ a metros del escenario, igual que a las imágenes. Un personaje dibujado de 160 
 | `suelo` | Capa de imagen | La imagen del piso, tal como se ve desde arriba. Propiedad `asset` (clave). Se coloca según el desplazamiento de la capa y mide lo que mide la imagen. |
 | `telones` | Capa de objetos | Una **línea de dos puntos** por cada fondo vertical (fachadas, cielo). Propiedades `asset` y `alto` (en píxeles). |
 | `decorado` | Capa de objetos | Un **rectángulo** por objeto: su forma es **la huella real** del objeto en el piso. Clase del catálogo y propiedad `asset`. |
-| `npcs` | Capa de objetos | Un objeto por personaje (un punto es lo más cómodo). Propiedades `id` y, opcional, `mira`. |
+| `npcs` | Capa de objetos | Un objeto por personaje (un punto es lo más cómodo). Propiedades `id` y, opcionales, `mira` y `anima` (ver «Pose inicial»). |
 | `interaccion` | Capa de objetos | Objetos de clase `inicioJugador`, `punto`, `salida` o `zona`. |
 | `piso` | Capa de objetos | Polígonos (o rectángulos) por donde se puede caminar. |
 
@@ -69,11 +69,40 @@ La clase de un objeto de `decorado` dice cómo se dibuja:
 | `plano` | Pintado sobre el piso, estirado a su huella (un tapete, una flecha). | No. |
 | `colgado` | Papel vertical en lo alto. Propiedad `altura` (píxeles del piso a su borde inferior; por defecto 2.2 m). | No. |
 
+**Lo parado que se encima:** entre personajes y objetos `parado`, se dibuja encima el que pisa más cerca de la
+cámara (el de `y` mayor en el mapa), sin importar lo alto que sea.
+
+**Lo `plano` que se encima** (un cojín sobre el tapete): el que va **después** en la capa `decorado` se pinta
+encima. En Tiled es el orden de la lista de objetos de la capa (con «Orden de dibujo: manual», el mapa se ve
+igual que en el juego); para subir uno, usa «Subir objeto». Lo `plano` siempre queda bajo las sombras y los pies
+de los personajes.
+
 Con la propiedad `id`, el objeto se puede tocar: su diálogo está en `interactivos` del contenido.
+Un objeto también puede llevar `id` **solo para nombrarlo** desde un plano de cámara (`mira`) o desde un paso
+`anima`, sin diálogo: entonces no se puede tocar. Un `id` que no está en `interactivos` y que nada nombra es error.
 Lo que se dibuja en el plano es exactamente lo que bloquea: no hay ajustes de «huella» a mano.
+
+**Lo `parado` no tapa al jugador:** si un objeto `parado` queda entre la cámara y el jugador (un árbol o alguien
+parado cerca de la cámara) y le cubre la cabeza o el cuerpo, se vuelve transparente poco a poco mientras lo tapa,
+y recupera su color al dejar de taparlo. Lo bajito que solo le tapa los pies (una banca) no cambia. No hace falta mover el dibujo; aun así, no pongas cosas altas donde el jugador camina seguido.
 
 Si el `asset` de un objeto es una **animación** (archivos numerados, ver §4), se repite sola todo el tiempo:
 sirve para una tele encendida, una bandera o un foco que parpadea.
+
+#### Decorado que aparece y desaparece (`visibleCuando`)
+
+Con la propiedad de texto `visibleCuando`, un objeto solo se ve mientras se cumple esa condición, escrita igual
+que en el contenido (ver «Condiciones»). Cambia sola en cuanto cambia el estado, también a media cinemática:
+
+| Objeto | `visibleCuando` | Qué pasa |
+| --- | --- | --- |
+| El letrero de «hay verduras» (`colgado`) | `no tengo verduras` | Se quita en cuanto se compran. |
+| Una flecha pintada en el piso (`plano`) | `objetivosCompletos` | Aparece cuando ya se tiene todo. |
+
+- Sus variables deben estar declaradas en el contenido (si no, es error, como en cualquier condición).
+- Mientras no se ve, tampoco se puede tocar ni cuenta como «a la mano».
+- Limitación conocida: el piso por donde se camina se calcula una vez al empezar el nivel, así que un objeto
+  `parado` escondido **sigue bloqueando el paso** (el validador lo advierte). Úsalo en `plano` y `colgado`.
 
 > **Para que el lugar se vea completo:** la cámara de una cinemática puede girar y acercarse, y entonces deja ver
 > lo que hay más allá del fondo. Cierra el lugar con telones también a los lados (como las paredes de la casa
@@ -83,10 +112,21 @@ sirve para una tele encendida, una bandera o un foco que parpadea.
 
 | Clase | Forma | Propiedades |
 | --- | --- | --- |
-| `inicioJugador` | punto | `mira` (`izquierda`/`derecha`, por defecto `derecha`). Exactamente uno si el nivel tiene jugador, dentro del piso. |
+| `inicioJugador` | punto | `mira` (`izquierda`/`derecha`, por defecto `derecha`) y, opcional, `anima`. Exactamente uno si el nivel tiene jugador, dentro del piso. |
 | `punto` | punto | Su **nombre** es su identificador (p. ej. `frente_tortilleria`); lo usan los pasos `camina`. No se repite. |
 | `salida` | rectángulo o polígono | Máximo una. |
 | `zona` | rectángulo o polígono | Su **nombre** es su identificador. Opcionales: `grupo` (qué lista de `comentarios` usar al entrar) y `espera` (segundos antes de repetir; por defecto 20). |
+
+#### Pose inicial (`anima`)
+
+Un personaje del mapa (un objeto de `npcs`, o el `inicioJugador`) puede llevar la propiedad de texto `anima`:
+la clave de la imagen o animación con que **empieza**, en vez de su `sprite`. Así lo que se ve detrás del botón
+de jugar ya es la primera toma de la cinemática de entrada (Pardi sentado viendo la tele), y no un personaje
+parado que de pronto cambia.
+
+- Es como un paso `anima` con `repite` que ya pasó: las caras de una línea (`con`) vuelven a esta pose al terminar.
+- Para que regrese a su dibujo normal: `{ "anima": "pardi", "con": "spr_pardi", "repite": true }`.
+- La imagen debe existir en los assets (si no, es error).
 
 ### Cómo se une el mapa con el contenido
 
@@ -145,6 +185,33 @@ Solo `meta` es obligatoria. **Una clave que el motor no conoce es un error**: as
 - Un NPC del mapa con `id: "tortu"` se dibuja con el personaje `tortu`.
 - Los dibujos miran **a la derecha**: para mirar a la izquierda, el motor voltea la figura como un papel.
 
+#### Voz de cada personaje
+
+Mientras no haya voces grabadas, cada línea se dice con la voz sintetizada del dispositivo. Para que cada
+personaje suene distinto, `voz` le cambia el tono y la velocidad (es opcional, y no cambia las voces grabadas):
+
+```json
+"personajes": {
+  "mama":  { "idioma": "es", "sprite": "spr_mama",  "voz": { "tono": 0.9, "velocidad": 0.95 } },
+  "pardi": { "idioma": "es", "sprite": "spr_pardi", "voz": { "tono": 1.4, "velocidad": 1.05 } },
+  "bobby": { "idioma": "en", "sprite": "spr_bobby", "voz": { "tono": 1.2 } }
+}
+```
+
+- `tono`: de `0.5` (más grave) a `2` (más agudo). `velocidad`: de `0.5` (más despacio) a `2` (más rápido).
+  En los dos, `1` es la voz normal, y es lo que vale si no se escribe.
+- La traducción (`trad`) de una línea se dice con la voz normal, no con la del personaje.
+- En el globo, el texto lleva el idioma de quien habla y su traducción el del sitio (atributo `lang`), igual que
+  las dos palabras de la tarjeta de vocabulario: así un lector de pantalla pronuncia cada una en su idioma.
+- Los minijuegos y el host pueden hablar con la misma voz nombrando al personaje: `audio.decir(texto, idioma,
+  clave, 'bobby')` en un minijuego y `juego.decir(texto, { idioma, quien: 'bobby' })` en el host.
+- El motor elige, de las voces del dispositivo, una que hable el idioma del personaje: para español prefiere
+  la de México, luego otra de América y luego cualquier español; para inglés, la de Estados Unidos y luego
+  cualquier inglés. Entre voces de la misma región prefiere una natural a una robótica de Apple (Eddy,
+  Grandma…) y luego la que el dispositivo usa por omisión; nunca elige las voces de efectos de Apple
+  (Albert, Bubbles, Zarvox…). Si el dispositivo no tiene ninguna de ese
+  idioma, solo pide el acento.
+
 ### `jugador` y `mundo`
 
 | Campo | Por defecto | Qué es |
@@ -152,6 +219,7 @@ Solo `meta` es obligatoria. **Una clave que el motor no conoce es un error**: as
 | `jugador.personaje` | — | Id en `meta.personajes` (obligatorio si hay `jugador`). |
 | `jugador.velocidad` | 2.4 | Metros por segundo al caminar. |
 | `jugador.acompanante` | — | Id del personaje que **sigue al jugador** mientras explora. Ver «Acompañante». |
+| `jugador.distanciaDelAcompanante` | 0.9 | Metros entre el jugador y el lugar donde se queda su acompañante. |
 | `mundo.pixelesPorMetro` | 100 | Cuántos píxeles del mapa y de las imágenes son un metro del escenario. |
 | `mundo.camara.distancia` | 8 | Metros entre la cámara y lo que sigue. |
 | `mundo.camara.altura` | 4 | Metros de la cámara sobre el piso. |
@@ -159,6 +227,7 @@ Solo `meta` es obligatoria. **Una clave que el motor no conoce es un error**: as
 | `mundo.fondo` | `"#bfe6f5"` (cielo claro) | Color de lo que se ve donde no hay piso ni telones, escrito `#rrggbb`. En un interior, ponle el color de las paredes o uno oscuro para que no se asome cielo; en un exterior, el color del cielo de tus telones (un atardecer, la noche). |
 | `mundo.sonidos.musica` | — | Clave de la música de fondo, que se repite mientras se juega. Si falta el archivo, hay advertencia y el nivel se juega sin música. |
 | `mundo.planos` | — | Planos de cámara con nombre, para los pasos `camara`. Ver abajo. |
+| `mundo.franjas` | `"normales"` | Grosor de las franjas negras de cine: `"normales"`, `"delgadas"` (la mitad) o `"ninguna"`. Ver «Franjas de cine». |
 
 La cámara sigue al jugador; en un nivel sin jugador mira al centro del lugar.
 
@@ -171,7 +240,12 @@ La cámara sigue al jugador; en un nivel sin jugador mira al centro del lugar.
 El acompañante es un personaje que va con el jugador: lo sigue a un paso de distancia mientras explora.
 
 - Camina por el piso rodeando el decorado, igual que el jugador, y voltea hacia donde camina.
-- Cuando el jugador se detiene, se queda cerca, del lado por el que venía: no se encima ni se le adelanta.
+- **Va detrás del jugador y un poco más lejos de la cámara:** del lado contrario al que camina el jugador, a
+  `jugador.distanciaDelAcompanante` metros (0.9 si no se dice), y un poco hacia el fondo. Así, al caminar de lado,
+  su dibujo queda detrás del del jugador y no lo tapa. Si ahí hay una pared o un puesto, se pone del otro lado
+  o a la misma altura.
+- Cuando el jugador se detiene, el acompañante se queda en su lugar: no se encima ni se le adelanta. Vuelve a
+  caminar cuando el jugador se aleja (su distancia y 0.6 m más) o si quedó delante de él, tapándolo.
 - **Durante un diálogo o una cinemática deja de seguir:** ahí lo mueven los pasos `camina`, `mira` y `anima`
   como a cualquier personaje. Al terminar la escena vuelve a seguir desde donde quedó.
 - Debe estar en el escenario: ser un NPC del mapa o entrar con un paso `aparece` (empieza a seguir en cuanto
@@ -203,6 +277,10 @@ Un plano dice **a qué** mira la cámara y **desde dónde**:
   Un `giro` positivo lleva la cámara hacia la derecha de lo que mira.
 - Para ir de un giro a otro la cámara toma el camino recto entre los dos números: de `350` a `10` daría la vuelta
   larga. Escribe giros cercanos (por ejemplo `-10` y `10`).
+- Los planos se componen para una pantalla **16:9**. En una más angosta (una tableta 4:3) la cámara abre su
+  ángulo vertical y se sigue viendo el mismo ancho: nadie queda cortado por la orilla, solo se ve un poco más de
+  cielo y de piso. Ese ajuste tiene un tope: en un teléfono de pie sí se ve menos de ancho. Encuadra en 16:9 y deja
+  un poco de aire arriba y abajo de los personajes.
 
 Los números de un plano no se adivinan: se encuadra a mano con la **cámara libre** y se copia el resultado
 (ver [«Crear planos con la cámara libre»](#crear-planos-con-la-cámara-libre)).
@@ -224,7 +302,8 @@ Los números de un plano no se adivinan: se encuadra a mano con la **cámara lib
   - `dinero`, si el nivel lo trae;
   - `charlas.<id>` por cada NPC e interactivo: el motor la marca sola al hablar con él. No hace falta escribirla.
   - `vista.<id>` por cada cinemática: el motor la marca sola cuando la cinemática termina.
-- `lista` da el nombre con artículo para `{faltan}` → «Te faltan las tortillas y los aguacates».
+- `lista` da el nombre con artículo para `{faltan}` → «Te faltan las tortillas y los aguacates». El artículo
+  también le dice a `{falta_o_faltan}` si el nombre es singular o plural (ver «Variables en los textos»).
 - `compartidas` son las variables **de la aventura**: las únicas que pasan de un nivel a otro. Ver abajo.
 
 #### Variables que pasan de un nivel a otro
@@ -264,20 +343,86 @@ en `estado.compartidas`:
 Gana **la primera rama cuya condición se cumple**. Una rama sin `cuando` siempre se cumple: debe ir al final
 (si no, las siguientes son inalcanzables y hay advertencia).
 
+### Señal de lo pendiente (`senal`)
+
+Un NPC o un interactivo puede llevar una estrellita amarilla que brinca encima de él, para que quien todavía no
+lee sepa **a dónde ir**:
+
+```json
+"npcs": {
+  "igu": { "senal": { "visibleCuando": "no tengo verduras" }, "dialogo": [ ... ] }
+}
+```
+
+- Se ve mientras se cumple `visibleCuando` (sin él, siempre). Sus variables deben estar declaradas.
+- Solo se ve mientras el jugador explora: en un diálogo o una cinemática se quita.
+- No se ve sobre lo que el jugador ya tiene a la mano: ahí ya está el aviso de que puede hablar.
+- Sobre un interactivo escondido por su `visibleCuando` del mapa, tampoco.
+- Puede haber varias a la vez; para que guíen, conviene que sean pocas (lo que falta del mandado).
+
 ### Pasos
 
 | Paso | Ejemplo | Qué hace |
 | --- | --- | --- |
-| Línea | `{ "dice": "tortu", "texto": "¡Hola!", "audio": "vo_hola" }` | Globo sobre quien habla. Termina con un toque o al acabar el audio. Opcional: `trad`, y `en` + `es` (siempre juntos) para una **tarjeta de vocabulario**; `con`, `reacciona` y `piensa` (ver «Caras y pensamientos»). |
-| Opción | `{ "elige": "¿Cuál quieres?", "opciones": [ { "imagen": "img_rosa", "audio": "vo_rosa", "secuencia": [...] } ] }` | Espera la elección. Cada opción: `texto`, `trad`, `imagen`, `audio`, `cuando`, y `secuencia` (pasos o nombre de secuencia). Una opción sin `imagen` da advertencia. |
-| Efecto | `{ "efecto": "magia" }` | Partículas y sonido. Disponibles: `magia`, `confeti`. |
+| Línea | `{ "dice": "tortu", "texto": "¡Hola!", "audio": "vo_hola" }` | Globo sobre quien habla. Termina con un toque o al acabar el audio. Un toque solo la cierra cuando ya lleva medio segundo a la vista, para que un doble toque no se salte la línea que acaba de empezar. Opcional: `trad`, y `en` + `es` (siempre juntos) para una **tarjeta de vocabulario**; `con`, `reacciona` y `piensa` (ver «Caras y pensamientos»). |
+| Opción | `{ "elige": "¿Cuál quieres?", "opciones": [ { "imagen": "img_rosa", "audio": "vo_rosa", "secuencia": [...] } ] }` | Espera la elección. Cada opción: `texto`, `trad`, `imagen`, `audio`, `cuando`, y `secuencia` (pasos o nombre de secuencia). El `texto` va en el idioma del sitio (así se lee en voz alta) y `trad` en el otro (`"texto": "Agua", "trad": "water"`). Una opción sin `imagen` da advertencia. |
+| Efecto | `{ "efecto": "magia" }` | Partículas y sonido. Disponibles: `magia`, `confeti` (papelitos que llueven sobre todo lo que se ve; se ven del mismo tamaño con la cámara cerca o lejos) y `destello` (un flash blanco de toda la pantalla, como el de una cámara de fotos). Opcional: `sonido`, la clave del sonido que lo acompaña (por ejemplo un obturador); sin él suenan unas notas cortas. Dura un segundo. |
 | Estado | `{ "pon": { "globo": "rosa" } }` | Asigna objetivos o variables. Con números también suma y resta: `{ "pon": { "dinero": { "resta": 10 }, "estrellas": { "suma": 1 } } }`. |
 | Minijuego | `{ "juego": "Tortilleria", "config": { "palabras": ["hot"] } }` | Abre el minijuego que registró el host y, al volver, ejecuta `alVolver`. |
 | Caminar | `{ "camina": "frente_tortilleria", "quien": "tortu" }` | Camina hasta un `punto` del mapa. Sin `quien`, camina el jugador. Sigue el piso y rodea el decorado; ver «Por dónde camina». |
 | Secuencia | `{ "secuencia": "aun_no_item" }` | Ejecuta una secuencia de `secuencias`. Los ciclos entre secuencias son error. |
 | Condicional | `{ "cuando": "globo", "dice": [ ...pasos ] }` | Ejecuta sus pasos solo si se cumple la condición. |
 
-Los textos admiten `{faltan}` (objetivos pendientes, en español) y `{dinero}`. Otro nombre entre llaves es error.
+#### Variables en los textos
+
+El `texto` de una línea y la pregunta de `elige` pueden llevar variables entre llaves, que se reemplazan al decirse:
+
+| Variable | Se reemplaza por | Ejemplo |
+| --- | --- | --- |
+| `{faltan}` | los objetivos pendientes, con su nombre de `estado.lista` | «las tortillas y el maíz» |
+| `{falta_o_faltan}` | el verbo que concuerda con `{faltan}`: «falta» o «faltan» | «falta» |
+| `{cuantos_faltan}` | cuántos objetivos faltan | «2» |
+| `{dinero}` | el dinero que tiene el jugador | «35» |
+| `{estrellas}` | el número de cualquier variable de `estado.variables` o `estado.compartidas` | «7» |
+
+Otro nombre entre llaves es error, con la ruta del texto. Los objetivos no se pueden mostrar: guardan «ya lo
+tengo», no un número.
+
+**Que el verbo concuerde.** `"Te faltan {faltan}."` dice bien «Te faltan las tortillas y el maíz», pero cuando
+solo queda el maíz diría «Te faltan el maíz». Para eso está `{falta_o_faltan}`: escribe el verbo con la variable
+y el motor elige.
+
+```json
+{ "dice": "pardi", "texto": "Nos {falta_o_faltan} {faltan}.", "audio": "vo_pardi_faltan" }
+```
+
+| Lo que falta | Se dice |
+| --- | --- |
+| las verduras y el maíz | «Nos faltan las verduras y el maíz.» |
+| el maíz | «Nos falta el maíz.» |
+| las tortillas | «Nos faltan las tortillas.» |
+
+- Dice «falta» solo cuando queda **un** objetivo y su nombre empieza con `el`, `la`, `un`, `una` (o `lo`, `mi`,
+  `tu`, `su`). Con dos o más, o con un nombre plural (`los`, `las`, `unos`, `unas`, `mis`, `tus`, `sus`), «faltan».
+- Si un nivel usa `{falta_o_faltan}` y el nombre de algún objetivo no empieza con una de esas palabras
+  (`"pan"`, o un objetivo que no está en `lista`), hay **advertencia**: en ese caso dirá «faltan».
+- `{falta_o_faltan}` siempre se escribe en minúsculas: ponlo después de otra palabra («Te», «Nos», «Todavía»),
+  no al empezar la frase.
+- Cuando ya no falta nada, `{faltan}` queda vacío y `{falta_o_faltan}` dice «faltan»: esa línea va dentro de
+  `{ "cuando": "no objetivosCompletos", ... }`.
+
+**Números del nivel.** `{estrellas}`, `{compras}` o cualquier variable declarada en `estado.variables` o
+`estado.compartidas` se muestra con su número. Igual que en las comparaciones, una variable sin valor, o con un
+valor que no es un número, se muestra como `0`.
+
+```json
+{ "dice": "mama", "texto": "¡Juntaron {estrellas} estrellas!", "audio": "vo_mama_estrellas" }
+```
+
+- Una voz grabada dice siempre lo mismo: si la línea lleva un número que cambia, se graba una línea por caso
+  (`"cuando": "estrellas >= 7"`) o se deja sin grabar para que la diga la voz sintetizada.
+- `{faltan}`, `{falta_o_faltan}`, `{cuantos_faltan}` y `{dinero}` son del motor: una variable del nivel con uno de
+  esos nombres no se puede mostrar en un texto.
 
 #### Por dónde camina
 
@@ -320,7 +465,7 @@ Mueven la cámara y a los personajes. Nacieron para las cinemáticas, pero sirve
 | Espera | `{ "espera": 2 }` | Una pausa, en segundos. |
 | Cámara | `{ "camara": "plano_puesto", "duracion": 2 }` | Lleva la cámara a un plano de `mundo.planos`, a un personaje (por su id) o a `"jugador"`. Con `duracion` viaja con suavidad; sin ella es un corte. |
 | Voltear | `{ "mira": "tommy", "hacia": "mama" }` | Voltea a un personaje hacia otro personaje o hacia un `punto` del mapa, con giro de papel. |
-| Animar | `{ "anima": "tommy", "con": "tommy_saluda" }` | Cambia el dibujo de un personaje por una animación (o una imagen) de los assets. Ver abajo. |
+| Animar | `{ "anima": "tommy", "con": "tommy_saluda" }` | Cambia el dibujo de un personaje (o de un objeto del decorado con `id`) por una animación (o una imagen) de los assets. Ver abajo. |
 | Aparecer | `{ "aparece": "mama", "en": "puerta" }` | Mete a un personaje al escenario, parado en un `punto`. Si ya estaba, solo lo cambia de lugar. |
 | Desaparecer | `{ "desaparece": "mama" }` | Lo saca del escenario. No se puede sacar al personaje del jugador. |
 | Música | `{ "musica": "mus_fiesta" }` | Cambia la música de fondo. |
@@ -330,7 +475,12 @@ Mueven la cámara y a los personajes. Nacieron para las cinemáticas, pero sirve
 | Salir | `{ "sale": "barrio" }` | Pide terminar el nivel hacia un destino. Ver abajo. |
 | Acompañar | `{ "acompana": "bobby" }` | Desde ahora ese personaje sigue al jugador mientras explora. Con `{ "acompana": null }`, ya nadie lo sigue. |
 
-**Animar.** Hay dos formas:
+**Animar.** `anima` nombra a un personaje o, si ningún personaje se llama así, a un **objeto del decorado** por
+su `id` del mapa: así la familia sentada a la mesa puede levantar los platos al «¡Provecho!»
+(`{ "anima": "mesa_familia", "con": "mesa_familia_brinda" }`). El objeto toma el dibujo nuevo en su misma huella y,
+sin `repite`, al terminar vuelve a su `asset` del mapa.
+
+Hay dos formas:
 
 - Sin `repite`, la animación pasa **una vez**, el paso espera a que termine y el personaje regresa a su dibujo
   normal (su `sprite`). Sirve para un gesto: saludar, brincar.
@@ -362,7 +512,8 @@ termina con `sale`: ahí la pantalla puede quedarse en negro mientras carga el n
 | `"objetivosCompletos"` | todos los objetivos están cumplidos |
 | `"charlas.tortu"` | ya se habló con `tortu` |
 | `"vista.intro"` | ya se vio la cinemática `intro` |
-| `"dinero >= 10"` | el número de `dinero` es 10 o más. Los signos son `>=`, `<=`, `>`, `<` y `=`, y a la derecha va siempre un número |
+| `"dinero >= 10"` | el número de `dinero` es 10 o más. Los signos son `>=`, `<=`, `>`, `<` y `=` |
+| `"premio = pizarron"` | `premio` guarda justo el texto `pizarron`. Con un texto a la derecha solo se usa `=` |
 | `["a", "b"]` | se cumplen `a` **y** `b` |
 | `{ "alguno": ["a", "b"] }` | se cumple `a` **o** `b` |
 
@@ -379,6 +530,28 @@ una variable que todavía no tiene valor cuenta como `0`. Así se cobra sin escr
 ] }
 ```
 
+**Textos.** Una variable también puede guardar un texto, que le da un `pon` (`{ "pon": { "premio": "pizarron" } }`)
+o el `otorgar` de un minijuego. Para preguntar cuál es, se compara con `=`:
+
+```json
+{ "cuando": "premio = pizarron", "dice": [
+  { "dice": "tlacua", "texto": "¡Te ganaste el premio mayor!" }
+] },
+{ "cuando": "tengo premio", "dice": [
+  { "dice": "tlacua", "texto": "¡Ya tienes tu premio!" }
+] }
+```
+
+- Si lo de la derecha es un número (`"estrellas = 3"`), se comparan números; si no, textos.
+- El texto se compara **tal cual**: `"premio = Pizarron"` y `"premio = pizarrón"` no se cumplen con `"pizarron"`.
+  Conviene que los valores sean palabras cortas, sin acentos ni mayúsculas, iguales a las del `pon` o del minijuego.
+- Una variable sin valor, o con un número, no es igual a ningún texto. Para «cualquier premio» basta `"tengo premio"`,
+  y para «cualquiera menos este», `"no premio = pizarron"`.
+- `>=`, `<=`, `>` y `<` solo van con números: `"premio > globo"` es error.
+- También es error lo que nunca se cumpliría: el texto entre comillas (`"premio = 'pizarron'"`), preguntar por
+  sí o no (`"premio = true"`: se escribe `"tengo premio"`) y comparar un objetivo, `charlas.<id>` o `vista.<id>`
+  con un texto, porque solo guardan si ya pasó.
+
 ### `alVolver` (después de un minijuego)
 
 ```json
@@ -387,8 +560,11 @@ una variable que todavía no tiene valor cuenta como `0`. Así se cobra sin escr
 
 Si el minijuego terminó con éxito → `siLogrado`; si no (o si falló con un error) → `siNo`.
 `siNo` debe ser amable («¡Otro día lo intentamos!»), nunca un «perdiste».
-Lo que el minijuego concede (`otorgar`) se aplica al estado antes de ejecutar cualquiera de los dos.
+Lo que el minijuego concede (`otorgar`) se aplica al estado antes de ejecutar cualquiera de los dos
+(y antes de avisar al host que el minijuego se cerró).
 `otorgar` acepta las mismas sumas y restas que `pon`: `{ "dinero": { "resta": 15 } }`.
+Si `otorgar` cambió alguna variable, el motor avisa al host que conviene guardar (evento `guardar`), aunque el
+minijuego no cumpla ningún objetivo: así un premio o el dinero de un antojo no se pierden al recargar la página.
 
 ### `comentarios`
 
@@ -436,8 +612,21 @@ franjas negras de cine. Es una lista de pasos, los mismos de los diálogos.
   (los personajes en su destino, lo que hagan `pon`, `aparece`, `musica` y `sale`); las líneas, los sonidos,
   los efectos y los videos se omiten. Así el nivel queda igual que si se hubiera visto completa.
 - Al terminar, el motor marca `vista.<id>`. Si la partida se guarda a media cinemática, al volver empieza de nuevo.
-- Las líneas (`dice`) se cierran solas al acabar la voz, o con un toque.
+- Las líneas (`dice`) se cierran solas al acabar la voz, o con un toque (pasado medio segundo).
 - Con «movimiento reducido» activo en el dispositivo, los viajes de cámara se vuelven cortes.
+
+#### Franjas de cine
+
+Mientras dura una cinemática se ven dos franjas negras, arriba y abajo. Tapan casi una décima del alto cada una,
+así que **lo que quede bajo ellas no se ve**: encuadra los planos con la cámara libre, que las marca con una guía
+punteada (ver «Crear planos con la cámara libre»).
+
+Los globos de diálogo, con su tarjeta de vocabulario, siempre quedan entre las dos franjas: si la cabeza de quien
+habla está muy arriba, el globo baja lo necesario y su piquito sigue apuntándole.
+
+Un nivel que es casi todo cinemática (una casa donde solo se cuenta la historia, una comida final) puede usar
+`"mundo": { "franjas": "delgadas" }` para tapar la mitad, o `"ninguna"` para no dibujarlas. Aun sin franjas, durante
+la cinemática los toques no llegan al escenario y el botón de saltar sigue en su lugar.
 
 La **casa de ejemplo** es un nivel hecho solo de una cinemática: no tiene `jugador`, su `intro` empieza
 `alEntrar` y termina con `{ "sale": "barrio" }`.
@@ -523,6 +712,9 @@ secuencia de arriba deja los ojos abiertos cinco cuadros y los cierra uno; a `"f
 casi dos segundos abiertos y un instante cerrados. Cada número es el del archivo; nombrar uno que no existe
 es error. Sin `secuencia`, los cuadros pasan del primero al último.
 
+Los minijuegos usan las mismas animaciones, con el mismo ritmo y la misma secuencia: `assets.animar(img, clave)`
+mueve un `<img>` (ver `docs/DISENO-3.0.md` §6, «Imágenes animadas en un minijuego»).
+
 El generador avisa si un SVG enlaza archivos externos (una foto, una fuente): al usarse en el juego no se cargan.
 
 Al terminar dice qué animaciones formó, para que una que nadie quiso se note al momento:
@@ -584,12 +776,28 @@ Y los de las cinemáticas y los pasos de escena:
 
 | Para… | Con dedo o ratón | Con teclado |
 | --- | --- | --- |
-| Caminar | Tocar un lugar del piso | Mantener oprimida `W` `A` `S` `D` o una flecha |
+| Caminar | Tocar un lugar del piso | Mantener oprimida `W` `A` `S` `D` o una flecha (rodea lo pequeño que estorba) |
 | Hablar con alguien o usar un objeto | Tocarlo: el jugador camina hasta ahí | — |
 | Hablar con quien se tiene a la mano | — | `E`, `Enter` o la barra espaciadora |
 | Seguir un diálogo | Tocar la pantalla | `Enter` o la barra espaciadora |
-| Elegir una opción | Tocar su tarjeta | Las teclas `1` a `9` |
-| Saltar una cinemática | Tocar el botón de saltar | — |
+| Elegir una opción | Tocar su tarjeta | Las teclas `1` a `9`; o `Enter`, la barra espaciadora o `Tab` para llegar a la primera tarjeta, `Tab` hasta la que se quiere y otra vez `Enter` o la barra |
+| Saltar una cinemática | Tocar el botón de saltar | `Tab` hasta el botón y `Enter` |
+
+Si el foco está en un botón, un enlace, un campo o algo con `role="button"` o `role="dialog"` (los del tablero
+del host, los de un minijuego, las tarjetas), `Enter` y la barra espaciadora oprimen ese botón: el motor no
+las toma para hablar ni para seguir el diálogo. `E` sigue sirviendo para hablar, salvo dentro de un
+minijuego o de un diálogo del host, que tapan a quien está detrás; ahí tampoco las flechas mueven al jugador.
+
+Con las tarjetas de un `elige` a la vista y el foco en ningún lado, `Enter` o la barra espaciadora no eligen:
+llevan el foco a la primera tarjeta (se ve su marco), y la segunda vez la eligen. Así quien venía siguiendo el
+diálogo con `Enter` sigue con la misma tecla, pero un `Enter` de más no escoge algo sin querer. Por lo mismo,
+`Enter` y la barra descansan medio segundo al salir las tarjetas y al enfocar una: dos oprimidas seguidas, de
+prisa, no eligen la primera. Una tecla que se queda oprimida tampoco elige: hay que soltarla y oprimirla otra vez. `Tab` también va
+directo a la primera tarjeta (con mayúsculas, a la última), antes que los botones del host.
+
+Después de que un toque, `Enter` o la barra espaciadora cierran la última línea de una plática o de una escena,
+hablar descansa medio segundo: el segundo toque (o la segunda tecla) de un doble toque no empieza otra plática
+con quien quedó debajo del dedo o con quien está a la mano, casi siempre el acompañante.
 
 ### Verlo en la demo
 
@@ -632,6 +840,9 @@ Con la tecla `C` entras a la cámara libre (el juego se pausa mientras tanto):
 | Clic en un personaje, en un objeto con `id` o cerca de un punto | Lo fija como `mira` del plano |
 | `1`–`9` | Salta a los planos que el nivel ya tiene, para compararlos o ajustarlos |
 | `P` | Copia el plano actual |
+
+Mientras la cámara libre está activa, una guía punteada marca dónde quedarán las franjas de cine (con el grosor
+de `mundo.franjas`): lo que encuadres debajo de ellas no se verá en una cinemática.
 
 Arriba del juego se ve siempre el plano que llevas, ya escrito como va en el contenido:
 

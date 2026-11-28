@@ -10,6 +10,7 @@
 //
 // Solo existe cuando el juego se crea con `depurar: true`.
 
+import { GROSOR_DE_FRANJAS_POR_DEFECTO } from '../dominio/contenido.ts';
 import type { Contenido, Plano } from '../dominio/contenido.ts';
 import { alejarPlano, girarPlano } from '../dominio/encuadrar-plano.ts';
 import type { Punto } from '../dominio/geometria.ts';
@@ -138,12 +139,15 @@ export class CamaraLibre {
     this.aviso = '';
     this.piezas.pausarElJuego();
     this.piezas.panel.avisarCamaraLibre(true);
+    // Lo que queda bajo las franjas no se ve en una cinemática: se marca para no encuadrar ahí a nadie.
+    this.piezas.panel.mostrarGuiaDeFranjas(this.piezas.contenido.mundo.franjas ?? GROSOR_DE_FRANJAS_POR_DEFECTO);
     this.mostrar();
   }
 
   private salir(): void {
     this.activa = false;
     this.piezas.panel.avisarCamaraLibre(false);
+    this.piezas.panel.mostrarGuiaDeFranjas(undefined);
     this.piezas.panel.mostrarTexto(AYUDA_SIN_CAMARA_LIBRE);
     // Al reanudar, la cámara del juego vuelve a colocarse sola en el siguiente cuadro.
     this.piezas.reanudarElJuego();

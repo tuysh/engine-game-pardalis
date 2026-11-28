@@ -23,13 +23,26 @@ import { AlmacenDeTexturas } from './almacen-de-texturas.ts';
 import { AnimacionesDeHojas } from './animaciones-de-hojas.ts';
 import { armarEscenografia } from './armar-escenografia.ts';
 import { CamaraEnPerspectiva } from './camara-en-perspectiva.ts';
+import { ConfetiDePapel } from './confeti-de-papel.ts';
+import { DecoradoQueSeTransparenta } from './decorado-que-se-transparenta.ts';
+import { DecoradoDePapel } from './decorado-de-papel.ts';
 import { EfectoDeParticulas } from './efecto-de-particulas.ts';
+import { crearOrdenDeLoTransparente } from './orden-de-lo-transparente.ts';
 import { PersonajesDePapel } from './personajes-de-papel.ts';
 import { liberarPieza } from './piezas-de-papel.ts';
 import type { FabricaDeTexturas } from './texturas.ts';
 import { ToquesDelLienzo } from './toques-del-lienzo.ts';
 
 const ALTURA_DE_LOS_EFECTOS_EN_METROS = 0.9;
+
+/** Un efecto que se está animando: chispas (efecto-de-particulas.ts) o confeti (confeti-de-papel.ts). */
+interface EfectoEnEscena {
+  /** Lo que se agrega a la escena mientras dura. */
+  readonly objeto: Object3D;
+  /** Lo mueve un cuadro. Devuelve `false` cuando ya terminó. */
+  actualizar(segundos: number): boolean;
+  liberar(): void;
+}
 
 /** Las pantallas muy finas no se aprovechan completas: dibujar tantos píxeles calienta las tablets. */
 const DENSIDAD_MAXIMA_DE_DIBUJO = 2;
@@ -48,10 +61,15 @@ export class EscenarioDeThree implements Escenario {
   private readonly toques: ToquesDelLienzo;
   /** Todo lo que `montar` puso: se quita completo al montar otra escenografía. */
   private readonly escenografia = new Group();
+  private readonly decorado: DecoradoDePapel;
   /** Cambia con cada `montar`: una escenografía que terminó de cargar tarde, para un lugar anterior, no se pone. */
   private numeroDeMontaje = 0;
+  /** Lo parado del decorado, que se aclara mientras tapa al jugador. */
+  private readonly loQueTapa = new DecoradoQueSeTransparenta();
+  /** El personaje que es el jugador. `undefined` = el nivel no tiene. */
+  private idDelJugador: string | undefined;
   /** Los efectos que se están animando ahora. */
-  private efectos: EfectoDeParticulas[] = [];
+  private efectos: EfectoEnEscena[] = [];
   /** Quita y libera las guías del modo depuración que se ven ahora. `undefined` = no hay ninguna. */
   private quitarGuiasActuales: (() => void) | undefined;
   /** Cambia con cada `mostrarGuias`: si dos pedidos se cruzan mientras cargan, gana el último. */
@@ -70,8 +88,17 @@ export class EscenarioDeThree implements Escenario {
       animaciones: this.animaciones,
       tocables: this.tocables,
     });
+    this.decorado = new DecoradoDePapel({
+      grupo: this.escenografia,
+      almacen: this.almacen,
+      animaciones: this.animaciones,
+      tocables: this.tocables,
+      loQueTapa: this.loQueTapa,
+    });
     this.dibujante = new WebGLRenderer({ antialias: true });
     this.dibujante.setPixelRatio(Math.min(fabrica.densidadDePantalla, DENSIDAD_MAXIMA_DE_DIBUJO));
+    // Las hojas de papel se enciman según dónde pisan, no según su centro: ver orden-de-lo-transparente.ts.
+    this.dibujante.setTransparentSort(crearOrdenDeLoTransparente(this.camara.camara));
     this.escena.add(this.escenografia);
 
     const lienzo = this.dibujante.domElement;
@@ -101,14 +128,19 @@ export class EscenarioDeThree implements Escenario {
     for (const pieza of lista.fondo) {
       this.escenografia.add(pieza);
     }
-    for (const { objeto, texturas, pieza } of lista.decorado) {
-      this.escenografia.add(pieza);
-      if (objeto.id !== undefined) {
-        this.tocables.set(pieza, { tipo: 'decorado', id: objeto.id });
-      }
-      // Un objeto cuyo dibujo es una animación la repite sin parar (una bandera, un foco que parpadea).
-      this.animaciones.animar(pieza, texturas, { cuadrosPorSegundo: objeto.imagen.cuadrosPorSegundo, repite: true });
-    }
+    this.decorado.poner(lista.decorado);
+  }
+
+  cambiarVisibilidadDelDecorado(indice: number, opciones: { readonly esVisible: boolean }): void {
+    this.decorado.cambiarVisibilidad(indice, opciones.esVisible);
+  }
+
+  async ponerDibujoDeDecorado(
+    indice: number,
+    imagen: ImagenDeEscena,
+    opciones: { readonly repite: boolean },
+  ): Promise<void> {
+    await this.decorado.ponerDibujo(indice, imagen, opciones);
   }
 
   async agregarPersonaje(personaje: PersonajeDeEscena): Promise<void> {
@@ -165,11 +197,23 @@ export class EscenarioDeThree implements Escenario {
 
   reproducirEfecto(nombre: string, punto: Punto): void {
     if (this.estaDestruido) return;
-    // El efecto nace a la altura del pecho de un personaje parado en ese punto.
-    const efecto = EfectoDeParticulas.crear(nombre, { x: punto.x, y: ALTURA_DE_LOS_EFECTOS_EN_METROS, z: punto.y });
+    const efecto = this.crearEfecto(nombre, punto);
     if (efecto === undefined) return;
     this.efectos.push(efecto);
-    this.escena.add(efecto.puntos);
+    this.escena.add(efecto.objeto);
+  }
+
+  /** El efecto de ese nombre, o `undefined` si no existe (la validación de niveles lo impide). */
+  private crearEfecto(nombre: string, punto: Punto): EfectoEnEscena | undefined {
+    // El efecto nace a la altura del pecho de un personaje parado en ese punto.
+    const centro = new Vector3(punto.x, ALTURA_DE_LOS_EFECTOS_EN_METROS, punto.y);
+    // El confeti llueve sobre todo lo que ve la cámara, por eso es el único que la necesita.
+    if (nombre === 'confeti') return new ConfetiDePapel(this.camara.camara, centro);
+    return EfectoDeParticulas.crear(nombre, centro);
+  }
+
+  marcarJugador(id: string | undefined): void {
+    this.idDelJugador = id;
   }
 
   enfocar(punto: Punto, camara: AjustesDeCamara): void {
@@ -183,6 +227,8 @@ export class EscenarioDeThree implements Escenario {
     this.personajes.avanzar(segundos);
     this.animaciones.avanzar(segundos);
     this.animarEfectos(segundos);
+    const hojaDelJugador = this.idDelJugador === undefined ? undefined : this.personajes.buscarHoja(this.idDelJugador);
+    this.loQueTapa.actualizar(this.camara.camara, hojaDelJugador, segundos);
     this.dibujante.render(this.escena, this.camara.camara);
   }
 
@@ -223,7 +269,7 @@ export class EscenarioDeThree implements Escenario {
     this.animaciones.olvidarTodas();
     this.tocables.clear();
     for (const efecto of this.efectos) {
-      this.escena.remove(efecto.puntos);
+      this.escena.remove(efecto.objeto);
       efecto.liberar();
     }
     this.efectos = [];
@@ -239,13 +285,13 @@ export class EscenarioDeThree implements Escenario {
 
   /** Mueve cada efecto y quita los que ya terminaron. */
   private animarEfectos(segundos: number): void {
-    const efectosQueSiguen: EfectoDeParticulas[] = [];
+    const efectosQueSiguen: EfectoEnEscena[] = [];
     for (const efecto of this.efectos) {
       const sigueVivo = efecto.actualizar(segundos);
       if (sigueVivo) {
         efectosQueSiguen.push(efecto);
       } else {
-        this.escena.remove(efecto.puntos);
+        this.escena.remove(efecto.objeto);
         efecto.liberar();
       }
     }
@@ -253,12 +299,14 @@ export class EscenarioDeThree implements Escenario {
   }
 
   private quitarEscenografia(): void {
+    this.loQueTapa.olvidarTodas();
     for (const pieza of this.escenografia.children) {
       this.tocables.delete(pieza);
       this.animaciones.olvidar(pieza);
       liberarPieza(pieza);
     }
     this.escenografia.clear();
+    this.decorado.olvidarTodos();
   }
 
   /** Hace que el lienzo ocupe todo el elemento del host, también cuando este cambia de tamaño. */

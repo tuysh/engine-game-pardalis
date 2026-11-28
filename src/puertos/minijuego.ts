@@ -6,10 +6,27 @@ import type { CambiosDeEstado, LectorDeEstado } from '../dominio/estado.ts';
 import type { Idioma } from '../dominio/idioma.ts';
 import type { Azar } from './azar.ts';
 
+/** Cómo tocar un sonido desde un minijuego. */
+export interface OpcionesDeSonidoParaMinijuego {
+  /** De 0 a 1, antes de aplicar el volumen de los efectos que eligió el host. `undefined` = 1. */
+  readonly volumen?: number;
+  /** De 0.25 a 4: qué tan rápido (y agudo) suena. `undefined` = 1, como está grabado. */
+  readonly tono?: number;
+}
+
 /** El audio del motor, visto desde un minijuego. */
 export interface AudioParaMinijuego {
-  /** Toca un sonido del manifiesto de assets. */
-  tocar(clave: string): void;
+  /**
+   * Toca un sonido del manifiesto de assets sin esperar a que termine.
+   * `opciones.volumen` (de 0 a 1) lo hace más bajito; `opciones.tono` lo reproduce más rápido y más agudo
+   * (2 = una octava arriba) o más lento y más grave (0.5 = una octava abajo). Sirve para que un mismo
+   * sonido suba de nota en cada acierto seguido. Una opción que no sirve se ignora con una advertencia.
+   *
+   * @example
+   * audio.tocar('sfx_atrapa', { tono: 1 + aciertosSeguidos * 0.1 });
+   * audio.tocar('sfx_paso', { volumen: 0.3 });
+   */
+  tocar(clave: string, opciones?: OpcionesDeSonidoParaMinijuego): void;
   /**
    * Toca una nota corta hecha por el dispositivo, sin archivo: sirve para un «ding» sin grabar nada.
    * Ejemplo: `tocarTono(880, 0.2)` es un la agudo de dos décimas de segundo.
@@ -17,7 +34,10 @@ export interface AudioParaMinijuego {
   tocarTono(frecuenciaEnHertz: number, duracionEnSegundos: number): void;
   /**
    * Dice un texto en voz alta. Si `clave` nombra una voz grabada se usa esa;
-   * si no, se usa la voz sintetizada del navegador.
+   * si no, se usa la voz sintetizada del navegador (y se avisa en la consola, una vez por nivel y clave).
+   * `quien` es el id de un personaje del nivel: la voz sintetizada suena con su tono y su velocidad
+   * (`meta.personajes.<id>.voz`), igual que sus líneas. Sin `quien`, o con un id que el nivel no tiene
+   * (se avisa una vez), suena la voz normal. Para dar `quien` sin voz grabada, `clave` va en `undefined`.
    *
    * La promesa termina cuando acaba de hablar, así que dos frases se encadenan con `await`.
    * Solo se dice una frase a la vez: llamar a `decir` mientras otra suena **la corta** (y la promesa de la
@@ -25,15 +45,80 @@ export interface AudioParaMinijuego {
    *
    * @example
    * await audio.decir('¡Lechuga!', 'es');
-   * await audio.decir('lettuce!', 'en');
+   * await audio.decir('lettuce!', 'en', 'vo_bobby_lettuce', 'bobby');
+   * await audio.decir('¡Muy bien!', 'es', undefined, 'tortu');
    */
-  decir(texto: string, idioma: Idioma, clave?: string): Promise<void>;
+  decir(texto: string, idioma: Idioma, clave?: string, quien?: string): Promise<void>;
+}
+
+/** Los cuadros de una imagen del manifiesto, con su ritmo. */
+export interface CuadrosDeAsset {
+  /**
+   * Dirección completa de cada cuadro, en el orden en que se muestran. Ya sigue la `secuencia` de
+   * `assets.config.json`, así que un cuadro puede repetirse: con `"secuencia": { "spr_tepo": [1, 1, 1, 2] }`
+   * llegan cuatro direcciones, tres de ellas iguales. Una imagen fija trae una sola.
+   * Vacía si la clave no es una imagen ni una animación del nivel.
+   */
+  readonly urls: readonly string[];
+  /** Cuántos cuadros pasan por segundo (el `fps` de `assets.config.json`). `0` en una imagen fija. */
+  readonly cuadrosPorSegundo: number;
+}
+
+/**
+ * Lo único que `assets.animar` necesita de una imagen: poder cambiarle la dirección.
+ * Un `HTMLImageElement` (`<img>`) lo cumple; también un objeto cualquiera con `src`.
+ */
+export interface ImagenAnimable {
+  src: string;
+}
+
+/** Una imagen que `assets.animar` está animando. */
+export interface AnimacionDeImagen {
+  /**
+   * Pasa a otra clave en la misma imagen, desde su primer cuadro. Sirve para alternar poses:
+   * de `spr_tepo` (quieto, parpadea) a `tepo_habla` (mueve la boca) y de vuelta.
+   * Una clave que no es imagen del nivel se ignora con una advertencia y la animación sigue como estaba.
+   * Después de `detener()` ya no hace nada.
+   */
+  cambiar(clave: string): void;
+  /** Deja de animar. La imagen se queda en el cuadro que mostraba. Llamarla dos veces no hace nada. */
+  detener(): void;
 }
 
 /** Los assets del nivel, vistos desde un minijuego. */
 export interface AssetsParaMinijuego {
-  /** Dirección completa de un asset del manifiesto, lista para usarse en un `<img>`. */
+  /**
+   * Dirección completa de un asset del manifiesto, lista para usarse en un `<img>`.
+   * De una animación, la de su primer cuadro: para verla moverse, `animar`.
+   */
   url(clave: string): string;
+  /**
+   * Las direcciones de todos los cuadros de una imagen o animación, con su ritmo. Sirve para dibujar
+   * la animación a mano (en un `<canvas>`, en Three.js) o para precargar sus cuadros.
+   *
+   * @example
+   * const { urls } = assets.cuadros('tepo_habla');
+   * for (const url of new Set(urls)) new Image().src = url; // precarga, para que no parpadee al cambiar
+   */
+  cuadros(clave: string): CuadrosDeAsset;
+  /**
+   * Anima una imagen con los cuadros de `clave`, al ritmo y en el orden de `assets.config.json`, igual que
+   * los personajes del escenario: así parpadean y mueven la boca también dentro del minijuego.
+   * Se repite sin fin hasta que se llama a `detener()`, se dispara `senal` o se cierra el minijuego.
+   * Una imagen fija solo se pone, sin animar. Volver a animar la misma imagen detiene la animación anterior.
+   * Con una clave que no es imagen del nivel avisa en la consola y deja la imagen como estaba, sin animar.
+   * El tiempo es el del juego: si el host pausa el juego, la animación también se pausa.
+   *
+   * @example
+   * const tepo = document.createElement('img');
+   * const animacion = assets.animar(tepo, 'spr_tepo');
+   * elemento.append(tepo);
+   *
+   * animacion.cambiar('tepo_habla');      // mueve la boca mientras habla
+   * await audio.decir('¡Buenos días!', 'es');
+   * animacion.cambiar('spr_tepo');        // vuelve a quedarse quieto, parpadeando
+   */
+  animar(imagen: ImagenAnimable, clave: string, senal?: AbortSignal): AnimacionDeImagen;
 }
 
 /** Lo que el motor le entrega a un minijuego al empezar. */
@@ -57,6 +142,41 @@ export interface ContextoDeMinijuego {
   readonly azar: Azar;
   /** Se dispara si el host destruye el juego. El minijuego debe limpiar lo suyo. */
   readonly senal: AbortSignal;
+  /**
+   * `true` mientras el juego está en pausa: el host llamó a `juego.pausar()` (por ejemplo, con el teléfono de pie
+   * o con su cuaderno abierto encima), la página no se ve, o todavía no tocan el botón de inicio.
+   * Un minijuego que se mueve solo (cosas que caen, un reloj de arena) se queda quieto mientras tanto: nadie
+   * lo está viendo, y no debe perder ni ganar nada por eso. Lo más fácil es moverlo con `enCadaCuadro`, que ya
+   * se detiene en la pausa; para lo demás, `alPausarOReanudar`.
+   *
+   * Lo que el motor hace por el minijuego ya respeta la pausa: `audio.decir` espera a que se reanude (y repite
+   * desde el principio la frase que la pausa cortó), `assets.animar` se detiene, y `audio.tocar` y
+   * `audio.tocarTono` no suenan mientras dure.
+   */
+  readonly pausado: boolean;
+  /**
+   * Llama a `funcion` cada vez que el juego se pausa (`true`) o se reanuda (`false`).
+   * Deja de avisar al llamar a la función que devuelve, al dispararse `senal` o al cerrarse el minijuego.
+   *
+   * @example
+   * alPausarOReanudar((pausado) => {
+   *   reloj.classList.toggle('detenido', pausado); // una animación de CSS también se detiene
+   * });
+   */
+  alPausarOReanudar(funcion: (pausado: boolean) => void, senal?: AbortSignal): () => void;
+  /**
+   * Llama a `funcion` en cada cuadro que se dibuja, con los segundos de juego que pasaron desde el anterior.
+   * Es el reloj del juego: no avanza mientras el juego está en pausa ni con la página oculta, y un cuadro nunca
+   * dura más de una décima de segundo, aunque el dispositivo se haya trabado. Conviene en vez de
+   * `requestAnimationFrame` y `performance.now()` para todo lo que se mueve solo.
+   * Deja de llamarla al llamar a la función que devuelve, al dispararse `senal` o al cerrarse el minijuego.
+   *
+   * @example
+   * enCadaCuadro((segundos) => {
+   *   chile.y += VELOCIDAD_DE_CAIDA_EN_PUNTOS_POR_SEGUNDO * segundos;
+   * });
+   */
+  enCadaCuadro(funcion: (segundos: number) => void, senal?: AbortSignal): () => void;
 }
 
 /** Lo que un minijuego devuelve al terminar. */

@@ -1,5 +1,6 @@
-// Los efectos del paso `efecto`: `magia` (un estallido de chispas) y `confeti` (papelitos que caen).
-// Cada efecto es una nube de puntitos de colores que se mueve sola durante un momento y luego se quita.
+// El efecto `magia` del paso `efecto`: un estallido de chispas.
+// Es una nube de puntitos de colores que se mueve sola durante un momento y luego se quita.
+// El `confeti` no son puntitos sino papelitos que giran: está en confeti-de-papel.ts.
 //
 // El azar de aquí es solo de apariencia (hacia dónde sale cada chispa), por eso usa `Math.random`
 // y no el azar del juego.
@@ -47,24 +48,6 @@ const RECETAS: Readonly<Record<string, RecetaDeEfecto>> = {
       };
     },
   },
-  // Papelitos que caen desde arriba, repartidos a lo ancho de lo que se ve.
-  confeti: {
-    cantidadDeParticulas: 90,
-    duracionEnSegundos: 1.6,
-    tamanoDeParticulaEnMetros: 0.24,
-    colores: [0xe2572b, 0x3fa34d, 0x2f6fd0, 0xf2c230, 0xef7fb0],
-    gravedadEnMetrosPorSegundoAlCuadrado: 0,
-    crearParticula(centro) {
-      return {
-        posicion: {
-          x: centro.x + alAzarEntre(-6, 6),
-          y: alAzarEntre(3.5, 5.5),
-          z: centro.z + alAzarEntre(-1.5, 1.5),
-        },
-        velocidad: { x: alAzarEntre(-0.6, 0.6), y: alAzarEntre(-3, -1.2), z: 0 },
-      };
-    },
-  },
 };
 
 /** Los efectos se dibujan después de todo lo demás, para que se vean encima. */
@@ -74,7 +57,7 @@ const COORDENADAS_POR_PARTICULA = 3;
 
 export class EfectoDeParticulas {
   /** La nube de puntos. Quien crea el efecto la agrega a la escena y la quita cuando termina. */
-  readonly puntos: Points;
+  readonly objeto: Points;
   private readonly receta: RecetaDeEfecto;
   /** La velocidad de cada partícula: tres números seguidos (x, y, z) por partícula. */
   private readonly velocidades: Float32Array;
@@ -108,10 +91,10 @@ export class EfectoDeParticulas {
       // Un efecto es un adorno de la escena completa: se ve aunque haya algo delante.
       depthTest: false,
     });
-    this.puntos = new Points(geometria, material);
-    this.puntos.renderOrder = ORDEN_DE_LOS_EFECTOS;
+    this.objeto = new Points(geometria, material);
+    this.objeto.renderOrder = ORDEN_DE_LOS_EFECTOS;
     // Las partículas se mueven lejos de donde nacieron; sin esto, Three.js podría dejar de dibujarlas.
-    this.puntos.frustumCulled = false;
+    this.objeto.frustumCulled = false;
   }
 
   /** Crea el efecto de ese nombre, o `undefined` si no existe (la validación de niveles lo impide). */
@@ -123,7 +106,7 @@ export class EfectoDeParticulas {
   /** Mueve las partículas lo que corresponde a un cuadro. Devuelve `false` cuando el efecto ya terminó. */
   actualizar(segundos: number): boolean {
     this.edadEnSegundos += segundos;
-    const posiciones = this.puntos.geometry.getAttribute('position');
+    const posiciones = this.objeto.geometry.getAttribute('position');
 
     for (let i = 0; i < this.receta.cantidadDeParticulas; i++) {
       // Las tres posiciones existen: el arreglo de velocidades se creó con tres números por partícula.
@@ -141,7 +124,7 @@ export class EfectoDeParticulas {
 
     // Las partículas se van transparentando: despacio al principio y rápido al final.
     const parteDeLaVida = Math.min(1, this.edadEnSegundos / this.receta.duracionEnSegundos);
-    const material = this.puntos.material;
+    const material = this.objeto.material;
     if (material instanceof PointsMaterial) {
       material.opacity = 1 - parteDeLaVida * parteDeLaVida;
     }
@@ -150,8 +133,8 @@ export class EfectoDeParticulas {
 
   /** Libera la memoria de video del efecto. */
   liberar(): void {
-    this.puntos.geometry.dispose();
-    const material = this.puntos.material;
+    this.objeto.geometry.dispose();
+    const material = this.objeto.material;
     if (material instanceof PointsMaterial) {
       material.dispose();
     }

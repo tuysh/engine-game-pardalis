@@ -76,6 +76,17 @@ test('al entrar a la cámara libre el juego se pausa, y al salir se reanuda', as
   expect(pausas).toEqual(['pausa', 'reanuda']);
 });
 
+test('mientras la cámara libre está activa se marca dónde quedan las franjas de cine', async () => {
+  const { panel } = await crearCamaraLibre();
+  expect(panel.guiaDeFranjas).toBeUndefined();
+
+  panel.simularOrden({ tipo: 'alternarCamaraLibre' });
+  expect(panel.guiaDeFranjas).toBe('normales');
+
+  panel.simularOrden({ tipo: 'alternarCamaraLibre' });
+  expect(panel.guiaDeFranjas).toBeUndefined();
+});
+
 test('al entrar, el plano mira al jugador con la cámara del nivel y se dibuja aunque el juego esté en pausa', async () => {
   const { escenario, panel } = await crearCamaraLibre();
 

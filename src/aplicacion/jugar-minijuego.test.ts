@@ -1,16 +1,19 @@
-import { expect, test } from 'bun:test';
+import { expect, spyOn, test } from 'bun:test';
 import { crearMapaDeCaminos } from '../dominio/rejilla-de-caminos.ts';
 import { AudioDeMemoria } from '../adaptadores/memoria/audio-de-memoria.ts';
 import { EscenarioDeMemoria } from '../adaptadores/memoria/escenario-de-memoria.ts';
 import { InterfazDeMemoria } from '../adaptadores/memoria/interfaz-de-memoria.ts';
 import { RelojDeMemoria } from '../adaptadores/memoria/reloj-de-memoria.ts';
 import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from '../dominio/contenido.ts';
-import { crearEstadoDeNivel } from '../dominio/estado.ts';
-import type { ContextoDeMinijuego, Minijuego, ResultadoDeMinijuego } from '../puertos/minijuego.ts';
+import { crearEstadoDeNivel, valorDe } from '../dominio/estado.ts';
+import type { AnimacionDeImagen, ContextoDeMinijuego, Minijuego, ResultadoDeMinijuego } from '../puertos/minijuego.ts';
 import { EstadoEnJuego } from './estado-en-juego.ts';
 import { jugarMinijuego } from './jugar-minijuego.ts';
+import type { CierreDeMinijuego } from './jugar-minijuego.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { Reparto } from './reparto.ts';
+import { VocesDelNivel } from './voces-del-nivel.ts';
+import { VozEnOrden } from './voz-en-orden.ts';
 
 /** Una escena con adaptadores falsos donde el host registró esos minijuegos. El jugador ya tiene un globo. */
 function crearEscena(minijuegos: Record<string, Minijuego>) {
@@ -18,6 +21,7 @@ function crearEscena(minijuegos: Record<string, Minijuego>) {
   const interfaz = new InterfazDeMemoria();
   const audio = new AudioDeMemoria();
   const avisos: string[] = [];
+  const cierres: CierreDeMinijuego[] = [];
   const reloj = new RelojDeMemoria();
   const estadoInicial = crearEstadoDeNivel({ objetivos: ['tortillas'], variables: ['globo'], lista: {} }, { globo: 'rosa' });
   const piezas: PiezasDeEscena = {
@@ -40,9 +44,25 @@ function crearEscena(minijuegos: Record<string, Minijuego>) {
     audio,
     reloj,
     reparto: new Reparto(escenario),
-    estado: new EstadoEnJuego(estadoInicial, () => {}),
+    estado: new EstadoEnJuego(estadoInicial, () => {}, (cambios) => {
+      const espacio = interfaz.hayEspacioDeMinijuego ? 'abierto' : 'cerrado';
+      avisos.push(`estado ${JSON.stringify(cambios)} con el espacio ${espacio}`);
+    }),
     minijuegos,
     direccionDeAsset: (clave) => (clave === 'comal' ? '/assets/img/comal.svg' : undefined),
+    voces: new VocesDelNivel({
+      personajes: { tortu: { idioma: 'es', sprite: 'spr_tortu', voz: { tono: 1.4, velocidad: 0.9 } } },
+      direccionDeAsset: (clave) => (clave === 'vo_tortu_bien' ? '/assets/voz/vo_tortu_bien.mp3' : undefined),
+    }),
+    cuadrosDeAsset: (clave) => {
+      if (clave === 'comal') return { urls: ['/assets/img/comal.svg'], cuadrosPorSegundo: 0 };
+      // Parpadea con dos dibujos: tres cuadros con los ojos abiertos y uno cerrados, a 4 por segundo.
+      if (clave === 'spr_tepo') {
+        return { urls: ['/tepo_1.svg', '/tepo_1.svg', '/tepo_1.svg', '/tepo_2.svg'], cuadrosPorSegundo: 4 };
+      }
+      if (clave === 'tepo_habla') return { urls: ['/tepo_habla_1.svg', '/tepo_habla_2.svg'], cuadrosPorSegundo: 8 };
+      return undefined;
+    },
     azar: () => 0.25,
     imagenDeAsset: (clave) => ({
       direcciones: [`/img/${clave}.svg`],
@@ -54,9 +74,12 @@ function crearEscena(minijuegos: Record<string, Minijuego>) {
     }),
     alVerPalabra: () => {},
     alEmpezarMinijuego: (nombre) => avisos.push(`inicio ${nombre}`),
-    alTerminarMinijuego: (nombre) => avisos.push(`fin ${nombre}`),
+    alTerminarMinijuego: (nombre, cierre) => {
+      avisos.push(`fin ${nombre}`);
+      cierres.push(cierre);
+    },
   };
-  return { piezas, interfaz, audio, avisos, reloj };
+  return { piezas, interfaz, audio, avisos, cierres, reloj };
 }
 
 const SIN_INTERRUMPIR = new AbortController().signal;
@@ -234,6 +257,81 @@ test('decir termina cuando la voz acaba: dos frases se encadenan con await', asy
   expect(await juego).toEqual({ exito: true });
 });
 
+test('con quien, el minijuego dice la frase con la voz de ese personaje y su voz grabada', async () => {
+  const Tortilleria: Minijuego = async ({ audio }) => {
+    void audio.decir('¡Muy bien!', 'es', 'vo_tortu_bien', 'tortu');
+    return { exito: true };
+  };
+  const { piezas, audio } = crearEscena({ Tortilleria });
+
+  await jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+
+  expect(audio.frasesDichas).toEqual([
+    {
+      texto: '¡Muy bien!',
+      idioma: 'es',
+      direccionDeLaVoz: '/assets/voz/vo_tortu_bien.mp3',
+      voz: { tono: 1.4, velocidad: 0.9 },
+    },
+  ]);
+});
+
+test('lo que falta para decir algo en un minijuego se avisa una vez y nunca lanza un error', async () => {
+  const avisos: string[] = [];
+  const espia = spyOn(console, 'warn').mockImplementation((aviso: unknown) => {
+    avisos.push(String(aviso));
+  });
+  const Tortilleria: Minijuego = async ({ audio }) => {
+    for (let ronda = 0; ronda < 3; ronda++) {
+      void audio.decir('¡Otra vez!', 'es', 'vo_sin_grabar', 'pardi');
+    }
+    return { exito: true };
+  };
+  const { piezas, audio } = crearEscena({ Tortilleria });
+
+  let resultado: ResultadoDeMinijuego;
+  try {
+    resultado = await jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+  } finally {
+    espia.mockRestore();
+  }
+
+  expect(resultado).toEqual({ exito: true });
+  expect(audio.frasesDichas[0]).toEqual({ texto: '¡Otra vez!', idioma: 'es', direccionDeLaVoz: undefined });
+  expect(avisos).toEqual([
+    '[escenario-engine] contexto.audio.decir: "vo_sin_grabar" no está en los assets del nivel; se usa voz sintetizada',
+    '[escenario-engine] contexto.audio.decir: "pardi" no es un personaje del nivel (meta.personajes); ' +
+      'se usa la voz normal',
+  ]);
+});
+
+test('una clave o un quien que no son texto se ignoran con un aviso, y la frase igual se dice', async () => {
+  const avisos: string[] = [];
+  const espia = spyOn(console, 'warn').mockImplementation((aviso: unknown) => {
+    avisos.push(String(aviso));
+  });
+  const Tortilleria: Minijuego = async ({ audio }) => {
+    // Así llama un minijuego escrito en JavaScript sin tipos: la clave es un número y quien, un objeto.
+    void Reflect.apply(audio.decir, audio, ['¡Otra vez!', 'es', 7, { id: 'tortu' }]);
+    return { exito: true };
+  };
+  const { piezas, audio } = crearEscena({ Tortilleria });
+
+  let resultado: ResultadoDeMinijuego;
+  try {
+    resultado = await jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+  } finally {
+    espia.mockRestore();
+  }
+
+  expect(resultado).toEqual({ exito: true });
+  expect(audio.frasesDichas[0]).toEqual({ texto: '¡Otra vez!', idioma: 'es', direccionDeLaVoz: undefined });
+  expect(avisos).toEqual([
+    '[escenario-engine] contexto.audio.decir: la clave de la voz no es un texto; se usa voz sintetizada',
+    '[escenario-engine] contexto.audio.decir: quien no es el id de un personaje; se usa la voz normal',
+  ]);
+});
+
 test('una frase nueva corta la que estaba sonando, y la promesa de la que se cortó termina', async () => {
   let primeraTermino = false;
   let terminar = (resultado: ResultadoDeMinijuego): void => {};
@@ -266,7 +364,10 @@ test('si la voz sintetizada nunca avisa que terminó, decir termina de todos mod
     });
     return new Promise((resolver) => (terminar = resolver));
   };
-  const { piezas, reloj } = crearEscena({ Verduras });
+  const escena = crearEscena({ Verduras });
+  const reloj = escena.reloj;
+  // El tope de tiempo lo pone la fila de voces, como en el juego (crear.ts).
+  const piezas: PiezasDeEscena = { ...escena.piezas, audio: new VozEnOrden(escena.audio, reloj) };
 
   const juego = jugarMinijuego({ nombre: 'Verduras', config: undefined }, SIN_INTERRUMPIR, piezas);
   await reloj.avanzar(10);
@@ -291,4 +392,323 @@ test('el minijuego recibe el azar del motor y puede tocar tonos sin archivo', as
   expect(numeros).toEqual([0.25]);
   // El tono con una frecuencia que no sirve se ignora con una advertencia.
   expect(audio.tonosTocados).toEqual([880]);
+});
+
+test('lo que otorga se aplica al estado antes de avisar que el minijuego se cerró', async () => {
+  const Tortilleria: Minijuego = async () => ({ exito: true, otorgar: { tortillas: true, globo: 'rosa' } });
+  const { piezas, avisos, cierres } = crearEscena({ Tortilleria });
+
+  await jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+
+  // El globo ya era rosa: no es un cambio, así que no llega en `cambios`.
+  expect(avisos).toEqual([
+    'inicio Tortilleria',
+    'estado {"tortillas":true} con el espacio cerrado',
+    'fin Tortilleria',
+  ]);
+  expect(cierres).toEqual([{ exito: true, cambios: { tortillas: true } }]);
+  expect(valorDe(piezas.estado.actual, 'tortillas')).toBe(true);
+});
+
+test('un minijuego interrumpido no otorga nada y avisa que terminó sin éxito', async () => {
+  const Tortilleria: Minijuego = () => new Promise(() => {});
+  const { piezas, cierres } = crearEscena({ Tortilleria });
+  const interrupcion = new AbortController();
+
+  const juego = jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, interrupcion.signal, piezas);
+  interrupcion.abort();
+  await juego;
+
+  expect(cierres).toEqual([{ exito: false, cambios: {} }]);
+  expect(valorDe(piezas.estado.actual, 'tortillas')).toBeUndefined();
+});
+
+test('el minijuego puede tocar un sonido más bajito o más agudo, y una opción que no sirve se ignora', async () => {
+  const Chiles: Minijuego = async ({ audio }) => {
+    audio.tocar('comal', { tono: 1.2 });
+    audio.tocar('comal', { volumen: 0.3, tono: 9 });
+    audio.tocar('comal');
+    return { exito: true };
+  };
+  const { piezas, audio } = crearEscena({ Chiles });
+
+  await jugarMinijuego({ nombre: 'Chiles', config: undefined }, SIN_INTERRUMPIR, piezas);
+
+  expect(audio.sonidosConOpciones).toEqual([
+    { direccion: '/assets/img/comal.svg', opciones: { volumen: undefined, tono: 1.2 } },
+    { direccion: '/assets/img/comal.svg', opciones: { volumen: 0.3, tono: undefined } },
+    { direccion: '/assets/img/comal.svg', opciones: undefined },
+  ]);
+});
+
+test('el minijuego puede pedir los cuadros de una animación, con su ritmo, para dibujarla a mano', async () => {
+  const pedidos: unknown[] = [];
+  const Tortilleria: Minijuego = async (contexto) => {
+    pedidos.push(contexto.assets.cuadros('spr_tepo'));
+    pedidos.push(contexto.assets.cuadros('comal'));
+    pedidos.push(contexto.assets.cuadros('no_existe'));
+    return { exito: true };
+  };
+  const { piezas } = crearEscena({ Tortilleria });
+
+  await jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+
+  expect(pedidos).toEqual([
+    { urls: ['/tepo_1.svg', '/tepo_1.svg', '/tepo_1.svg', '/tepo_2.svg'], cuadrosPorSegundo: 4 },
+    { urls: ['/assets/img/comal.svg'], cuadrosPorSegundo: 0 },
+    { urls: [], cuadrosPorSegundo: 0 },
+  ]);
+});
+
+test('una imagen animada por el minijuego parpadea con el reloj del juego y se detiene al cerrarse', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const tepo = { src: '' };
+  const Tortilleria: Minijuego = (contexto) => {
+    contexto.assets.animar(tepo, 'spr_tepo');
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Tortilleria });
+
+  const jugando = jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+  expect(tepo.src).toBe('/tepo_1.svg');
+  await reloj.avanzar(0.75);
+  expect(tepo.src).toBe('/tepo_2.svg');
+  terminar({ exito: true });
+  await jugando;
+  await reloj.avanzar(0.25);
+
+  expect(tepo.src).toBe('/tepo_2.svg');
+});
+
+test('cambiar pasa la imagen a otra animación desde el principio; una clave que no existe se ignora', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const tepo = { src: '' };
+  let animacion: AnimacionDeImagen | undefined;
+  const Tortilleria: Minijuego = (contexto) => {
+    animacion = contexto.assets.animar(tepo, 'spr_tepo');
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Tortilleria });
+  const vistos: string[] = [];
+
+  const jugando = jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(0.5);
+  animacion?.cambiar('tepo_habla');
+  vistos.push(tepo.src);
+  await reloj.avanzar(0.125);
+  vistos.push(tepo.src);
+  animacion?.cambiar('no_existe');
+  vistos.push(tepo.src);
+  animacion?.cambiar('spr_tepo');
+  vistos.push(tepo.src);
+  terminar({ exito: true });
+  await jugando;
+
+  expect(vistos).toEqual(['/tepo_habla_1.svg', '/tepo_habla_2.svg', '/tepo_habla_2.svg', '/tepo_1.svg']);
+});
+
+test('animar otra vez la misma imagen detiene la animación anterior', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const tepo = { src: '' };
+  let primera: AnimacionDeImagen | undefined;
+  const Tortilleria: Minijuego = (contexto) => {
+    primera = contexto.assets.animar(tepo, 'spr_tepo');
+    contexto.assets.animar(tepo, 'tepo_habla');
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Tortilleria });
+
+  const jugando = jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+  // Si la primera siguiera viva, a los 0.75 s pondría el cuadro con los ojos cerrados.
+  primera?.cambiar('spr_tepo');
+  await reloj.avanzar(0.75);
+  terminar({ exito: true });
+  await jugando;
+
+  expect(tepo.src).toBe('/tepo_habla_1.svg');
+});
+
+test('la señal que el minijuego le da a animar detiene solo esa imagen, antes de cerrarse', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const quitada = { src: '' };
+  const queSigue = { src: '' };
+  const alQuitarLaImagen = new AbortController();
+  const Tortilleria: Minijuego = (contexto) => {
+    contexto.assets.animar(quitada, 'spr_tepo', alQuitarLaImagen.signal);
+    contexto.assets.animar(queSigue, 'spr_tepo');
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Tortilleria });
+
+  const jugando = jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+  alQuitarLaImagen.abort();
+  await reloj.avanzar(0.75);
+  terminar({ exito: true });
+  await jugando;
+
+  expect(quitada.src).toBe('/tepo_1.svg');
+  expect(queSigue.src).toBe('/tepo_2.svg');
+});
+
+test('una imagen fija solo se pone, y cambiar después de detener ya no hace nada', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const comal = { src: '' };
+  const tepo = { src: '' };
+  const Tortilleria: Minijuego = (contexto) => {
+    contexto.assets.animar(comal, 'comal');
+    const animacion = contexto.assets.animar(tepo, 'spr_tepo');
+    animacion.detener();
+    animacion.cambiar('tepo_habla');
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Tortilleria });
+
+  const jugando = jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(1);
+  terminar({ exito: true });
+  await jugando;
+
+  expect(comal.src).toBe('/assets/img/comal.svg');
+  expect(tepo.src).toBe('/tepo_1.svg');
+});
+
+test('el minijuego sabe si el juego está en pausa y se entera cuando se pausa y se reanuda', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  let contextoRecibido: ContextoDeMinijuego | undefined;
+  const avisosDePausa: boolean[] = [];
+  const Chiles: Minijuego = (contexto) => {
+    contextoRecibido = contexto;
+    contexto.alPausarOReanudar((pausado) => avisosDePausa.push(pausado));
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Chiles });
+
+  const jugando = jugarMinijuego({ nombre: 'Chiles', config: undefined }, SIN_INTERRUMPIR, piezas);
+  expect(contextoRecibido?.pausado).toBe(false);
+  reloj.pausar();
+  expect(contextoRecibido?.pausado).toBe(true);
+  reloj.reanudar();
+  expect(contextoRecibido?.pausado).toBe(false);
+  terminar({ exito: true });
+  await jugando;
+  // Cerrado el minijuego, ya no se le avisa.
+  reloj.pausar();
+
+  expect(avisosDePausa).toEqual([true, false]);
+});
+
+test('enCadaCuadro lleva el tiempo del juego: no avanza en pausa y se detiene al cerrarse el minijuego', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const cuadros: number[] = [];
+  const Chiles: Minijuego = (contexto) => {
+    contexto.enCadaCuadro((segundos) => cuadros.push(segundos));
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Chiles });
+
+  const jugando = jugarMinijuego({ nombre: 'Chiles', config: undefined }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(0.1);
+  // Con el teléfono de pie (el host pausa el juego) los chiles no caen.
+  reloj.pausar();
+  await reloj.avanzar(15);
+  reloj.reanudar();
+  await reloj.avanzar(0.05);
+  terminar({ exito: true });
+  await jugando;
+  await reloj.avanzar(0.1);
+
+  expect(cuadros).toEqual([0.1, 0.05]);
+});
+
+test('lo que el minijuego escucha del reloj se deja con su señal o con la función que devuelve', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const cuadros: string[] = [];
+  const caida = new AbortController();
+  let dejarLaCanasta = (): void => {};
+  const Chiles: Minijuego = (contexto) => {
+    contexto.enCadaCuadro(() => cuadros.push('chile'), caida.signal);
+    dejarLaCanasta = contexto.enCadaCuadro(() => cuadros.push('canasta'));
+    contexto.enCadaCuadro(() => cuadros.push('nube'));
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Chiles });
+
+  const jugando = jugarMinijuego({ nombre: 'Chiles', config: undefined }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(0.1);
+  caida.abort();
+  dejarLaCanasta();
+  dejarLaCanasta(); // llamarla de más no hace nada
+  await reloj.avanzar(0.1);
+  terminar({ exito: true });
+  await jugando;
+
+  expect(cuadros).toEqual(['chile', 'canasta', 'nube', 'nube']);
+});
+
+test('una función del minijuego que falla en el reloj no traba el juego, y lo que no es función se ignora', async () => {
+  const errores: unknown[] = [];
+  const avisos: unknown[] = [];
+  const espiaDeErrores = spyOn(console, 'error').mockImplementation((error: unknown) => errores.push(error));
+  const espiaDeAvisos = spyOn(console, 'warn').mockImplementation((aviso: unknown) => avisos.push(aviso));
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  let cuadrosDelJuego = 0;
+  const Chiles: Minijuego = (contexto) => {
+    contexto.enCadaCuadro(() => {
+      throw new Error('se cayó la canasta');
+    });
+    contexto.alPausarOReanudar(() => {
+      throw new Error('tampoco');
+    });
+    // Escrito en JavaScript sin tipos: no es una función.
+    (contexto.enCadaCuadro as (funcion: unknown) => () => void)('chile');
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Chiles });
+  reloj.enCadaCuadro(() => cuadrosDelJuego++);
+
+  try {
+    const jugando = jugarMinijuego({ nombre: 'Chiles', config: undefined }, SIN_INTERRUMPIR, piezas);
+    await reloj.avanzar(0.1);
+    reloj.pausar();
+    reloj.reanudar();
+    terminar({ exito: true });
+    await jugando;
+  } finally {
+    espiaDeErrores.mockRestore();
+    espiaDeAvisos.mockRestore();
+  }
+
+  expect(cuadrosDelJuego).toBe(1);
+  expect(errores).toHaveLength(3);
+  expect(avisos).toEqual(['[escenario-engine] contexto.enCadaCuadro necesita una función; se ignora']);
+});
+
+test('en pausa, los sonidos del minijuego no suenan y lo que dice espera a que se reanude', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const Chiles: Minijuego = ({ audio }) => {
+    audio.tocar('comal');
+    audio.tocarTono(880, 0.2);
+    void audio.decir('¡Chile guajillo!', 'es');
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const escena = crearEscena({ Chiles });
+  const reloj = escena.reloj;
+  // Como en el juego (crear.ts): la pausa llega al reloj y a la fila de voces a la vez.
+  const voz = new VozEnOrden(escena.audio, reloj);
+  const piezas: PiezasDeEscena = { ...escena.piezas, audio: voz };
+  reloj.pausar();
+  voz.pausar();
+
+  const jugando = jugarMinijuego({ nombre: 'Chiles', config: undefined }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(1);
+  expect(escena.audio.sonidosTocados).toEqual([]);
+  expect(escena.audio.tonosTocados).toEqual([]);
+  expect(escena.audio.frasesDichas).toEqual([]);
+
+  reloj.reanudar();
+  voz.reanudar();
+  await reloj.avanzar(0);
+  expect(escena.audio.frasesDichas.map((frase) => frase.texto)).toEqual(['¡Chile guajillo!']);
+  terminar({ exito: true });
+  await jugando;
 });

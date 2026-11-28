@@ -4,6 +4,7 @@
 // Estos tipos son el contenido ya leído y revisado. Su forma sigue de cerca la del archivo
 // `contenido.json`, que se explica en docs/NIVELES.md.
 
+import type { AjustesDeVoz } from './ajustes-de-voz.ts';
 import type { Condicion } from './condicion.ts';
 import type { DeclaracionDeEstado } from './estado.ts';
 import type { Idioma } from './idioma.ts';
@@ -15,6 +16,8 @@ export interface Personaje {
   readonly idioma: Idioma;
   /** Clave de su imagen en el manifiesto de assets. */
   readonly sprite: string;
+  /** Cómo suena su voz sintetizada. `undefined` = como la trae el dispositivo. No cambia las voces grabadas. */
+  readonly voz?: AjustesDeVoz;
 }
 
 /** Los datos generales del nivel. */
@@ -35,6 +38,11 @@ export interface Jugador {
    * `undefined` = nadie lo acompaña al empezar. Un paso `acompana` puede cambiarlo después.
    */
   readonly acompanante?: string;
+  /**
+   * A cuántos metros del jugador se queda quien lo acompaña (`jugador.distanciaDelAcompanante`).
+   * `undefined` = la distancia por defecto (`DISTANCIA_DEL_ACOMPANANTE_POR_DEFECTO_EN_METROS`, en seguir.ts).
+   */
+  readonly distanciaDelAcompananteEnMetros?: number;
 }
 
 /** Desde dónde mira la cámara a lo que sigue. Son los mismos campos que un plano de cinemática. */
@@ -59,7 +67,22 @@ export interface AjustesDelMundo {
   readonly sonidos: SonidosDelMundo;
   /** Planos de cámara con nombre, para los pasos `camara`. */
   readonly planos: Readonly<Record<string, Plano>>;
+  /** Qué tan gruesas son las franjas negras de cine durante una cinemática. `undefined` = `normales`. */
+  readonly franjas?: GrosorDeFranjas;
 }
+
+/**
+ * Qué tan gruesas son las franjas negras de arriba y abajo durante una cinemática:
+ * - `normales`: las de siempre, que dicen «esto es una película»;
+ * - `delgadas`: la mitad, para un nivel que es casi todo cinemática y necesita la pantalla;
+ * - `ninguna`: no se dibujan (los toques siguen sin llegar al escenario y el botón de saltar sigue ahí).
+ */
+export type GrosorDeFranjas = 'normales' | 'delgadas' | 'ninguna';
+
+export const GROSORES_DE_FRANJAS: readonly GrosorDeFranjas[] = ['normales', 'delgadas', 'ninguna'];
+
+/** El grosor de las franjas de un nivel que no dice otro. */
+export const GROSOR_DE_FRANJAS_POR_DEFECTO: GrosorDeFranjas = 'normales';
 
 /** Un plano de cámara: desde dónde se mira a algo del escenario. Las distancias están en metros. */
 export interface Plano extends AjustesDeCamara {
@@ -101,10 +124,21 @@ export interface AlVolver {
   readonly siNo: PasosOSecuencia;
 }
 
+/**
+ * Una señal que sube y baja encima de un NPC o un objeto interactivo, para que se sepa sin leer que ahí hay algo
+ * pendiente («aquí compras las verduras»).
+ */
+export interface SenalDePendiente {
+  /** La señal solo se ve mientras esto se cumple. `undefined` = siempre. */
+  readonly visibleCuando?: Condicion;
+}
+
 /** Algo con lo que se puede hablar: un NPC o un objeto interactivo del decorado. */
 export interface Interlocutor {
   readonly dialogo: readonly Rama[];
   readonly alVolver?: AlVolver;
+  /** Si existe, una señal encima dice que aquí hay algo pendiente. */
+  readonly senal?: SenalDePendiente;
 }
 
 /** La flecha que señala la salida. */

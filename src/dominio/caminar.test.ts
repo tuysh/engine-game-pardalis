@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { avanzarHacia } from './caminar.ts';
+import { avanzarConElTeclado, avanzarHacia } from './caminar.ts';
 import type { Punto } from './geometria.ts';
 import { ajustarAlPiso, crearTerreno, esCaminable } from './terreno.ts';
 import type { Terreno } from './terreno.ts';
@@ -114,4 +114,38 @@ test('el terreno de un mundo usa como obstáculos solo el decorado parado', () =
   });
 
   expect(terreno.obstaculos).toEqual([{ x: 1, y: 1, ancho: 1, alto: 1 }]);
+});
+
+/** Mantiene oprimida una dirección del teclado varios cuadros y devuelve dónde quedó. */
+function caminarConElTeclado(inicio: Punto, direccion: Punto, cuadros: number): Punto {
+  let posicion = inicio;
+  for (let cuadro = 0; cuadro < cuadros; cuadro++) {
+    posicion = avanzarConElTeclado(posicion, direccion, 0.05, TERRENO).posicion;
+  }
+  return posicion;
+}
+
+test('con el teclado en diagonal contra una caja, se desliza por su orilla', () => {
+  // Va hacia arriba y a la derecha; choca con el lado izquierdo de la caja y sube pegado a él hasta librarla.
+  const final = caminarConElTeclado({ x: 4.3, y: 2.3 }, { x: 1, y: -1 }, 40);
+
+  expect(final.x).toBeGreaterThan(4.5);
+  expect(final.y).toBeLessThan(1.5);
+});
+
+test('con el teclado de frente contra una caja, la rodea por la orilla más cercana y sigue derecho', () => {
+  // La caja va de y = 1.5 a y = 2.5; Tommy está un poco abajo de su centro: la orilla de abajo queda más cerca.
+  const final = caminarConElTeclado({ x: 4, y: 2.2 }, { x: 1, y: 0 }, 60);
+
+  expect(final.x).toBeGreaterThan(5.5);
+  expect(final.y).toBeGreaterThan(2.5);
+  expect(final.y).toBeLessThan(2.6);
+});
+
+test('con el teclado de frente contra algo grande, sin orilla al alcance, se atora', () => {
+  const muro: Terreno = { pisos: TERRENO.pisos, obstaculos: [{ x: 4.5, y: 0, ancho: 1, alto: 4 }] };
+
+  const avance = avanzarConElTeclado({ x: 4.45, y: 2 }, { x: 1, y: 0 }, 0.05, muro);
+
+  expect(avance).toEqual({ posicion: { x: 4.45, y: 2 }, llego: false, seAtoro: true });
 });

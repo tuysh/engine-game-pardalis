@@ -145,6 +145,7 @@ test('cada ajuste dice lo que acepta y lo que llegó', () => {
     iniciarCon: 'clic',
     origenesPermitidos: 'https://assets.pardalis.mx',
     proyeccion: 'si',
+    pausarAlOcultar: 'no',
     semilla: Number.NaN,
   });
 
@@ -155,6 +156,7 @@ test('cada ajuste dice lo que acepta y lo que llegó', () => {
       'llegó "https://assets.pardalis.mx"',
     'opciones.semilla: debe ser un número; llegó NaN',
     'opciones.proyeccion: debe ser true o false; llegó "si"',
+    'opciones.pausarAlOcultar: debe ser true o false; llegó "no"',
   ]);
 });
 
@@ -164,7 +166,7 @@ test('una opción que no existe solo se advierte, y el mensaje lista las que sí
   expect(revision.errores).toEqual([]);
   expect(revision.advertencias).toEqual([
     'opciones.minijuego: esa opción no existe y se ignora; las opciones son: niveles, nivel, minijuegos, ' +
-      'cinematicas, partida, raizDeAssets, origenesPermitidos, idioma, iniciarCon, proyeccion, alCargar, ' +
-      'senal, depurar, semilla',
+      'cinematicas, partida, raizDeAssets, origenesPermitidos, idioma, iniciarCon, proyeccion, pausarAlOcultar, ' +
+      'alCargar, senal, depurar, semilla',
   ]);
 });

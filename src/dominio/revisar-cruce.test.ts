@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test';
+import { leerCondicionDeTexto } from './condicion.ts';
 import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from './contenido.ts';
 import type { Contenido } from './contenido.ts';
 import { crearDiagnostico } from './diagnostico.ts';
@@ -280,5 +281,63 @@ test('quien reacciona a una línea debe estar en el escenario', () => {
   expect(revisar(contenido, MUNDO).errores).toEqual([
     'secuencias.saludo[0].reacciona: "mama" nunca está en el escenario: no es el jugador, ni un NPC del mapa, ' +
       'ni entra con un paso "aparece"',
+  ]);
+});
+
+test('el visibleCuando de un objeto del decorado usa variables declaradas; si es "parado", se advierte', () => {
+  const letrero = {
+    descripcion: 'objeto #7 "Letrero"',
+    clase: 'colgado' as const,
+    asset: 'letrero',
+    huella: { x: 3, y: 1, ancho: 1, alto: 0.1 },
+    alturaEnMetros: 2,
+    visibleCuando: leerCondicionDeTexto('no tengo verduras'),
+  };
+  const puesto = { ...letrero, descripcion: 'objeto #8 "Puesto"', clase: 'parado' as const, visibleCuando: leerCondicionDeTexto('charlas.tortu') };
+
+  const diagnostico = revisar(CONTENIDO, { ...MUNDO, decorado: [...MUNDO.decorado, letrero, puesto] });
+
+  expect(diagnostico.errores).toEqual([
+    'condición "verduras" usada en mapa: objeto #7 "Letrero" (decorado).visibleCuando: ' +
+      'no está en estado.objetivos, ni en estado.variables, ni en estado.compartidas',
+  ]);
+  expect(diagnostico.advertencias).toEqual([
+    'mapa: objeto #8 "Puesto" (decorado) es "parado" y lleva visibleCuando: ' +
+      'mientras no se ve, su huella sigue bloqueando el paso',
+  ]);
+});
+
+test('"anima" nombra a un personaje en el escenario o a un objeto del decorado con id', () => {
+  const contenido: Contenido = {
+    ...CONTENIDO,
+    secuencias: {
+      festejo: [
+        { tipo: 'anima', personaje: 'tortu', clave: 'tortu_baila', repite: false },
+        { tipo: 'anima', personaje: 'comal', clave: 'comal_humea', repite: true },
+        { tipo: 'anima', personaje: 'mesa', clave: 'mesa_brinda', repite: false },
+      ],
+    },
+  };
+
+  expect(revisar(contenido, MUNDO).errores).toEqual([
+    'secuencias.festejo[2]: "anima": "mesa" no es un personaje de meta.personajes ni un objeto del decorado con id',
+  ]);
+});
+
+test('un objeto con id sin diálogo vale si un paso "anima" o un plano lo nombra; si nadie lo nombra, es error', () => {
+  const objeto = { ...MUNDO.decorado[0]!, alturaEnMetros: 0, clase: 'plano' as const };
+  const mesa = { ...objeto, descripcion: 'objeto #8 "Mesa"', id: 'mesa_familia' };
+  const tele = { ...objeto, descripcion: 'objeto #9 "Tele"', id: 'tele' };
+  const lampara = { ...objeto, descripcion: 'objeto #10 "Lámpara"', id: 'lampara' };
+  const contenido: Contenido = {
+    ...CONTENIDO,
+    mundo: { ...CONTENIDO.mundo, planos: { a_la_tele: { mira: 'tele', distanciaEnMetros: 5, alturaEnMetros: 2, giroEnGrados: 0 } } },
+    secuencias: { provecho: [{ tipo: 'anima', personaje: 'mesa_familia', clave: 'mesa_brinda', repite: false }] },
+  };
+
+  const diagnostico = revisar(contenido, { ...MUNDO, decorado: [...MUNDO.decorado, mesa, tele, lampara] });
+
+  expect(diagnostico.errores).toEqual([
+    'mapa: objeto #10 "Lámpara" (decorado) tiene id "lampara", que no existe en interactivos',
   ]);
 });

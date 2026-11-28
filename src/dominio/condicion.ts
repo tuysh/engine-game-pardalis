@@ -9,10 +9,11 @@
 //   "objetivosCompletos"                   ya se cumplieron todos los objetivos del nivel
 //   "charlas.tortu"                        ya se habló con "tortu" (el motor lo marca solo)
 //   "dinero >= 10"                         el número de "dinero" es 10 o más; también >, <, <= y =
+//   "premio = pizarron"                    la variable "premio" guarda justo el texto "pizarron"
 //   ["a", "b"]                             se cumplen "a" Y "b"
 //   { "alguno": ["a", "b"] }               se cumple "a" O "b"
 
-import { estanCompletosLosObjetivos, numeroDe, tieneValor } from './estado.ts';
+import { estanCompletosLosObjetivos, numeroDe, tieneValor, valorDe } from './estado.ts';
 import type { EstadoDeNivel } from './estado.ts';
 
 /** Cómo se compara el número de una variable con otro número. Se escribe igual que en el nivel. */
@@ -26,10 +27,22 @@ export interface CondicionDeComparacion {
   readonly numero: number;
 }
 
+/**
+ * Pregunta si una variable guarda justo un texto. Ejemplo: `premio = pizarron`.
+ * Solo se compara con `=`: un texto no es mayor ni menor que otro.
+ */
+export interface CondicionDeTextoIgual {
+  readonly tipo: 'textoIgual';
+  readonly nombre: string;
+  /** El texto con el que se compara, tal cual (distingue mayúsculas y acentos). */
+  readonly texto: string;
+}
+
 /** Una condición ya leída, lista para evaluarse. */
 export type Condicion =
   | { readonly tipo: 'variable'; readonly nombre: string }
   | CondicionDeComparacion
+  | CondicionDeTextoIgual
   | { readonly tipo: 'objetivosCompletos' }
   | { readonly tipo: 'no'; readonly condicion: Condicion }
   | { readonly tipo: 'todas'; readonly condiciones: readonly Condicion[] }
@@ -38,15 +51,20 @@ export type Condicion =
 const PREFIJO_DE_NEGACION = 'no ';
 const PREFIJO_TENGO = 'tengo ';
 const TODOS_LOS_OBJETIVOS = 'objetivosCompletos';
+const SIGNOS_DE_COMPARACION = ['<', '>', '='];
 
 // Uno o más espacios, tabuladores o saltos de línea seguidos.
 // Ejemplo: en "tengo   tortillas" encuentra los tres espacios juntos.
 const ESPACIOS_SEGUIDOS = /\s+/g;
 
-// Una comparación: el nombre de una variable, un operador y un número (con signo y decimales opcionales).
-// En "dinero >= 10" captura "dinero", ">=" y "10"; en "estrellas<3", "estrellas", "<" y "3".
-// Los operadores de dos signos van primero para que ">=" no se lea como ">" seguido de "=10".
-const EXPRESION_DE_COMPARACION = /^(.+?)\s*(>=|<=|>|<|=)\s*(-?\d+(?:\.\d+)?)$/;
+// Una comparación: el nombre de una variable, un signo y lo que va a la derecha (un número o un texto).
+// En "dinero >= 10" captura "dinero", ">=" y "10"; en "estrellas<3", "estrellas", "<" y "3";
+// en "premio = pizarron", "premio", "=" y "pizarron".
+// Los signos de dos caracteres van primero para que ">=" no se lea como ">" seguido de "=10".
+const EXPRESION_DE_COMPARACION = /^(.+?)\s*(>=|<=|>|<|=)\s*(.+)$/;
+
+// Un número, con signo y decimales opcionales. Acepta "10", "-3" y "2.5"; no acepta "diez" ni "1,5".
+const EXPRESION_DE_NUMERO = /^-?\d+(?:\.\d+)?$/;
 
 /**
  * Convierte el texto de una condición en una `Condicion`.
@@ -69,16 +87,32 @@ export function leerCondicionDeTexto(texto: string): Condicion {
     sinTengo = textoLimpio.slice(PREFIJO_TENGO.length);
   }
 
-  const partes = EXPRESION_DE_COMPARACION.exec(sinTengo);
+  return leerComparacion(sinTengo);
+}
+
+/**
+ * Lee una comparación como `dinero >= 10` o `premio = pizarron`. Si el texto no es una comparación bien escrita
+ * (por ejemplo, `globo >= mucho`: un texto solo se compara con `=`), lo deja como el nombre de una variable;
+ * la validación explica entonces cómo se escribe.
+ */
+function leerComparacion(texto: string): Condicion {
+  const partes = EXPRESION_DE_COMPARACION.exec(texto);
   if (partes === null) {
-    return { tipo: 'variable', nombre: sinTengo };
+    return { tipo: 'variable', nombre: texto };
   }
-  return {
-    tipo: 'comparacion',
-    nombre: partes[1]!, // los grupos 1, 2 y 3 siempre existen cuando la expresión coincide
-    operador: partes[2] as OperadorDeComparacion, // la expresión solo acepta esos cinco operadores
-    numero: Number(partes[3]),
-  };
+  const nombre = partes[1]!; // los grupos 1, 2 y 3 siempre existen cuando la expresión coincide
+  const operador = partes[2] as OperadorDeComparacion; // la expresión solo acepta esos cinco operadores
+  const derecha = partes[3]!;
+
+  if (EXPRESION_DE_NUMERO.test(derecha)) {
+    return { tipo: 'comparacion', nombre, operador, numero: Number(derecha) };
+  }
+  // Otro signo en la derecha ("premio == globo", "dinero => 3", "a = b = c") es un error de dedo, no un texto.
+  const llevaOtroSigno = SIGNOS_DE_COMPARACION.some((signo) => derecha.includes(signo));
+  if (operador === '=' && !llevaOtroSigno) {
+    return { tipo: 'textoIgual', nombre, texto: derecha };
+  }
+  return { tipo: 'variable', nombre: texto };
 }
 
 /** Dice si la condición se cumple en ese estado. */
@@ -88,6 +122,8 @@ export function cumpleCondicion(condicion: Condicion, estado: EstadoDeNivel): bo
       return tieneValor(estado, condicion.nombre);
     case 'comparacion':
       return cumpleComparacion(condicion, estado);
+    case 'textoIgual':
+      return valorDe(estado, condicion.nombre) === condicion.texto;
     case 'objetivosCompletos':
       return estanCompletosLosObjetivos(estado);
     case 'no':
@@ -116,11 +152,37 @@ function cumpleComparacion(condicion: CondicionDeComparacion, estado: EstadoDeNi
   }
 }
 
+/**
+ * Las igualdades de texto (`premio = pizarron`) que hay dentro de una condición, en orden.
+ * Sirve para revisar que el texto de la derecha esté bien escrito.
+ */
+export function igualdadesDeTextoEn(condicion: Condicion): CondicionDeTextoIgual[] {
+  switch (condicion.tipo) {
+    case 'textoIgual':
+      return [condicion];
+    case 'variable':
+    case 'comparacion':
+    case 'objetivosCompletos':
+      return [];
+    case 'no':
+      return igualdadesDeTextoEn(condicion.condicion);
+    case 'todas':
+    case 'alguna': {
+      const igualdades: CondicionDeTextoIgual[] = [];
+      for (const parte of condicion.condiciones) {
+        igualdades.push(...igualdadesDeTextoEn(parte));
+      }
+      return igualdades;
+    }
+  }
+}
+
 /** Los nombres de las variables que menciona una condición. Sirve para revisar que estén declaradas. */
 export function variablesQueUsa(condicion: Condicion): string[] {
   switch (condicion.tipo) {
     case 'variable':
     case 'comparacion':
+    case 'textoIgual':
       return [condicion.nombre];
     case 'objetivosCompletos':
       return [];

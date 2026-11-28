@@ -6,6 +6,7 @@ import type { Punto } from '../dominio/geometria.ts';
 import type { Nivel } from '../dominio/nivel.ts';
 import { crearMapaDeCaminos } from '../dominio/rejilla-de-caminos.ts';
 import type { MapaDeCaminos } from '../dominio/rejilla-de-caminos.ts';
+import { DISTANCIA_DEL_ACOMPANANTE_POR_DEFECTO_EN_METROS } from '../dominio/seguir.ts';
 import { crearTerreno } from '../dominio/terreno.ts';
 import { completarTexto } from '../dominio/texto-con-variables.ts';
 import { Acompanante } from './acompanante.ts';
@@ -13,7 +14,7 @@ import { CamaraDeEscena } from './camara-de-escena.ts';
 import { Cercania } from './cercania.ts';
 import { ComentariosDeZona } from './comentarios-de-zona.ts';
 import { decirLinea } from './decir-linea.ts';
-import { buscarDireccionDeAsset } from './direccion-de-asset.ts';
+import { buscarCuadrosDeAsset, buscarDireccionDeAsset } from './direccion-de-asset.ts';
 import { EscenasDelNivel } from './escenas-del-nivel.ts';
 import { EstadoEnJuego } from './estado-en-juego.ts';
 import { Exploracion } from './exploracion.ts';
@@ -25,6 +26,9 @@ import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { crearImagenDeEscena } from './preparar-escena.ts';
 import type { Reparto } from './reparto.ts';
 import { SalidaDelNivel } from './salida-del-nivel.ts';
+import { SenalesDePendientes } from './senales-de-pendientes.ts';
+import { VisibilidadDelDecorado } from './visibilidad-del-decorado.ts';
+import { VocesDelNivel } from './voces-del-nivel.ts';
 
 /** Un nivel con todas sus piezas ya creadas y conectadas entre sí, listo para ponerse en marcha. */
 export interface NivelArmado {
@@ -44,6 +48,12 @@ export interface NivelArmado {
   readonly salida: SalidaDelNivel;
   readonly flecha: FlechaDeSalida;
   readonly cercania: Cercania;
+  /** Esconde y muestra el decorado que lleva `visibleCuando`. */
+  readonly visibilidad: VisibilidadDelDecorado;
+  /** Las estrellitas sobre lo que todavía está pendiente (`senal` de un NPC o interactivo). */
+  readonly senales: SenalesDePendientes;
+  /** Las voces que piden los minijuegos y el host, con sus avisos de lo que falta (una vez por nivel). */
+  readonly voces: VocesDelNivel;
 }
 
 /** Lo que casi todas las piezas de un nivel necesitan para crearse. */
@@ -85,6 +95,9 @@ export async function armarNivel(
   const comentarios = crearComentarios(base, escena);
   const camara = crearCamara(base);
   const escenas = crearEscenas(base, { escena, camara, comentarios, exploracion, acompanante });
+  const visibilidad = new VisibilidadDelDecorado({ decorado: nivel.mundo.decorado, estado, escenario });
+  // Antes del primer cuadro: lo que empieza escondido no debe asomarse ni un instante.
+  visibilidad.actualizar();
 
   return {
     nivel,
@@ -103,7 +116,10 @@ export async function armarNivel(
       alSalir: (destino) => avisos.alSalir(destino),
     }),
     flecha: new FlechaDeSalida({ nivel, estado, escenario, interfaz }),
-    cercania: new Cercania({ nivel, reparto, escenario, interfaz, acompanante }),
+    cercania: new Cercania({ nivel, reparto, escenario, interfaz, acompanante, estado }),
+    visibilidad,
+    senales: new SenalesDePendientes({ nivel, estado, reparto, escenario, interfaz }),
+    voces: escena.voces,
   };
 }
 
@@ -114,6 +130,7 @@ function crearPiezasDeEscena(base: BaseDelNivel): PiezasDeEscena {
   return {
     contenido: nivel.contenido,
     puntos: nivel.mundo.puntos,
+    decorado: nivel.mundo.decorado,
     caminos: base.caminos,
     centroDelLugar: base.centroDelLugar,
     idiomaBase: pedido.idiomaBase,
@@ -126,10 +143,16 @@ function crearPiezasDeEscena(base: BaseDelNivel): PiezasDeEscena {
     estado: base.estado,
     minijuegos: pedido.minijuegos,
     direccionDeAsset: (clave) => buscarDireccionDeAsset(clave, nivel.assets, pedido.ubicacion),
+    // Una por nivel: así los avisos de lo que falta salen una vez en cada nivel (voces-del-nivel.ts).
+    voces: new VocesDelNivel({
+      personajes: nivel.contenido.meta.personajes,
+      direccionDeAsset: (clave) => buscarDireccionDeAsset(clave, nivel.assets, pedido.ubicacion),
+    }),
+    cuadrosDeAsset: (clave) => buscarCuadrosDeAsset(clave, nivel.assets, pedido.ubicacion),
     imagenDeAsset: (clave) => crearImagenDeEscena(clave, nivel, pedido.ubicacion),
     alVerPalabra: (palabra) => avisos.alVerPalabra(palabra),
     alEmpezarMinijuego: (nombre) => avisos.alEmpezarMinijuego(nombre),
-    alTerminarMinijuego: (nombre) => avisos.alTerminarMinijuego(nombre),
+    alTerminarMinijuego: (nombre, cierre) => avisos.alTerminarMinijuego(nombre, cierre),
   };
 }
 
@@ -156,6 +179,7 @@ function crearAcompanante(nivel: Nivel, reparto: Reparto, caminos: MapaDeCaminos
     caminos,
     idDelJugador: jugador.personaje,
     velocidadEnMetrosPorSegundo: jugador.velocidadEnMetrosPorSegundo,
+    distanciaEnMetros: jugador.distanciaDelAcompananteEnMetros ?? DISTANCIA_DEL_ACOMPANANTE_POR_DEFECTO_EN_METROS,
     idDelAcompananteInicial: jugador.acompanante,
   });
 }
@@ -172,6 +196,8 @@ function crearComentarios(base: BaseDelNivel, escena: PiezasDeEscena): Comentari
       return decirLinea({ paso: linea, textoCompleto, seCierraConUnToque: false }, senal, escena);
     },
     alFallar: (error) => base.avisos.alFallar(error),
+    alEmpezarComentario: (zona) => base.avisos.alEmpezarDialogo({ origen: 'comentario', id: zona }),
+    alTerminarComentario: (zona) => base.avisos.alTerminarDialogo({ origen: 'comentario', id: zona }),
   });
 }
 

@@ -65,3 +65,65 @@ test('tocar el botón de inicio no echa a andar el tiempo si alguien tiene el ju
   pausa.reanudar();
   expect(reloj.estaCorriendo).toBe(true);
 });
+
+test('ocultar la página congela el tiempo y lo que suena, y mostrarla los devuelve', () => {
+  const { pausa, reloj, audio } = crearPausa();
+
+  pausa.ocultarLaPagina();
+  expect(reloj.estaCorriendo).toBe(false);
+  expect(audio.estaCorriendo).toBe(false);
+
+  pausa.mostrarLaPagina();
+  expect(reloj.estaCorriendo).toBe(true);
+  expect(audio.estaCorriendo).toBe(true);
+});
+
+test('volver a la página no reanuda un juego que el host pausó', () => {
+  const { pausa, reloj, audio } = crearPausa();
+  pausa.pausar();
+
+  pausa.ocultarLaPagina();
+  pausa.mostrarLaPagina();
+
+  expect(reloj.estaCorriendo).toBe(false);
+  expect(audio.estaCorriendo).toBe(false);
+});
+
+test('reanudar con la página oculta deja el juego detenido hasta que la página se vuelve a ver', () => {
+  const { pausa, reloj, audio } = crearPausa();
+  pausa.pausar();
+  pausa.ocultarLaPagina();
+
+  pausa.reanudar();
+  expect(reloj.estaCorriendo).toBe(false);
+  expect(audio.estaCorriendo).toBe(false);
+
+  pausa.mostrarLaPagina();
+  expect(reloj.estaCorriendo).toBe(true);
+  expect(audio.estaCorriendo).toBe(true);
+});
+
+test('volver a la página no echa a andar el tiempo si todavía no tocan el botón de inicio', () => {
+  const { pausa, reloj } = crearPausa();
+  pausa.esperarElInicio();
+
+  pausa.ocultarLaPagina();
+  pausa.mostrarLaPagina();
+
+  expect(reloj.estaCorriendo).toBe(false);
+});
+
+test('cada pieza recibe un pedido solo cuando su situación cambia', () => {
+  const pedidos: string[] = [];
+  const reloj: Pausable = { pausar: () => pedidos.push('reloj pausa'), reanudar: () => pedidos.push('reloj sigue') };
+  const audio: Pausable = { pausar: () => pedidos.push('audio pausa'), reanudar: () => pedidos.push('audio sigue') };
+  const pausa = new PausaDelJuego(reloj, [audio]);
+
+  pausa.pausar();
+  pausa.ocultarLaPagina();
+  pausa.pausar();
+  pausa.mostrarLaPagina();
+  pausa.reanudar();
+
+  expect(pedidos).toEqual(['audio pausa', 'reloj pausa', 'audio sigue', 'reloj sigue']);
+});

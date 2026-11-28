@@ -108,6 +108,7 @@ no ponerla (salvo `nivel`, que es obligatoria).
 | `idioma` | `'es' \| 'en'` | `'es'` | Idioma base de la interfaz. |
 | `iniciarCon` | `'boton' \| 'host'` | `'boton'` | Quién da el primer toque que desbloquea el audio. Ver §7.5. |
 | `proyeccion` | `boolean` | `false` | Modo salón de clases: todo más grande. |
+| `pausarAlOcultar` | `boolean` | `true` | Pausa juego, audio y video mientras la página no se ve (otra pestaña, ventana minimizada, teléfono bloqueado) y los reanuda al volver. Ver «Pausa al ocultar la página». |
 | `alCargar` | `({ cargados, total }) => void` | — | Progreso de carga de las imágenes de cada nivel, para que el host dibuje su propia barra. Avisa una vez al empezar (0 de `total`) y otra por cada archivo. |
 | `senal` | `AbortSignal` | — | Cancela la creación (por ejemplo, si el componente se desmonta mientras carga). |
 | `depurar` | `boolean` | `false` | Dibuja piso, huellas y zonas, y activa la cámara libre (§9.3). |
@@ -122,22 +123,73 @@ no ponerla (salvo `nivel`, que es obligatoria).
 | `cargar(nivel)` | Cambia de nivel reutilizando el mismo lienzo. `nivel` es un id de `niveles` o la dirección de un `nivel.json`. Promesa que se resuelve cuando ya se puede jugar y rechaza con `ErrorDeEscenario` si el nivel tiene errores o no cargó alguna de sus imágenes (entonces sigue el nivel que estaba). |
 | `reproducir(idDeCinematica)` | Lanza una cinemática del nivel actual, aunque ya se haya visto. Promesa que se resuelve al terminar. |
 | `interrumpir()` | Salta la cinemática o cierra el diálogo en curso. |
-| `pausar()` / `reanudar()` | Congela y reanuda juego, audio y video. |
+| `pausar()` / `reanudar()` | Congela y reanuda juego, audio y video. Una frase del juego que se estaba diciendo se corta y, al reanudar, se dice otra vez desde el principio. Volver a la página nunca deshace un `pausar()`. Lo que diga el host con `decir()` sí se oye en pausa. |
+| `volumen` | Volumen general, de 0 a 1 (empieza en 1). Multiplica a los tres canales. Ver «Volumen y voz del host». |
+| `silenciado` | `true` = no se oye nada, sin olvidar los volúmenes. El juego sigue avanzando (no es una pausa). |
+| `volumenes` / `ajustarVolumenes(cambios)` | El volumen de cada canal (`musica`, `voces`, `efectos`), de 0 a 1. `ajustarVolumenes({ musica: 0.3 })` cambia solo los canales que se escriben. |
+| `decir(texto, { idioma, clave?, voz?, quien? })` | El host dice algo con la voz del motor. Promesa que termina al acabar de hablar. Ver «Volumen y voz del host». |
+| `callar()` | Calla lo que el host dice con `decir()` (y la frase del host que esperaba su turno). Nunca corta las líneas del juego. |
 | `proyeccion` | Propiedad booleana; se puede cambiar sin reiniciar. |
 | `nivel` | Id del nivel actual (solo lectura). |
 | `estado` | El estado del nivel actual, solo para leer: `estado.obtener('dinero')` y `estado.cumple('tengo maiz')`. Es el mismo lector que reciben los minijuegos. Mientras se carga un nivel, `obtener` entrega `undefined` y `cumple`, `false`. |
 | `destruir()` | Libera todo: WebGL, audio, video, temporizadores y oyentes. Se puede llamar más de una vez. |
 
+### Volumen y voz del host
+
+Para un botón de bocina en el salón de clases, o para bajar la música en casa:
+
+```js
+juego.silenciado = !juego.silenciado;          // todo callado, o todo como estaba
+juego.volumen = 0.5;                           // volumen general
+juego.ajustarVolumenes({ musica: 0.3 });       // solo la música; también `voces` y `efectos`
+```
+
+Un valor que no sirve (fuera de 0 a 1, un canal que no existe) lanza `ErrorDeEscenario` y no cambia nada.
+`efectos` son los sonidos cortos (los de `sonido` y los de los minijuegos) y los tonos.
+
+`juego.decir(texto, { idioma, clave?, voz?, quien? })` dice algo del host (una palabra del cuaderno, la pantalla final)
+con la voz del motor, en vez de usar `speechSynthesis` por su cuenta:
+
+- Todo lo que se dice pasa por **una sola fila**: lo del host espera a que termine la línea del juego, y la
+  línea del juego espera a que termine lo del host. Nada se encima ni se corta.
+  El tope de tiempo de una frase (por si la voz del dispositivo nunca avisa que terminó) empieza a contar
+  cuando le toca hablar, no mientras espera en la fila.
+- Se oye **aunque el juego esté en pausa**: el host suele pausar justo para mostrar lo suyo.
+- Una frase nueva de `juego.decir` corta la anterior de `juego.decir` (no las del juego).
+- `clave` es una voz grabada del nivel actual; si falta, se usa la voz sintetizada y se avisa en la consola
+  **una vez por clave y por nivel** (al cargar otro nivel, el aviso puede volver a salir).
+- `quien` es el id de un personaje del nivel actual: la frase suena con su `voz` de `meta.personajes`
+  (docs/NIVELES.md), igual que sus líneas, sin que el host copie la tabla de voces. Un id que el nivel no tiene
+  no es un error: se avisa una vez por nivel y se usa la voz normal.
+- `voz` es `{ tono, velocidad }`, como la de `meta.personajes`. **Si llegan `voz` y `quien`, gana `voz`**: es lo
+  más concreto que pidió el host.
+- `juego.callar()` corta lo que el host está diciendo y la frase del host que esperaba su turno; sus promesas
+  terminan en ese momento. Nunca corta las líneas del juego (para eso está `interrumpir()`).
+- La promesa termina al acabar de hablar, al cortarla otra frase, con `callar()` o al destruir el juego.
+  Solo rechaza si los argumentos no sirven (por ejemplo, un `quien` que no es texto), con `ErrorDeEscenario`.
+
+```js
+await juego.decir('maíz', { idioma: 'es' });
+await juego.decir('corn', { idioma: 'en', clave: 'vo_bobby_corn', quien: 'bobby' });
+await juego.decir('corn', { idioma: 'en', voz: { tono: 1.2 } });
+juego.callar();
+```
+
+Limitaciones conocidas: una frase de voz sintetizada que ya empezó termina con el volumen que tenía (el navegador
+no deja cambiarlo a media frase); y si la voz del dispositivo nunca avisa que terminó, el tope de tiempo de una
+frase no corre mientras el juego está en pausa.
+
 ### Eventos
 
 | Evento | Dato | Cuándo |
 | --- | --- | --- |
-| `guardar` | `partida` | Cada vez que conviene guardar: objetivo cumplido, fin de cinemática, cambio de nivel. |
+| `guardar` | `partida` | Cada vez que conviene guardar: objetivo cumplido, fin de cinemática, cambio de nivel, o un minijuego que cambió el estado con lo que otorgó (llega después de su `minijuego` de fin). |
 | `objetivo` | `id` | Se cumplió un objetivo. |
 | `palabra` | `{ en, es }` | Se mostró una tarjeta de vocabulario. |
 | `nivel` | `{ id, anterior }` | Se terminó de cargar otro nivel. `anterior` es el id del que se dejó. |
 | `cinematica` | `{ id, fase }` | `fase` es `'inicio'` o `'fin'`. Sirve para ocultar la interfaz del host. |
-| `minijuego` | `{ nombre, fase }` | Se abrió (`'inicio'`) o se cerró (`'fin'`) un minijuego. El minijuego se dibuja dentro del elemento del juego, así que queda debajo de lo que el host tenga encima: con este evento lo esconde. |
+| `dialogo` | `{ fase, origen, id }` | Empezó (`'inicio'`) o terminó (`'fin'`) un diálogo que no es una cinemática. Sirve para que lo que el host dibuja encima no tape los globos. Ver «Diálogos». |
+| `minijuego` | `{ nombre, fase }`; al cerrarse, también `{ exito, cambios }` | Se abrió (`'inicio'`) o se cerró (`'fin'`) un minijuego. El minijuego se dibuja dentro del elemento del juego, así que queda debajo de lo que el host tenga encima: con este evento lo esconde. El `'fin'` llega **después** de aplicar lo que el minijuego otorgó: ver «Al cerrarse un minijuego». |
 | `estado` | `{ nivel, cambios, variables }` | Cambió alguna variable del nivel: el dinero después de pagar, un objetivo, lo que hizo un `pon` o concedió un minijuego. `cambios` trae solo lo que cambió, con su valor nuevo; `variables`, todas. |
 | `salida` | `destino` | El jugador salió hacia un destino que **no** es un nivel registrado: el host decide. |
 | `error` | `ErrorDeEscenario` | Falla después de arrancar (por ejemplo, un nivel siguiente que no carga). |
@@ -148,12 +200,75 @@ Cualquier otro destino (`"Selector"`, `"Creditos"`) llega al host por `salida`.
 El evento `estado` no se emite al empezar un nivel, solo cuando algo cambia: para pintar por primera vez
 (el monedero, la lista) se lee `juego.estado` al crear el juego y en cada evento `nivel`.
 
+### Diálogos
+
+El evento `dialogo` avisa cuando alguien empieza a hablar fuera de una cinemática, y cuando termina
+(completo, cerrado con `interrumpir()` o con un error). `origen` dice qué lo empezó:
+
+| `origen` | `id` | Cuándo |
+| --- | --- | --- |
+| `'npc'` | id del NPC | El jugador tocó a un personaje (o usó la tecla de hablar). |
+| `'interactivo'` | id del interactivo | El jugador tocó un objeto del decorado que tiene diálogo. |
+| `'salida'` | `undefined` | El jugador intentó salir sin cumplir `salida.requiere`: se dicen los pasos de `siBloqueada`. |
+| `'comentario'` | nombre de la zona | El jugador entró a una zona con `grupo` y dice un comentario. Mientras se oye se puede seguir caminando. |
+
+Reglas:
+
+- Nunca se enciman dos: el `'fin'` de uno llega antes que el `'inicio'` del siguiente. Si un diálogo
+  calla un comentario, el `'fin'` del comentario llega primero.
+- Una cinemática no emite `dialogo`: avisa con `cinematica`.
+- Un minijuego que se abre dentro de un diálogo llega entre sus dos avisos:
+  `dialogo` inicio → `minijuego` inicio → `minijuego` fin → `dialogo` fin.
+- Si el diálogo termina con un paso `sale`, el `'fin'` llega antes que el cambio de nivel o la `salida`.
+
+```js
+juego.on('dialogo', ({ fase, origen }) => {
+  if (origen === 'comentario') return; // son cortos: aquí el host decide no esconder nada
+  achicarLista(fase === 'inicio');
+});
+```
+
+### Al cerrarse un minijuego
+
+El orden es siempre el mismo:
+
+1. se cierra el espacio del minijuego;
+2. lo que otorgó se aplica al estado, y si algo cambió llega el evento `estado`;
+3. llega `minijuego` con `fase: 'fin'`, `exito` y `cambios` (solo las variables que cambiaron por lo que
+   otorgó, con su valor nuevo; `{}` si no cambió nada o si el minijuego se cerró sin terminar);
+4. el diálogo sigue por `siLogrado` o `siNo`.
+
+Así el host puede volver a mostrar su monedero o su lista justo en el `'fin'` y animar ahí lo que cambió,
+en vez de animarlo mientras estaba escondido:
+
+```js
+juego.on('minijuego', (aviso) => {
+  if (aviso.fase === 'inicio') return ocultarMenu();
+  mostrarMenu();
+  if (Object.hasOwn(aviso.cambios, 'dinero')) animarMonedero(aviso.cambios.dinero);
+});
+```
+
 El evento `palabra` solo se emite cuando la tarjeta **se mostró**. Las líneas de una cinemática que se salta
 no se muestran, así que sus palabras no se avisan: el «cuaderno de palabras» del host solo guarda lo que la
 niña o el niño sí vio.
 
 Si una función que escucha un evento lanza un error, el motor lo muestra en la consola y sigue:
 un descuido del host no deja una cinemática o un diálogo a medias.
+
+### Pausa al ocultar la página
+
+Con `pausarAlOcultar` (activa si no se dice otra cosa), el motor escucha `visibilitychange` del documento:
+cuando la página deja de verse, el juego se detiene como con `pausar()`, y cuando se ve otra vez, sigue.
+Es una razón de pausa aparte de la del host, y ninguna deshace a la otra:
+
+- si el host pausó el juego (un menú abierto), volver a la página **no** lo reanuda: sigue en pausa hasta
+  `juego.reanudar()`;
+- si el host llama a `juego.reanudar()` con la página oculta, el juego sigue detenido hasta que la página
+  se vuelve a ver;
+- mientras se espera el botón de inicio (§7.5), volver a la página no echa a andar el tiempo.
+
+Con `pausarAlOcultar: false` el motor no escucha nada y el host decide qué hacer.
 
 ## 5. Niveles
 
@@ -206,10 +321,13 @@ export function Tortilleria({ elemento, config, estado, audio, assets, azar, sen
 | `elemento` | `HTMLElement` vacío. El motor lo crea antes y lo borra después. Está en el DOM normal, así que le aplican los estilos del host. |
 | `config` | Lo que venga en el paso `{ "juego": ..., "config": ... }`. |
 | `estado` | Solo lectura: `obtener(nombre)`, `cumple(condicion)`. Para cambiarlo se usa `otorgar` en el resultado. |
-| `audio` | `tocar(clave)`, `tocarTono(frecuenciaEnHertz, duracionEnSegundos)` (un «ding» sin archivo) y `decir(texto, idioma, clave?)`. `decir` devuelve una promesa que termina cuando acaba de hablar: `await audio.decir('¡Lechuga!', 'es'); await audio.decir('lettuce!', 'en');`. Solo se dice una frase a la vez: una frase nueva **corta** la que estuviera sonando. |
+| `audio` | `tocar(clave, { volumen?, tono? })` (`volumen` de 0 a 1; `tono` de 0.25 a 4 es la velocidad de reproducción, y con ella la nota: `1.2` suena más agudo, para que un acierto tras otro suba de nota), `tocarTono(frecuenciaEnHertz, duracionEnSegundos)` (un «ding» sin archivo) y `decir(texto, idioma, clave?, quien?)`. `decir` devuelve una promesa que termina cuando acaba de hablar: `await audio.decir('¡Lechuga!', 'es'); await audio.decir('lettuce!', 'en');`. Solo se dice una frase a la vez: una frase nueva **corta** la que estuviera sonando. `quien` es el id de un personaje del nivel: la frase suena con su `voz` de `meta.personajes`, como sus líneas (`audio.decir('lettuce!', 'en', undefined, 'bobby')`). Una clave sin voz grabada o un `quien` que el nivel no tiene se avisan una vez por nivel y nunca lanzan un error. |
 | `azar` | `azar()` entrega un número de 0 a 1, como `Math.random`, pero sale del azar del motor: con la opción `semilla`, el minijuego también es repetible. |
-| `assets` | `url(clave)` para usar imágenes del manifiesto. |
+| `assets` | `url(clave)` para usar imágenes del manifiesto (de una animación, su primer cuadro); `cuadros(clave)` y `animar(imagen, clave, senal?)` para las animaciones: ver «Imágenes animadas en un minijuego». |
 | `senal` | `AbortSignal`: se dispara si el host destruye el juego. El minijuego debe limpiar lo suyo. |
+| `pausado` | `true` mientras el juego está en pausa (`juego.pausar()`, la página oculta o antes del botón de inicio). Ver «Pausa en un minijuego». |
+| `alPausarOReanudar` | `alPausarOReanudar((pausado) => …, senal?)`: avisa cada vez que el juego se pausa o se reanuda. Devuelve la función que deja de avisar. |
+| `enCadaCuadro` | `enCadaCuadro((segundos) => …, senal?)`: llama en cada cuadro con los segundos del reloj del juego, que no avanza en pausa. Devuelve la función que la detiene. |
 
 Resultado: `{ exito: boolean, otorgar?: Record<string, valor> }`. Si la función lanza un error se trata como
 `{ exito: false }` y sigue el diálogo amable `siNo`. En `otorgar`, un valor puede ser también `{ suma: n }` o
@@ -218,6 +336,76 @@ no tiene que leer el total y devolverlo.
 
 El motor coloca `elemento` a pantalla completa con un marco propio, así que el minijuego puede ponerle cualquier
 estilo sin perder su lugar. Un ejemplo completo está en [`ejemplo/tortilleria.ts`](../ejemplo/tortilleria.ts).
+
+### Imágenes animadas en un minijuego
+
+Los personajes de un minijuego se mueven igual que en el escenario: parpadean, respiran y mueven la boca al
+hablar. `assets.animar(imagen, clave)` le va cambiando el `src` a un `<img>` con los cuadros de una animación
+del manifiesto, al ritmo (`fps`) y en el orden (`secuencia`) de `assets.config.json`, y la repite sin fin.
+Devuelve un control con dos métodos:
+
+- `cambiar(clave)`: pasa a otra animación en la misma imagen, desde su primer cuadro. Con él se alterna entre
+  estar quieto (`spr_tepo`) y hablar (`tepo_habla`). Una clave que no existe se ignora con una advertencia.
+- `detener()`: la deja en el cuadro que mostraba. Después, `cambiar` ya no hace nada.
+
+```js
+const tepo = document.createElement('img');
+tepo.alt = '';
+const animacion = assets.animar(tepo, 'spr_tepo');   // quieto, parpadeando
+elemento.append(tepo);
+
+animacion.cambiar('tepo_habla');                     // mueve la boca mientras habla
+await audio.decir('¡Buenos días!', 'es');
+animacion.cambiar('spr_tepo');
+```
+
+- Todo se detiene solo al cerrarse el minijuego. El tercer parámetro, una `AbortSignal` opcional, la detiene
+  antes (por ejemplo, al quitar esa imagen).
+- Volver a animar la misma imagen detiene la animación que tenía: nunca quedan dos peleándose por el `src`.
+- El tiempo es el del juego: si el host pausa el juego, la animación también se pausa.
+- Una imagen fija se pone y no se anima, así que `animar` sirve para cualquier imagen.
+- `imagen` puede ser cualquier objeto con `src` (`ImagenAnimable`), no solo un `<img>`.
+- Con una clave que no es imagen del nivel, `animar` avisa en la consola y deja la imagen como estaba.
+
+Para dibujar una animación por su cuenta (en un `<canvas>`, en una textura de Three.js) o para precargar sus
+cuadros, `assets.cuadros(clave)` entrega `{ urls, cuadrosPorSegundo }`: `urls` ya viene en el orden de la
+`secuencia`, con los cuadros repetidos que pida; una imagen fija trae una sola dirección y `cuadrosPorSegundo: 0`,
+y una clave que no es imagen del nivel trae `urls: []` y una advertencia.
+
+```js
+// El primer cambio de cuadro no parpadea si cada dibujo ya está en la memoria del navegador.
+for (const url of new Set(assets.cuadros('tepo_habla').urls)) new Image().src = url;
+```
+
+### Pausa en un minijuego
+
+Cuando el host pausa el juego (con el teléfono de pie, con su cuaderno abierto encima) o la página deja de
+verse, nadie está viendo el minijuego: lo que se mueve solo debe quedarse quieto, para que nadie pierda una
+estrella por chiles que cayeron detrás de un aviso. El motor ya detiene lo suyo: `audio.decir` espera a que se
+reanude (y repite desde el principio la frase que la pausa cortó), `assets.animar` se detiene, y `audio.tocar` y
+`audio.tocarTono` no suenan mientras dure la pausa. Lo que el minijuego mueve por su cuenta lo detiene él:
+
+- Lo más fácil es moverlo con `enCadaCuadro((segundos) => …)` en vez de `requestAnimationFrame` y
+  `performance.now()`: es el reloj del juego, así que en pausa no avanza, y un cuadro nunca dura más de una
+  décima de segundo aunque el dispositivo se haya trabado.
+- Para lo demás (un temporizador propio, una animación de CSS, un video) están `pausado` y
+  `alPausarOReanudar((pausado) => …)`.
+- Las dos dejan de llamarse solas al cerrarse el minijuego; su segundo parámetro, una `AbortSignal` opcional,
+  las detiene antes. Si la función lanza un error, se anota en la consola y el juego sigue.
+
+```js
+const dejarDeCaer = enCadaCuadro((segundos) => {
+  chile.y += VELOCIDAD_DE_CAIDA_EN_PUNTOS_POR_SEGUNDO * segundos;
+});
+alPausarOReanudar((pausado) => canasta.classList.toggle('quieta', pausado));
+```
+
+Un host que arma a mano un `ContextoDeMinijuego` (por ejemplo, una mesa de pruebas que abre un minijuego sin
+el motor) ahora tiene que darle también `assets.cuadros`, `assets.animar`, `pausado`, `alPausarOReanudar` y
+`enCadaCuadro`; TypeScript lo señala. Para una prueba sin pausa bastan `pausado: false`,
+`alPausarOReanudar: () => () => {}` y un `enCadaCuadro` hecho con `requestAnimationFrame`. Y para
+las animaciones basta con poner el primer cuadro: `animar: (imagen, clave) => { imagen.src = url(clave); return { cambiar:
+(otra) => { imagen.src = url(otra); }, detener: () => {} }; }`.
 
 ## 7. Cinemáticas
 
@@ -302,7 +490,8 @@ la cinemática termina ahí, el juego sigue y el host recibe el evento `error`.
 
 - **Saltar** pone la cinemática en modo rápido: cada paso se resuelve al instante dejando su resultado final
   (personajes en su destino, `pon` aplicados; líneas y videos omitidos). Vale igual para JSON y para código.
-- Durante una cinemática se bloquean toques y teclado y aparecen las franjas de cine.
+- Durante una cinemática se bloquean toques y teclado y aparecen las franjas de cine. Su grosor lo elige el nivel
+  (`mundo.franjas`: `normales`, `delgadas` o `ninguna`), y los globos siempre quedan entre las dos.
 - **Audio al inicio:** los navegadores no dejan sonar nada hasta el primer toque. Con `iniciarCon: 'boton'`
   el motor muestra un botón grande de jugar; con `'host'` el host garantiza que ya hubo un toque.
 - Con «movimiento reducido» activo en el sistema, los movimientos de cámara se vuelven cortes.
@@ -333,9 +522,26 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   una nube. En código son opciones de `escena.dice` con los mismos nombres. Al saltar una cinemática la línea
   se omite, así que nadie cambia de dibujo.
 - **Acompañante:** `jugador.acompanante` nombra a un personaje que sigue al jugador mientras explora, por el
-  piso y rodeando el decorado. Empieza a caminar cuando el jugador se aleja metro y medio y se detiene a
-  menos de un metro. Durante un diálogo o una cinemática no sigue: lo mueven los pasos. El paso `acompana`
+  piso y rodeando el decorado. Su lugar está a `jugador.distanciaDelAcompanante` metros del jugador (0.9 por
+  defecto), del lado contrario al que camina el jugador y un poco atrás (más lejos de la cámara), para que su
+  dibujo no tape al del jugador. Empieza a caminar cuando el jugador se aleja esa distancia y 0.6 m más, o cuando
+  quedó delante de él tapándolo; mientras el jugador camina lo sigue sin pararse. Durante un diálogo o una
+  cinemática no sigue: lo mueven los pasos; al terminar, se queda del lado donde lo dejaron. El paso `acompana`
   lo cambia o lo quita; ese cambio todavía no se guarda en la partida.
+- **Quién se dibuja encima:** entre hojas paradas (personajes y decorado `parado` o `colgado`), la que pisa más
+  cerca de la cámara se dibuja encima, medido desde el punto donde pisa cada una y no desde su centro: si no, un
+  árbol alto detrás del jugador se dibujaba encima de él (`orden-de-lo-transparente.ts`).
+- **Lo que tapa al jugador se aclara:** el escenario sabe quién es el jugador
+  (`Escenario.marcarJugador`, que llama la aplicación al montar el nivel) y, en cada cuadro, aclara hasta 35 % de
+  opacidad cada objeto `parado` que pise más cerca de la cámara que el jugador (o sea, que se dibuja encima de él)
+  y le cubra en la pantalla al menos una cuarta parte de su mitad de arriba (lo bajito que solo le tapa los pies,
+  como una banca o una fuente, no se aclara). A media vuelta del jugador se mide con su ancho completo,
+  para que el objeto no parpadee. Vuelve a su color con la misma suavidad (unas dos décimas de segundo).
+- **Lo `plano` se encima en el orden del mapa:** entre dos objetos `plano` que se cruzan, el que va después en la
+  capa `decorado` se pinta encima. Todos quedan bajo las sombras y los pies de los personajes.
+- **`confeti`** son papelitos (rectángulos que giran), repartidos a lo ancho de lo que ve la cámara y con un tamaño
+  que crece con la distancia, para verse igual en un plano cercano que en uno de 13 metros. `magia` siguen siendo
+  chispas alrededor del punto del efecto.
 - **Caminos:** al cargar el nivel se corta el piso en una rejilla (celdas de un cuarto de metro, sin las huellas
   del decorado `parado`). Con ella, el jugador al tocar un lugar y los pasos `camina` rodean lo que estorba.
   Un `camina` va en línea recta solo si quien camina o su punto están fuera del piso.
@@ -360,6 +566,11 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   con su estado guardado y el host recibe el evento `error`.
 - **Números en el contenido:** `pon` suma y resta (`{ "dinero": { "resta": 10 } }`) y las condiciones comparan
   con un número (`"dinero >= 10"`). Una variable sin valor, o con un valor que no es un número, cuenta como 0.
+- **Variables en los textos:** `{faltan}`, `{falta_o_faltan}` (el verbo que concuerda: «falta el maíz», «faltan las
+  tortillas»), `{cuantos_faltan}`, `{dinero}` y el número de cualquier variable de `estado.variables` o
+  `estado.compartidas` (`{estrellas}`). Otro nombre entre llaves es error de validación.
+- **Textos en las condiciones:** `"premio = pizarron"` pregunta si la variable guarda justo ese texto (lo pone un
+  `pon` o el `otorgar` de un minijuego). Solo con `=`: un texto no es mayor ni menor que otro.
 - **Cada nivel tiene su propio estado.** Un nivel no puede preguntar por las variables de otro, salvo por las
   que los dos declaran en `estado.compartidas`: esas son de la aventura y viajan con la partida (§10).
 - **Todavía no se hace:** que el nivel termine de cargar por detrás mientras se ve un video (§7.4).
@@ -514,9 +725,20 @@ El jugador se mueve de dos formas, que conviven:
   no se puede alcanzar, llega lo más cerca que se pueda. Tocar a un personaje o a un objeto interactivo lo lleva
   junto a él y empieza su diálogo.
 - **Teclado:** mantener oprimida `W` `A` `S` `D` o una flecha lo hace caminar hacia ese lado. El teclado manda
-  sobre el lugar tocado. Durante un diálogo o un minijuego no mueve al jugador.
+  sobre el lugar tocado. Durante un diálogo o un minijuego no mueve al jugador. Contra lo que estorba, el jugador
+  se desliza por su orilla; si va de frente contra algo y a menos de medio metro de lado puede librarlo (un
+  arbusto, una maceta), lo rodea por el lado más cercano en vez de quedarse pegado.
 
 En los diálogos, `Enter` o la barra espaciadora siguen la línea, y las teclas `1` a `9` eligen una opción.
+Con las tarjetas de opciones a la vista y el foco en ningún lado, `Enter`, la barra espaciadora o `Tab` llevan el
+foco a la primera tarjeta (`Tab` con mayúsculas, a la última) sin elegirla; la segunda vez, la tecla la elige.
+`Enter` y la barra descansan medio segundo al salir las tarjetas y al enfocar una, para que dos oprimidas
+seguidas no elijan la primera tarjeta sin querer.
+Con el foco en un botón o un campo (del host, de un minijuego o una tarjeta de opciones), `Enter` y la barra
+espaciadora son de ese botón: el motor no las cancela ni las usa para hablar o seguir la línea.
+Un toque solo cierra una línea cuando ya lleva medio segundo a la vista, y después de que un toque o una tecla
+cierran la última, hablar descansa medio segundo: la capa de toque se queda atrapando toques y la tecla de
+hablar no pide hablar. Así un doble toque ni se salta una línea ni empieza una plática que nadie pidió.
 
 ## 10. Partida
 

@@ -117,9 +117,9 @@ test('los pasos de escena deben nombrar personajes que existen', () => {
     { tipo: 'desaparece', personaje: 'papa' },
   ]);
 
+  // "anima" también puede nombrar un objeto del decorado: eso se revisa al cruzar con el mapa, no aquí.
   expect(diagnostico.errores).toEqual([
     'cinematicas.intro.pasos[0]: el personaje "papa" no existe en meta.personajes',
-    'cinematicas.intro.pasos[1]: el personaje "papa" no existe en meta.personajes',
     'cinematicas.intro.pasos[2]: el personaje "papa" no existe en meta.personajes',
     'cinematicas.intro.pasos[3]: el personaje "papa" no existe en meta.personajes',
   ]);
@@ -156,6 +156,6 @@ test('los pasos de adentro de "juntos" también se revisan, con su ruta', () => 
   ]);
 
   expect(diagnostico.errores).toEqual([
-    'efecto "chispas" en cinematicas.intro.pasos[0].juntos[1] no existe; los disponibles son: magia, confeti',
+    'efecto "chispas" en cinematicas.intro.pasos[0].juntos[1] no existe; los disponibles son: magia, confeti, destello',
   ]);
 });

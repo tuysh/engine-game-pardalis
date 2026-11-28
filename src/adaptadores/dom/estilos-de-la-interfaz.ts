@@ -167,11 +167,36 @@ export const ESTILOS_DE_LA_INTERFAZ = `
   animation: subir-y-bajar 0.7s ease-in-out infinite alternate;
 }
 
+/* Las señales de lo pendiente: una estrellita amarilla que brinca sobre quien todavía tiene algo para el jugador. */
+.senal-de-pendiente {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.senal-de-pendiente svg {
+  display: block;
+  width: calc(40px * var(--escala));
+  height: calc(40px * var(--escala));
+  fill: #ffd23f;
+  stroke: var(--tinta);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  animation: subir-y-bajar 0.6s ease-in-out infinite alternate;
+}
+
 /* El fundido a negro: una cortina que el motor va oscureciendo o aclarando. */
 .fundido {
   position: absolute;
   inset: 0;
   background: #000000;
+}
+
+/* El destello: un flash blanco de toda la pantalla, como el de una cámara de fotos. */
+.destello {
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
 }
 
 /* Las franjas de cine: una arriba y una abajo. La capa completa atrapa los toques durante la cinemática. */
@@ -187,7 +212,8 @@ export const ESTILOS_DE_LA_INTERFAZ = `
   position: absolute;
   left: 0;
   right: 0;
-  height: 9%;
+  /* El motor pone el alto según mundo.franjas del nivel (franjas-de-cine.ts). */
+  height: var(--alto-de-la-franja, 9%);
   background: #000000;
 }
 
@@ -282,7 +308,10 @@ export const ESTILOS_DE_LA_INTERFAZ = `
   object-fit: contain;
 }
 
+/* Con teclado, la tarjeta enfocada se marca igual de grueso que la resaltada: el borde fino del navegador
+   casi no se distingue del contorno de la tarjeta. */
 .tarjeta:active,
+.tarjeta:focus-visible,
 .tarjeta.resaltada {
   transform: scale(1.07);
   border-color: var(--acento);
@@ -333,8 +362,13 @@ export const ESTILOS_DE_LA_INTERFAZ = `
     transition: none;
   }
   .flecha svg,
-  .aviso svg {
+  .aviso svg,
+  .senal-de-pendiente svg {
     animation: none;
+  }
+  /* Con menos movimiento, el flash es más suave: un golpe de blanco total puede molestar. */
+  .destello {
+    background: rgb(255 255 255 / 55%);
   }
 }
 `;

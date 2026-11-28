@@ -1,6 +1,8 @@
 // Ayudas para crear los elementos de la interfaz. Los textos siempre se ponen con `textContent`,
 // que nunca los interpreta como HTML: así un texto de un nivel no puede meter etiquetas en la página.
 
+import type { Idioma } from '../../dominio/idioma.ts';
+
 const ESPACIO_SVG = 'http://www.w3.org/2000/svg';
 
 /** Crea un elemento vacío que empieza oculto. */
@@ -16,6 +18,13 @@ export function crearConTexto(etiqueta: string, clase: string, texto: string): H
   const elemento = document.createElement(etiqueta);
   elemento.className = clase;
   elemento.textContent = texto;
+  return elemento;
+}
+
+/** Crea un elemento con un texto en ese idioma (atributo `lang`), para que un lector de pantalla lo pronuncie bien. */
+export function crearEnIdioma(etiqueta: string, clase: string, texto: string, idioma: Idioma): HTMLElement {
+  const elemento = crearConTexto(etiqueta, clase, texto);
+  elemento.lang = idioma;
   return elemento;
 }
 

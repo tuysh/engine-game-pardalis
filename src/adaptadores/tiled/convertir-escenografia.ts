@@ -1,5 +1,7 @@
 // Convierte las capas del mapa que son escenografía: `suelo`, `telones`, `decorado` y `piso`.
 
+import { leerCondicionDeTexto } from '../../dominio/condicion.ts';
+import type { Condicion } from '../../dominio/condicion.ts';
 import type { Punto } from '../../dominio/geometria.ts';
 import { ALTURA_DE_LO_COLGADO_POR_DEFECTO_EN_METROS, CLASES_DE_DECORADO } from '../../dominio/mundo.ts';
 import type { ClaseDeDecorado, Decorado, Suelo, Telon } from '../../dominio/mundo.ts';
@@ -92,9 +94,20 @@ export function convertirDecorado(capa: CapaDeTiled, conversion: Conversion): De
       huella: rectanguloEnMetros(objeto, conversion),
       alturaEnMetros,
       id: textoDePropiedad(objeto.propiedades, 'id'),
+      visibleCuando: leerVisibleCuando(objeto),
     });
   }
   return decorado;
+}
+
+/**
+ * La propiedad `visibleCuando`: una condición escrita como texto, igual que en el contenido
+ * (`"no tengo verduras"`, `"objetivosCompletos"`). Que sus variables existan se revisa al cruzar con el contenido.
+ */
+function leerVisibleCuando(objeto: ObjetoDeTiled): Condicion | undefined {
+  const texto = textoDePropiedad(objeto.propiedades, 'visibleCuando');
+  if (texto === undefined) return undefined;
+  return leerCondicionDeTexto(texto);
 }
 
 /** Cada objeto de `piso` es un polígono de 3 o más vértices, o un rectángulo. */

@@ -11,6 +11,7 @@ import { leerCondicionDeTexto } from '../dominio/condicion.ts';
 import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from '../dominio/contenido.ts';
 import type { VariablesDeEstado } from '../dominio/estado.ts';
 import type { Nivel } from '../dominio/nivel.ts';
+import type { Minijuego } from '../puertos/minijuego.ts';
 import { jugarNivel } from './jugar-nivel.ts';
 
 /**
@@ -74,7 +75,11 @@ const NIVEL: Nivel = {
 };
 
 /** Pone a jugar un nivel con adaptadores falsos y anota en listas todo lo que el nivel avisa. */
-async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
+async function empezar(
+  nivel: Nivel,
+  variablesGuardadas?: VariablesDeEstado,
+  minijuegos: Readonly<Record<string, Minijuego>> = {},
+) {
   const escenario = new EscenarioDeMemoria();
   const interfaz = new InterfazDeMemoria();
   const audio = new AudioDeMemoria();
@@ -84,10 +89,13 @@ async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
   const objetivosCumplidos: string[] = [];
   const salidas: string[] = [];
   const fallas: unknown[] = [];
+  const dialogos: string[] = [];
+  /** Los avisos de diálogo, estado y minijuego en el orden en que llegaron. */
+  const cronologia: string[] = [];
 
   const ubicacion = { direccionDelNivel: '/niveles/barrio/nivel.json', cargador: new CargadorDeMemoria({}) };
   const nivelEnJuego = await jugarNivel(
-    { nivel, ubicacion, idiomaBase: 'es', minijuegos: {}, variablesGuardadas },
+    { nivel, ubicacion, idiomaBase: 'es', minijuegos, variablesGuardadas },
     { escenario, interfaz, audio, video, controles, reloj, azar: () => 0 },
     {
       alCumplirObjetivo: (objetivo) => objetivosCumplidos.push(objetivo),
@@ -96,12 +104,23 @@ async function empezar(nivel: Nivel, variablesGuardadas?: VariablesDeEstado) {
       alFallar: (error) => fallas.push(error),
       alEmpezarCinematica: () => {},
       alTerminarCinematica: () => {},
-      alCambiarElEstado: () => {},
-      alEmpezarMinijuego: () => {},
-      alTerminarMinijuego: () => {},
+      alEmpezarDialogo: ({ origen, id }) => {
+        dialogos.push(`inicio ${origen} ${id}`);
+        cronologia.push(`dialogo inicio ${id}`);
+      },
+      alTerminarDialogo: ({ origen, id }) => {
+        dialogos.push(`fin ${origen} ${id}`);
+        cronologia.push(`dialogo fin ${id}`);
+      },
+      alCambiarElEstado: (cambios) => cronologia.push(`estado ${JSON.stringify(cambios)}`),
+      alEmpezarMinijuego: (nombre) => cronologia.push(`minijuego inicio ${nombre}`),
+      alTerminarMinijuego: (nombre, cierre) => {
+        cronologia.push(`minijuego fin ${nombre} ${cierre.exito} ${JSON.stringify(cierre.cambios)}`);
+      },
     },
   );
-  return { nivelEnJuego, escenario, interfaz, audio, controles, reloj, objetivosCumplidos, salidas, fallas };
+  const avisos = { objetivosCumplidos, salidas, fallas, dialogos, cronologia };
+  return { nivelEnJuego, escenario, interfaz, audio, controles, reloj, ...avisos };
 }
 
 test('al empezar, monta la escenografía con la dirección y el tamaño en metros de cada imagen', async () => {
@@ -128,6 +147,12 @@ test('pone en el escenario a los NPCs del mapa y al jugador en su inicio', async
 
   expect(escenario.personajes.get('tortu')).toEqual({ posicion: { x: 6, y: 2 }, mira: 'izquierda', sePuedeTocar: true });
   expect(escenario.personajes.get('tommy')).toEqual({ posicion: { x: 2, y: 3 }, mira: 'derecha', sePuedeTocar: false });
+});
+
+test('el escenario sabe quién es el jugador, para que el decorado cerca de la cámara no lo tape', async () => {
+  const { escenario } = await empezar(NIVEL);
+
+  expect(escenario.idDelJugador).toBe('tommy');
 });
 
 test('tocar el piso hace caminar al jugador hacia ahí, cuadro tras cuadro', async () => {
@@ -184,6 +209,65 @@ test('cuando un diálogo cumple un objetivo, el nivel avisa y la variable queda 
 
   expect(objetivosCumplidos).toEqual(['tortillas']);
   expect(nivelEnJuego.leerVariables()).toEqual({ 'charlas.tortu': true, tortillas: true });
+});
+
+test('un diálogo con un personaje avisa al empezar y al terminar, con quién', async () => {
+  const { escenario, interfaz, reloj, dialogos } = await empezar(NIVEL);
+
+  escenario.simularToque({ tipo: 'personaje', id: 'tortu' });
+  await reloj.avanzar(3);
+  expect(dialogos).toEqual(['inicio npc tortu']);
+
+  interfaz.simularToqueParaSeguir();
+  await reloj.avanzar(0.1);
+  expect(dialogos).toEqual(['inicio npc tortu', 'fin npc tortu']);
+});
+
+test('un minijuego dentro de un diálogo otorga una sola vez, y avisa su fin ya con el estado nuevo', async () => {
+  // Doña Tortu cobra con un minijuego que resta 15 pesos: si lo que otorga se aplicara dos veces, quedarían 70.
+  const nivelConCobro: Nivel = {
+    ...NIVEL,
+    contenido: {
+      ...NIVEL.contenido,
+      estado: { objetivos: ['tortillas'], variables: ['dinero'], lista: {} },
+      npcs: { tortu: { dialogo: [{ pasos: [{ tipo: 'juego', nombre: 'Cobro', config: undefined }] }] } },
+    },
+  };
+  const Cobro: Minijuego = async () => ({ exito: true, otorgar: { dinero: { resta: 15 }, tortillas: true } });
+  const { nivelEnJuego, escenario, reloj, cronologia } = await empezar(nivelConCobro, { dinero: 100 }, { Cobro });
+
+  escenario.simularToque({ tipo: 'personaje', id: 'tortu' });
+  await reloj.avanzar(3);
+
+  expect(nivelEnJuego.leerVariables()).toMatchObject({ dinero: 85, tortillas: true });
+  expect(cronologia).toEqual([
+    'dialogo inicio tortu',
+    'estado {"charlas.tortu":true}',
+    'minijuego inicio Cobro',
+    'estado {"dinero":85,"tortillas":true}',
+    'minijuego fin Cobro true {"dinero":85,"tortillas":true}',
+    'dialogo fin tortu',
+  ]);
+});
+
+test('un interactivo y una salida cerrada también avisan su diálogo', async () => {
+  const { nivelEnJuego, escenario, interfaz, reloj, dialogos } = await empezar(NIVEL);
+
+  escenario.simularToque({ tipo: 'decorado', id: 'comal' });
+  await reloj.avanzar(5);
+  interfaz.simularToqueParaSeguir();
+  await reloj.avanzar(0.1);
+  escenario.simularToque({ tipo: 'piso', punto: { x: 9.5, y: 3.5 } });
+  await reloj.avanzar(5);
+  nivelEnJuego.interrumpir();
+  await reloj.avanzar(0.1);
+
+  expect(dialogos).toEqual([
+    'inicio interactivo comal',
+    'fin interactivo comal',
+    'inicio salida undefined',
+    'fin salida undefined',
+  ]);
 });
 
 test('al tocar un objeto interactivo, el jugador camina hasta quedar frente a él y lo usa', async () => {
@@ -306,7 +390,7 @@ test('al entrar a una zona con grupo, el jugador comenta sin dejar de poder cami
   escenario.simularToque({ tipo: 'piso', punto: { x: 4, y: 3 } });
   await reloj.avanzar(0.6);
 
-  expect(interfaz.globo).toEqual({ texto: 'Wow!', traduccion: '¡Qué colorido!', palabra: undefined });
+  expect(interfaz.globo).toEqual({ texto: 'Wow!', idioma: 'en', traduccion: '¡Qué colorido!', palabra: undefined });
   // El globo de un comentario no atrapa toques: el jugador puede seguir caminando.
   expect(interfaz.hayQuienEscuchaToques).toBe(false);
 });
@@ -327,7 +411,7 @@ test('un diálogo que empieza reemplaza el comentario, y el comentario no le bor
       },
     },
   };
-  const { escenario, interfaz, reloj } = await empezar(nivelConZona);
+  const { escenario, interfaz, reloj, dialogos } = await empezar(nivelConZona);
   await reloj.avanzar(0.016);
   expect(interfaz.globo?.texto).toBe('Wow!');
 
@@ -335,6 +419,8 @@ test('un diálogo que empieza reemplaza el comentario, y el comentario no le bor
   await reloj.avanzar(3);
 
   expect(interfaz.globo?.texto).toBe('¡Aquí tienes!');
+  // El comentario avisa su fin antes de que el diálogo avise su inicio: nunca se enciman.
+  expect(dialogos).toEqual(['inicio comentario todo', 'fin comentario todo', 'inicio npc tortu']);
 });
 
 test('la flecha de la salida aparece cuando se cumple su condición y apunta a la salida', async () => {
@@ -460,6 +546,34 @@ test('la tecla de hablar no hace nada si no hay nadie cerca, ni durante un diál
   expect(interfaz.globo).toBeUndefined();
 });
 
+test('mientras un minijuego está abierto, la tecla de hablar no empieza otra plática con quien está cerca', async () => {
+  // Doña Tortu abre un minijuego que sigue abierto hasta que la prueba lo cierra.
+  const nivelConMinijuego: Nivel = {
+    ...NIVEL,
+    contenido: {
+      ...NIVEL.contenido,
+      npcs: { tortu: { dialogo: [{ pasos: [{ tipo: 'juego', nombre: 'Comal', config: undefined }] }] } },
+    },
+  };
+  let cerrarElMinijuego = (): void => {};
+  const Comal: Minijuego = () =>
+    new Promise((terminar) => {
+      cerrarElMinijuego = () => terminar({ exito: true });
+    });
+  const { escenario, controles, reloj, dialogos } = await empezar(nivelConMinijuego, undefined, { Comal });
+  escenario.simularToque({ tipo: 'personaje', id: 'tortu' });
+  await reloj.avanzar(3);
+  expect(dialogos).toEqual(['inicio npc tortu']);
+
+  // Enter en un botón del minijuego llega al motor como la tecla de hablar, y doña Tortu sigue cerca.
+  controles.simularTeclaDeHablar();
+  await reloj.avanzar(1);
+  cerrarElMinijuego();
+  await reloj.avanzar(1);
+
+  expect(dialogos).toEqual(['inicio npc tortu', 'fin npc tortu']);
+});
+
 test('pedir hablar con una tecla de movimiento todavía oprimida inicia el diálogo igual', async () => {
   const { escenario, interfaz, controles, reloj } = await empezar(NIVEL);
   escenario.simularToque({ tipo: 'piso', punto: { x: 4.5, y: 2 } });
@@ -505,6 +619,8 @@ test('en modo depuración se ven las guías del mapa, y con la cámara libre act
       alFallar: () => {},
       alEmpezarCinematica: () => {},
       alTerminarCinematica: () => {},
+      alEmpezarDialogo: () => {},
+      alTerminarDialogo: () => {},
       alCambiarElEstado: () => {},
       alEmpezarMinijuego: () => {},
       alTerminarMinijuego: () => {},
@@ -554,6 +670,8 @@ test('mientras cargan las imágenes del nivel, avisa del avance: una vez al empe
       alFallar: () => {},
       alEmpezarCinematica: () => {},
       alTerminarCinematica: () => {},
+      alEmpezarDialogo: () => {},
+      alTerminarDialogo: () => {},
       alCambiarElEstado: () => {},
       alEmpezarMinijuego: () => {},
       alTerminarMinijuego: () => {},
