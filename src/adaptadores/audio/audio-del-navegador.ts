@@ -230,6 +230,8 @@ export class AudioDelNavegador implements Audio {
       reproductor.volume = this.volumenDe(sonando);
       // Sin esto, el navegador cambia la velocidad pero conserva la nota: el tono no subiría.
       reproductor.preservesPitch = false;
+      // Al cargar el archivo, el navegador devuelve `playbackRate` a `defaultPlaybackRate`: hay que poner los dos.
+      reproductor.defaultPlaybackRate = reproduccion.tono;
       reproductor.playbackRate = reproduccion.tono;
       reproductor.src = direccion;
       // `play()` rechaza si el archivo no sirve o si todavía no hubo un toque que desbloquee el sonido.
