@@ -4,8 +4,9 @@
 // En vez de pedir que se mueva el dibujo, mientras una pieza esté entre la cámara y el jugador y lo cubra,
 // se aclara poco a poco hasta dejarlo ver; cuando ya no lo tapa, vuelve a verse completa.
 //
-// «Lo tapa» se mide en la pantalla: cuánto del rectángulo que ocupa el jugador queda dentro del rectángulo
-// que ocupa la pieza. Solo cuentan las piezas que están más cerca de la cámara que el jugador, medido igual que
+// «Lo tapa» se mide en la pantalla: cuánto de la mitad de arriba del jugador (cabeza y cuerpo) queda dentro del
+// rectángulo que ocupa la pieza. Lo bajito que solo le tapa los pies (una banca, una fuente) no se aclara: el
+// jugador se sigue viendo, y una banca medio transparente cada vez que pasa detrás se vería rara. Solo cuentan las piezas que están más cerca de la cámara que el jugador, medido igual que
 // el orden de dibujo (orden-de-lo-transparente.ts): desde el punto donde pisa cada hoja. Así solo se aclara
 // lo que de verdad se dibuja encima del jugador.
 
@@ -19,6 +20,8 @@ const OPACIDAD_MIENTRAS_TAPA = 0.35;
 const CAMBIO_DE_OPACIDAD_POR_SEGUNDO = 3.5;
 /** Qué parte del jugador (de su rectángulo en la pantalla) debe quedar cubierta para que la pieza se aclare. */
 const PARTE_CUBIERTA_QUE_CUENTA = 0.25;
+/** Qué parte del alto del jugador, contando desde su cabeza, es la que no debe quedar tapada. */
+const PARTE_DE_ARRIBA_DEL_JUGADOR = 0.5;
 
 /** Un rectángulo de la pantalla, en la medida de Three.js: de -1 a 1 en cada eje. */
 interface RectanguloEnPantalla {
@@ -52,7 +55,8 @@ export class DecoradoQueSeTransparenta {
     let rectanguloDelJugador: RectanguloEnPantalla | undefined;
     let profundidadDelJugador = 0;
     if (hojaDelJugador !== undefined) {
-      rectanguloDelJugador = rectanguloEnPantallaDe(cajaDeLaHojaSinVoltear(hojaDelJugador), camara);
+      const rectanguloCompleto = rectanguloEnPantallaDe(cajaDeLaHojaSinVoltear(hojaDelJugador), camara);
+      rectanguloDelJugador = soloLaParteDeArriba(rectanguloCompleto, PARTE_DE_ARRIBA_DEL_JUGADOR);
       profundidadDelJugador = profundidadAnteLaCamara(hojaDelJugador, camara);
     }
 
@@ -127,6 +131,12 @@ function rectanguloEnPantallaDe(caja: Box3, camara: Camera): RectanguloEnPantall
     }
   }
   return { izquierda, derecha, abajo, arriba };
+}
+
+/** La parte de arriba de un rectángulo: `parte` es qué tanto de su alto se queda, contando desde arriba. */
+function soloLaParteDeArriba(rectangulo: RectanguloEnPantalla, parte: number): RectanguloEnPantalla {
+  const alto = rectangulo.arriba - rectangulo.abajo;
+  return { ...rectangulo, abajo: rectangulo.arriba - alto * parte };
 }
 
 /** Qué parte de `tapado` queda dentro de `encima`: 0 = nada, 1 = todo. */

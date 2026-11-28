@@ -345,7 +345,8 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
 - **Lo que tapa al jugador se aclara:** el escenario sabe quién es el jugador
   (`Escenario.marcarJugador`, que llama la aplicación al montar el nivel) y, en cada cuadro, aclara hasta 35 % de
   opacidad cada objeto `parado` que pise más cerca de la cámara que el jugador (o sea, que se dibuja encima de él)
-  y le cubra al menos una cuarta parte en la pantalla. A media vuelta del jugador se mide con su ancho completo,
+  y le cubra en la pantalla al menos una cuarta parte de su mitad de arriba (lo bajito que solo le tapa los pies,
+  como una banca o una fuente, no se aclara). A media vuelta del jugador se mide con su ancho completo,
   para que el objeto no parpadee. Vuelve a su color con la misma suavidad (unas dos décimas de segundo).
 - **Lo `plano` se encima en el orden del mapa:** entre dos objetos `plano` que se cruzan, el que va después en la
   capa `decorado` se pinta encima. Todos quedan bajo las sombras y los pies de los personajes.
