@@ -308,7 +308,10 @@ export const ESTILOS_DE_LA_INTERFAZ = `
   object-fit: contain;
 }
 
+/* Con teclado, la tarjeta enfocada se marca igual de grueso que la resaltada: el borde fino del navegador
+   casi no se distingue del contorno de la tarjeta. */
 .tarjeta:active,
+.tarjeta:focus-visible,
 .tarjeta.resaltada {
   transform: scale(1.07);
   border-color: var(--acento);

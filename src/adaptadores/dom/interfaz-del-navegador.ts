@@ -17,6 +17,7 @@ import { GloboDeDialogo } from './globo-de-dialogo.ts';
 import { SenalEnPantalla } from './senal-en-pantalla.ts';
 import { SenalesDePendientes } from './senales-de-pendientes.ts';
 import { TarjetasDeOpciones } from './tarjetas-de-opciones.ts';
+import { esTeclaDeUnControl } from './tecla-de-un-control.ts';
 
 /** Cuánto crece todo en el modo proyección, para que se lea desde el fondo del salón. */
 const ESCALA_NORMAL = 1;
@@ -280,7 +281,10 @@ export class InterfazDelNavegador implements Interfaz {
     }
   };
 
-  /** Con teclado: Enter o la barra espaciadora siguen el diálogo, y las teclas 1 a 9 eligen una tarjeta. */
+  /**
+   * Con teclado: Enter o la barra espaciadora siguen el diálogo, y las teclas 1 a 9 eligen una tarjeta.
+   * Las tarjetas son botones: con una enfocada, Enter o la barra la eligen solas, sin pasar por aquí.
+   */
   private readonly alOprimirUnaTecla = (evento: KeyboardEvent): void => {
     if (this.opciones.cantidad > 0) {
       const numero = Number(evento.key);
@@ -292,6 +296,9 @@ export class InterfazDelNavegador implements Interfaz {
       return;
     }
 
+    // Enter o la barra espaciadora en un botón (del host, de un minijuego o el de saltar) oprimen ese botón:
+    // cancelarlas para seguir el diálogo lo dejaría sin funcionar con teclado.
+    if (esTeclaDeUnControl(evento.composedPath())) return;
     const hayAlguienEscuchando = this.funcionesParaSeguir.length > 0;
     if (hayAlguienEscuchando && (evento.key === 'Enter' || evento.key === ' ')) {
       evento.preventDefault();
