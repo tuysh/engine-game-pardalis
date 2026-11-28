@@ -228,7 +228,7 @@ Devuelve un control con dos métodos:
 
 - `cambiar(clave)`: pasa a otra animación en la misma imagen, desde su primer cuadro. Con él se alterna entre
   estar quieto (`spr_tepo`) y hablar (`tepo_habla`). Una clave que no existe se ignora con una advertencia.
-- `detener()`: la deja en el cuadro que mostraba.
+- `detener()`: la deja en el cuadro que mostraba. Después, `cambiar` ya no hace nada.
 
 ```js
 const tepo = document.createElement('img');
@@ -247,6 +247,7 @@ animacion.cambiar('spr_tepo');
 - El tiempo es el del juego: si el host pausa el juego, la animación también se pausa.
 - Una imagen fija se pone y no se anima, así que `animar` sirve para cualquier imagen.
 - `imagen` puede ser cualquier objeto con `src` (`ImagenAnimable`), no solo un `<img>`.
+- Con una clave que no es imagen del nivel, `animar` avisa en la consola y deja la imagen como estaba.
 
 Para dibujar una animación por su cuenta (en un `<canvas>`, en una textura de Three.js) o para precargar sus
 cuadros, `assets.cuadros(clave)` entrega `{ urls, cuadrosPorSegundo }`: `urls` ya viene en el orden de la
@@ -257,6 +258,11 @@ y una clave que no es imagen del nivel trae `urls: []` y una advertencia.
 // El primer cambio de cuadro no parpadea si cada dibujo ya está en la memoria del navegador.
 for (const url of new Set(assets.cuadros('tepo_habla').urls)) new Image().src = url;
 ```
+
+Un host que arma a mano un `ContextoDeMinijuego` (por ejemplo, una mesa de pruebas que abre un minijuego sin
+el motor) ahora tiene que darle también `assets.cuadros` y `assets.animar`; TypeScript lo señala. Para una
+prueba basta con poner el primer cuadro: `animar: (imagen, clave) => { imagen.src = url(clave); return { cambiar:
+(otra) => { imagen.src = url(otra); }, detener: () => {} }; }`.
 
 ## 7. Cinemáticas
 

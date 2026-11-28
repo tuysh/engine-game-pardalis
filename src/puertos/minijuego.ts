@@ -57,6 +57,7 @@ export interface AnimacionDeImagen {
    * Pasa a otra clave en la misma imagen, desde su primer cuadro. Sirve para alternar poses:
    * de `spr_tepo` (quieto, parpadea) a `tepo_habla` (mueve la boca) y de vuelta.
    * Una clave que no es imagen del nivel se ignora con una advertencia y la animación sigue como estaba.
+   * Después de `detener()` ya no hace nada.
    */
   cambiar(clave: string): void;
   /** Deja de animar. La imagen se queda en el cuadro que mostraba. Llamarla dos veces no hace nada. */
@@ -84,6 +85,7 @@ export interface AssetsParaMinijuego {
    * los personajes del escenario: así parpadean y mueven la boca también dentro del minijuego.
    * Se repite sin fin hasta que se llama a `detener()`, se dispara `senal` o se cierra el minijuego.
    * Una imagen fija solo se pone, sin animar. Volver a animar la misma imagen detiene la animación anterior.
+   * Con una clave que no es imagen del nivel avisa en la consola y deja la imagen como estaba, sin animar.
    * El tiempo es el del juego: si el host pausa el juego, la animación también se pausa.
    *
    * @example
