@@ -37,6 +37,7 @@ export interface PiezasDeLaVozDelHost {
   readonly direccionDeAsset: (clave: string) => string | undefined;
 }
 
+/** Lo que hay detrás de `juego.decir()`: revisa lo que pide el host y lo pone en la fila de voces. */
 export class VozDelHost {
   private readonly piezas: PiezasDeLaVozDelHost;
   /** Corta la frase del host que se esté diciendo. */
@@ -47,6 +48,10 @@ export class VozDelHost {
     this.piezas = piezas;
   }
 
+  /**
+   * Dice `texto` cuando le toque. Recibe `unknown` porque el host puede llamarla desde JavaScript sin tipos;
+   * lo que no sirva rechaza con un `ErrorDeEscenario` que nombra `juego.decir`.
+   */
   async decir(texto: unknown, opciones: unknown): Promise<void> {
     const frase = this.leerFrase(texto, opciones);
     this.cortarLaFraseAnterior();

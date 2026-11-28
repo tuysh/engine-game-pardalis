@@ -117,14 +117,20 @@ function leerOpcionesDeSonido(clave: string, opciones: unknown): OpcionesDeSonid
   if (esNumeroEntre(volumenPedido, VOLUMEN_MINIMO, VOLUMEN_MAXIMO)) {
     volumen = volumenPedido;
   } else if (volumenPedido !== undefined) {
-    console.warn(`[escenario-engine] un minijuego tocó "${clave}" con un volumen que no va de 0 a 1; se ignora`);
+    console.warn(
+      `[escenario-engine] un minijuego tocó "${clave}" con un volumen que no va de ` +
+        `${VOLUMEN_MINIMO} a ${VOLUMEN_MAXIMO}; se ignora`,
+    );
   }
   let tono: number | undefined;
   const tonoPedido = opciones['tono'];
   if (esNumeroEntre(tonoPedido, TONO_MINIMO_DE_UN_SONIDO, TONO_MAXIMO_DE_UN_SONIDO)) {
     tono = tonoPedido;
   } else if (tonoPedido !== undefined) {
-    console.warn(`[escenario-engine] un minijuego tocó "${clave}" con un tono que no va de 0.25 a 4; se ignora`);
+    console.warn(
+      `[escenario-engine] un minijuego tocó "${clave}" con un tono que no va de ` +
+        `${TONO_MINIMO_DE_UN_SONIDO} a ${TONO_MAXIMO_DE_UN_SONIDO}; se ignora`,
+    );
   }
   return { volumen, tono };
 }
