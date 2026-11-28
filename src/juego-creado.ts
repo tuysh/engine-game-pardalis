@@ -114,6 +114,10 @@ export class JuegoCreado implements Juego {
     return this.piezas.vozDelHost.decir(texto, opciones);
   }
 
+  callar(): void {
+    this.piezas.vozDelHost.callar();
+  }
+
   on<Evento extends NombreDeEvento>(evento: Evento, funcion: (dato: EventosDeJuego[Evento]) => void): () => void {
     return this.piezas.emisor.on(evento, funcion);
   }

@@ -7,8 +7,9 @@
 //
 // Reglas:
 // - Del host se dice una frase a la vez: una frase nueva corta la anterior del host (no las del juego).
-// - La promesa termina cuando acaba de hablar, cuando la corta otra frase del host o cuando se destruye
-//   el juego. Rechaza solo si el host la llamó mal, con un `ErrorDeEscenario` que nombra `juego.decir`.
+// - `juego.callar()` corta la frase del host que se esté diciendo o esperando su turno; nunca las del juego.
+// - La promesa termina cuando acaba de hablar, cuando la corta otra frase del host, `juego.callar()` o la
+//   destrucción del juego. Rechaza solo si el host la llamó mal, con un `ErrorDeEscenario` que nombra `juego.decir`.
 // - Con `quien`, la frase suena con la voz de ese personaje del nivel (`meta.personajes.<id>.voz`). Si además
 //   llega `voz`, gana `voz`: es lo más concreto que pidió el host. Un id que el nivel no tiene no es un error
 //   (el host puede pasar de un nivel a otro con la misma tabla): se avisa una vez y se usa la voz normal.
@@ -78,6 +79,15 @@ export class VozDelHost {
     } finally {
       this.destruccion.signal.removeEventListener('abort', cortar);
     }
+  }
+
+  /**
+   * Corta la frase del host que se esté diciendo o que espere su turno; su promesa termina en ese momento.
+   * Las líneas del juego siguen como iban. Sin una frase del host, no hace nada.
+   */
+  callar(): void {
+    this.cortarLaFraseAnterior();
+    this.cortarLaFraseAnterior = () => {};
   }
 
   /** Corta lo que el host esté diciendo y ya no dice nada más. */

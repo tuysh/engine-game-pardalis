@@ -211,8 +211,8 @@ export interface Juego {
   /**
    * Dice un texto en voz alta con la voz del motor. Espera su turno: no se encima con lo que dice el juego
    * ni lo corta. Se oye aunque el juego esté en pausa. Una frase nueva de `juego.decir` corta la anterior.
-   * La promesa termina cuando acaba de hablar (o cuando la corta otra, o al destruir el juego) y rechaza con
-   * `ErrorDeEscenario` solo si los argumentos no sirven.
+   * La promesa termina cuando acaba de hablar (o cuando la corta otra, `juego.callar()` o la destrucción del
+   * juego) y rechaza con `ErrorDeEscenario` solo si los argumentos no sirven.
    * Una `clave` que el nivel no tiene se avisa en la consola una sola vez por nivel.
    *
    * @example
@@ -221,6 +221,14 @@ export interface Juego {
    * await juego.decir('corn', { idioma: 'en', voz: { tono: 1.3 } });
    */
   decir(texto: string, opciones: OpcionesDeVoz): Promise<void>;
+  /**
+   * Calla lo que el host está diciendo con `juego.decir()`, y también la frase del host que esperaba su turno;
+   * sus promesas terminan en ese momento. Nunca corta las líneas del juego. Sin nada del host, no hace nada.
+   *
+   * @example
+   * botonCerrarCuaderno.addEventListener('click', () => juego.callar());
+   */
+  callar(): void;
   /** Modo salón de clases. Se puede cambiar sin reiniciar. */
   proyeccion: boolean;
   /** Id del nivel actual. */
