@@ -7,6 +7,7 @@
 //
 // Cada cosa lleva una `descripcion` (por ejemplo: `objeto #12 "Doña Tortu"`) para nombrarla en un mensaje de error.
 
+import type { Condicion } from './condicion.ts';
 import type { Forma } from './forma.ts';
 import type { Punto, Rectangulo } from './geometria.ts';
 
@@ -50,6 +51,11 @@ export interface Decorado {
   readonly alturaEnMetros: number;
   /** Si existe, el objeto se puede tocar: su diálogo está en `interactivos` del contenido. */
   readonly id?: string;
+  /**
+   * El objeto solo se ve mientras esto se cumple (un letrero que se quita al comprar, una flecha en el piso
+   * que aparece al terminar el mandado). `undefined` = se ve siempre.
+   */
+  readonly visibleCuando?: Condicion;
 }
 
 /** Dónde está parado un personaje al empezar el nivel. */

@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test';
+import { leerCondicionDeTexto } from './condicion.ts';
 import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from './contenido.ts';
 import type { Contenido } from './contenido.ts';
 import { crearDiagnostico } from './diagnostico.ts';
@@ -280,5 +281,28 @@ test('quien reacciona a una línea debe estar en el escenario', () => {
   expect(revisar(contenido, MUNDO).errores).toEqual([
     'secuencias.saludo[0].reacciona: "mama" nunca está en el escenario: no es el jugador, ni un NPC del mapa, ' +
       'ni entra con un paso "aparece"',
+  ]);
+});
+
+test('el visibleCuando de un objeto del decorado usa variables declaradas; si es "parado", se advierte', () => {
+  const letrero = {
+    descripcion: 'objeto #7 "Letrero"',
+    clase: 'colgado' as const,
+    asset: 'letrero',
+    huella: { x: 3, y: 1, ancho: 1, alto: 0.1 },
+    alturaEnMetros: 2,
+    visibleCuando: leerCondicionDeTexto('no tengo verduras'),
+  };
+  const puesto = { ...letrero, descripcion: 'objeto #8 "Puesto"', clase: 'parado' as const, visibleCuando: leerCondicionDeTexto('charlas.tortu') };
+
+  const diagnostico = revisar(CONTENIDO, { ...MUNDO, decorado: [...MUNDO.decorado, letrero, puesto] });
+
+  expect(diagnostico.errores).toEqual([
+    'condición "verduras" usada en mapa: objeto #7 "Letrero" (decorado).visibleCuando: ' +
+      'no está en estado.objetivos, ni en estado.variables, ni en estado.compartidas',
+  ]);
+  expect(diagnostico.advertencias).toEqual([
+    'mapa: objeto #8 "Puesto" (decorado) es "parado" y lleva visibleCuando: ' +
+      'mientras no se ve, su huella sigue bloqueando el paso',
   ]);
 });

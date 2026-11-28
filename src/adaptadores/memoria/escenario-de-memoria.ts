@@ -35,6 +35,10 @@ export class EscenarioDeMemoria implements Escenario {
   readonly personajes = new Map<string, PersonajeRecordado>();
   /** El último dibujo que se le cambió a cada personaje, por id. Quien nunca cambió de dibujo no aparece. */
   readonly dibujos = new Map<string, DibujoRecordado>();
+  /** Los lugares, en `Escenografia.decorado`, de los objetos que están ocultos ahora. */
+  readonly decoradoOculto = new Set<number>();
+  /** El último dibujo que se le cambió a cada objeto del decorado, por su lugar en la lista. */
+  readonly dibujosDelDecorado = new Map<number, DibujoRecordado>();
   /** Las imágenes que se pidió descargar por adelantado. */
   readonly imagenesPrecargadas: ImagenDeEscena[] = [];
   /** El último punto al que se apuntó la cámara. */
@@ -62,6 +66,8 @@ export class EscenarioDeMemoria implements Escenario {
     // Una escenografía nueva es un lugar nuevo: los personajes del lugar anterior ya no están.
     this.personajes.clear();
     this.dibujos.clear();
+    this.decoradoOculto.clear();
+    this.dibujosDelDecorado.clear();
 
     if (escenografia.suelo !== undefined) {
       this.avisarDeLaCargaDe(escenografia.suelo.imagen);
@@ -110,6 +116,22 @@ export class EscenarioDeMemoria implements Escenario {
     if (this.personajes.has(id)) {
       this.dibujos.set(id, { imagen, repite: opciones.repite });
     }
+  }
+
+  cambiarVisibilidadDelDecorado(indice: number, opciones: { readonly esVisible: boolean }): void {
+    if (opciones.esVisible) {
+      this.decoradoOculto.delete(indice);
+    } else {
+      this.decoradoOculto.add(indice);
+    }
+  }
+
+  async ponerDibujoDeDecorado(
+    indice: number,
+    imagen: ImagenDeEscena,
+    opciones: { readonly repite: boolean },
+  ): Promise<void> {
+    this.dibujosDelDecorado.set(indice, { imagen, repite: opciones.repite });
   }
 
   async precargar(imagenes: readonly ImagenDeEscena[]): Promise<void> {

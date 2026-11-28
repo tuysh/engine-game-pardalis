@@ -225,3 +225,12 @@ test('una capa con el tipo equivocado se reporta', () => {
     'mapa: la capa "piso" debe ser una capa de objetos',
   ]);
 });
+
+test('la propiedad "visibleCuando" de un objeto de decorado se lee como una condición', () => {
+  const letrero = { id: 9, type: 'colgado', x: 0, y: 300, width: 100, height: 10, properties: propiedades({ asset: 'letrero', visibleCuando: 'no tengo verduras' }) };
+
+  const { mundo, diagnostico } = leer(mapaCon([capaDeObjetos('decorado', [letrero])]));
+
+  expect(diagnostico.errores).toEqual([]);
+  expect(mundo?.decorado[0]?.visibleCuando).toEqual({ tipo: 'no', condicion: { tipo: 'variable', nombre: 'verduras' } });
+});

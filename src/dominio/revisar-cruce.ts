@@ -5,6 +5,7 @@
 // - Cada diálogo de `interactivos` tiene su objeto en el mapa, y cada objeto interactivo su diálogo.
 // - Hay piso, y si el nivel tiene jugador, exactamente un inicio dentro del piso.
 // - Los puntos de los pasos `camina`, los grupos de las zonas y la salida existen en los dos lados.
+// - La condición `visibleCuando` de un objeto del decorado usa variables que el contenido declara.
 //
 // Lo que nombran los pasos de escena, los planos y las cinemáticas se cruza en revisar-cruce-de-escena.ts.
 
@@ -15,6 +16,7 @@ import type { Mundo } from './mundo.ts';
 import type { PasoDeCaminata } from './paso.ts';
 import { recorrerPasos } from './recorrer-pasos.ts';
 import { revisarCruceDeEscena } from './revisar-cruce-de-escena.ts';
+import { reunirVariablesDeclaradas, revisarCondicion } from './revisar-variables.ts';
 
 export function revisarCruce(contenido: Contenido, mundo: Mundo, diagnostico: Diagnostico): void {
   revisarNpcs(contenido, mundo, diagnostico);
@@ -22,6 +24,7 @@ export function revisarCruce(contenido: Contenido, mundo: Mundo, diagnostico: Di
   revisarPisoEInicio(contenido, mundo, diagnostico);
   revisarZonas(contenido, mundo, diagnostico);
   revisarSalida(contenido, mundo, diagnostico);
+  revisarVisibilidadDelDecorado(contenido, mundo, diagnostico);
   revisarCruceDeEscena(contenido, mundo, diagnostico);
 
   recorrerPasos(contenido, {
@@ -139,6 +142,22 @@ function revisarSalida(contenido: Contenido, mundo: Mundo, diagnostico: Diagnost
     diagnostico.advertencias.push(
       `mapa: ${mundo.salida.descripcion} (salida) no hace nada: el contenido no tiene la sección "salida"`,
     );
+  }
+}
+
+/** Las condiciones `visibleCuando` del mapa se escriben igual que las del contenido y usan sus variables. */
+function revisarVisibilidadDelDecorado(contenido: Contenido, mundo: Mundo, diagnostico: Diagnostico): void {
+  const revision = { contenido, variablesDeclaradas: reunirVariablesDeclaradas(contenido), diagnostico };
+  for (const objeto of mundo.decorado) {
+    if (objeto.visibleCuando === undefined) continue;
+    revisarCondicion(objeto.visibleCuando, `mapa: ${objeto.descripcion} (decorado).visibleCuando`, revision);
+    // El piso por donde se camina se calcula una sola vez por nivel: esconder algo no abre el paso.
+    if (objeto.clase === 'parado') {
+      diagnostico.advertencias.push(
+        `mapa: ${objeto.descripcion} (decorado) es "parado" y lleva visibleCuando: ` +
+          'mientras no se ve, su huella sigue bloqueando el paso',
+      );
+    }
   }
 }
 

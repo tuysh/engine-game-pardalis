@@ -25,6 +25,7 @@ import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { crearImagenDeEscena } from './preparar-escena.ts';
 import type { Reparto } from './reparto.ts';
 import { SalidaDelNivel } from './salida-del-nivel.ts';
+import { VisibilidadDelDecorado } from './visibilidad-del-decorado.ts';
 
 /** Un nivel con todas sus piezas ya creadas y conectadas entre sí, listo para ponerse en marcha. */
 export interface NivelArmado {
@@ -44,6 +45,8 @@ export interface NivelArmado {
   readonly salida: SalidaDelNivel;
   readonly flecha: FlechaDeSalida;
   readonly cercania: Cercania;
+  /** Esconde y muestra el decorado que lleva `visibleCuando`. */
+  readonly visibilidad: VisibilidadDelDecorado;
 }
 
 /** Lo que casi todas las piezas de un nivel necesitan para crearse. */
@@ -85,6 +88,9 @@ export async function armarNivel(
   const comentarios = crearComentarios(base, escena);
   const camara = crearCamara(base);
   const escenas = crearEscenas(base, { escena, camara, comentarios, exploracion, acompanante });
+  const visibilidad = new VisibilidadDelDecorado({ decorado: nivel.mundo.decorado, estado, escenario });
+  // Antes del primer cuadro: lo que empieza escondido no debe asomarse ni un instante.
+  visibilidad.actualizar();
 
   return {
     nivel,
@@ -103,7 +109,8 @@ export async function armarNivel(
       alSalir: (destino) => avisos.alSalir(destino),
     }),
     flecha: new FlechaDeSalida({ nivel, estado, escenario, interfaz }),
-    cercania: new Cercania({ nivel, reparto, escenario, interfaz, acompanante }),
+    cercania: new Cercania({ nivel, reparto, escenario, interfaz, acompanante, estado }),
+    visibilidad,
   };
 }
 

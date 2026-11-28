@@ -75,6 +75,21 @@ Lo que se dibuja en el plano es exactamente lo que bloquea: no hay ajustes de «
 Si el `asset` de un objeto es una **animación** (archivos numerados, ver §4), se repite sola todo el tiempo:
 sirve para una tele encendida, una bandera o un foco que parpadea.
 
+#### Decorado que aparece y desaparece (`visibleCuando`)
+
+Con la propiedad de texto `visibleCuando`, un objeto solo se ve mientras se cumple esa condición, escrita igual
+que en el contenido (ver «Condiciones»). Cambia sola en cuanto cambia el estado, también a media cinemática:
+
+| Objeto | `visibleCuando` | Qué pasa |
+| --- | --- | --- |
+| El letrero de «hay verduras» (`colgado`) | `no tengo verduras` | Se quita en cuanto se compran. |
+| Una flecha pintada en el piso (`plano`) | `objetivosCompletos` | Aparece cuando ya se tiene todo. |
+
+- Sus variables deben estar declaradas en el contenido (si no, es error, como en cualquier condición).
+- Mientras no se ve, tampoco se puede tocar ni cuenta como «a la mano».
+- Limitación conocida: el piso por donde se camina se calcula una vez al empezar el nivel, así que un objeto
+  `parado` escondido **sigue bloqueando el paso** (el validador lo advierte). Úsalo en `plano` y `colgado`.
+
 > **Para que el lugar se vea completo:** la cámara de una cinemática puede girar y acercarse, y entonces deja ver
 > lo que hay más allá del fondo. Cierra el lugar con telones también a los lados (como las paredes de la casa
 > de ejemplo) y haz el suelo un poco más grande que el piso por donde se camina.

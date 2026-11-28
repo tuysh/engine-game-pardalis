@@ -145,6 +145,7 @@ function avanzarUnCuadro(armado: NivelArmado, puertos: PuertosParaJugar, segundo
     armado.acompanante.avanzar(segundos);
   }
   armado.camara.actualizar(segundos);
+  armado.visibilidad.actualizar();
   puertos.escenario.dibujar(segundos);
 
   // La flecha se coloca después de dibujar, cuando la cámara ya está en su lugar de este cuadro.
