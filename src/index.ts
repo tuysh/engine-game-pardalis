@@ -11,6 +11,7 @@ export type {
   AvisoDeCinematica,
   AvisoDeDialogo,
   AvisoDeMinijuego,
+  CambiosDeVolumen,
   CambioDeEstado,
   CambioDeNivel,
   EventosDeJuego,
@@ -18,8 +19,10 @@ export type {
   InicioDeMinijuego,
   Juego,
   NombreDeEvento,
+  OpcionesDeVoz,
   PalabraMostrada,
 } from './juego.ts';
+export type { CanalDeAudio, VolumenesPorCanal } from './dominio/volumenes.ts';
 
 export type {
   CambioDeVariable,
@@ -39,6 +42,7 @@ export type {
   AudioParaMinijuego,
   ContextoDeMinijuego,
   Minijuego,
+  OpcionesDeSonidoParaMinijuego,
   ResultadoDeMinijuego,
 } from './puertos/minijuego.ts';
 export type {

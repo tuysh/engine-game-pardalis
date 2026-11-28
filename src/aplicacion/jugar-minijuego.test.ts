@@ -12,6 +12,7 @@ import { jugarMinijuego } from './jugar-minijuego.ts';
 import type { CierreDeMinijuego } from './jugar-minijuego.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { Reparto } from './reparto.ts';
+import { VozEnOrden } from './voz-en-orden.ts';
 
 /** Una escena con adaptadores falsos donde el host registró esos minijuegos. El jugador ya tiene un globo. */
 function crearEscena(minijuegos: Record<string, Minijuego>) {
@@ -274,7 +275,10 @@ test('si la voz sintetizada nunca avisa que terminó, decir termina de todos mod
     });
     return new Promise((resolver) => (terminar = resolver));
   };
-  const { piezas, reloj } = crearEscena({ Verduras });
+  const escena = crearEscena({ Verduras });
+  const reloj = escena.reloj;
+  // El tope de tiempo lo pone la fila de voces, como en el juego (crear.ts).
+  const piezas: PiezasDeEscena = { ...escena.piezas, audio: new VozEnOrden(escena.audio, reloj) };
 
   const juego = jugarMinijuego({ nombre: 'Verduras', config: undefined }, SIN_INTERRUMPIR, piezas);
   await reloj.avanzar(10);
@@ -328,4 +332,22 @@ test('un minijuego interrumpido no otorga nada y avisa que terminó sin éxito',
 
   expect(cierres).toEqual([{ exito: false, cambios: {} }]);
   expect(valorDe(piezas.estado.actual, 'tortillas')).toBeUndefined();
+});
+
+test('el minijuego puede tocar un sonido más bajito o más agudo, y una opción que no sirve se ignora', async () => {
+  const Chiles: Minijuego = async ({ audio }) => {
+    audio.tocar('comal', { tono: 1.2 });
+    audio.tocar('comal', { volumen: 0.3, tono: 9 });
+    audio.tocar('comal');
+    return { exito: true };
+  };
+  const { piezas, audio } = crearEscena({ Chiles });
+
+  await jugarMinijuego({ nombre: 'Chiles', config: undefined }, SIN_INTERRUMPIR, piezas);
+
+  expect(audio.sonidosConOpciones).toEqual([
+    { direccion: '/assets/img/comal.svg', opciones: { volumen: undefined, tono: 1.2 } },
+    { direccion: '/assets/img/comal.svg', opciones: { volumen: 0.3, tono: undefined } },
+    { direccion: '/assets/img/comal.svg', opciones: undefined },
+  ]);
 });

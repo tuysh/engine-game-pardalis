@@ -423,3 +423,39 @@ test('el jugador puede traer acompañante, y el paso "acompana" lo cambia o lo q
     { tipo: 'acompana', personaje: undefined },
   ]);
 });
+
+test('la voz de un personaje se lee con su tono y su velocidad, y lo que falta queda en 1', () => {
+  const lectura = new LectorDeNivelesDeJson().leerContenido({
+    meta: {
+      id: 'mercado',
+      titulo: 'El mercado',
+      personajes: {
+        mama: { idioma: 'es', sprite: 'spr_mama', voz: { tono: 0.9, velocidad: 0.95 } },
+        bobby: { idioma: 'en', sprite: 'spr_bobby', voz: { tono: 1.3 } },
+      },
+    },
+  });
+
+  if (lectura.tipo !== 'leido') throw new Error(`no se pudo leer: ${lectura.errores.join('; ')}`);
+  expect(lectura.valor.meta.personajes['mama']!.voz).toEqual({ tono: 0.9, velocidad: 0.95 });
+  expect(lectura.valor.meta.personajes['bobby']!.voz).toEqual({ tono: 1.3, velocidad: 1 });
+});
+
+test('un tono o una velocidad fuera de sus límites dice cuáles son y qué es lo normal', () => {
+  const errores = erroresDe({
+    meta: {
+      id: 'mercado',
+      titulo: 'El mercado',
+      personajes: {
+        pardi: { idioma: 'es', sprite: 'spr_pardi', voz: { tono: 3, velocidad: 'rápido' } },
+        bobby: { idioma: 'en', sprite: 'spr_bobby', voz: { tono: 1.2, volumen: 1 } },
+      },
+    },
+  });
+
+  expect(errores).toEqual([
+    'meta.personajes.pardi.voz.tono: el tono va de 0.5 (más grave) a 2 (más agudo); 1 es la voz normal',
+    'meta.personajes.pardi.voz.velocidad: la velocidad va de 0.5 (más despacio) a 2 (más rápido); 1 es la voz normal',
+    'meta.personajes.bobby.voz: Llave desconocida: "volumen"',
+  ]);
+});

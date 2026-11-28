@@ -9,7 +9,6 @@
 // Diferencia con la versión 2.0: el texto aparece completo de una vez, no letra por letra.
 
 import type { PasoDeLinea } from '../dominio/paso.ts';
-import { decirSinEsperarDeMas } from './decir-sin-esperar-de-mas.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { ponerPosesDeLinea } from './poses-de-linea.ts';
 
@@ -76,10 +75,12 @@ export async function decirLinea(porDecir: LineaPorDecir, senal: AbortSignal, pi
     if (linea.audio !== undefined) {
       direccionDeLaVoz = piezas.direccionDeAsset(linea.audio);
     }
-    const fraseOriginal = { texto: textoCompleto, idioma: personaje.idioma, direccionDeLaVoz };
-    const resultado = await decirSinEsperarDeMas(fraseOriginal, cierre.signal, piezas);
+    // La voz de quien habla (tono y velocidad) solo se usa en su frase; la traducción la dice la voz normal.
+    const fraseOriginal = { texto: textoCompleto, idioma: personaje.idioma, direccionDeLaVoz, voz: personaje.voz };
+    // En el juego, `piezas.audio` es la fila de voces (voz-en-orden.ts): espera su turno y pone el tope de tiempo.
+    const resultado = await piezas.audio.decir(fraseOriginal, cierre.signal);
     if (traduccion !== undefined && !cierre.signal.aborted) {
-      await decirSinEsperarDeMas({ texto: traduccion, idioma: piezas.idiomaBase }, cierre.signal, piezas);
+      await piezas.audio.decir({ texto: traduccion, idioma: piezas.idiomaBase }, cierre.signal);
     }
 
     let esperaFinalEnSegundos = ESPERA_AL_TERMINAR_LA_VOZ_EN_SEGUNDOS;

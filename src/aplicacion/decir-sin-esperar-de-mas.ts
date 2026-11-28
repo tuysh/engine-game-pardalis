@@ -1,6 +1,7 @@
 // Dice una frase en voz alta y espera a que termine, con un tope de tiempo para la voz sintetizada.
-// Lo usan las líneas de un diálogo y los minijuegos: en los dos casos alguien espera a que la voz acabe,
-// y una voz que nunca avisa que terminó no debe dejarlo esperando para siempre.
+// Lo usa la fila de voces (voz-en-orden.ts) cuando a una frase le toca hablar: quien la pidió (una línea de
+// diálogo, un minijuego, el host) espera a que la voz acabe, y una voz que nunca avisa que terminó no debe
+// dejarlo esperando para siempre.
 
 import type { Audio, FrasePorDecir, ResultadoDeDecir } from '../puertos/audio.ts';
 import type { Reloj } from '../puertos/reloj.ts';
@@ -15,7 +16,8 @@ const SEGUNDOS_MINIMOS_DEL_TOPE_DE_VOZ = 6;
 
 /** Lo que hace falta para decir una frase. */
 export interface PiezasParaDecir {
-  readonly audio: Audio;
+  /** Solo hace falta quien diga la frase. */
+  readonly audio: Pick<Audio, 'decir'>;
   readonly reloj: Reloj;
 }
 

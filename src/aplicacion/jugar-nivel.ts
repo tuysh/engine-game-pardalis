@@ -35,6 +35,7 @@ export async function jugarNivel(
     leerEstado: () => armado.estado.actual,
     interrumpir: () => armado.escenas.interrumpir(),
     reproducirCinematica: (id) => armado.escenas.reproducirCinematica(id),
+    direccionDeAsset: (clave) => buscarDireccionDeAsset(clave, pedido.nivel.assets, pedido.ubicacion),
     terminar(): void {
       armado.escenas.terminar();
       armado.comentarios.callar();

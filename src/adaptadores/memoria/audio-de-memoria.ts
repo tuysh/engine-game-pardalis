@@ -1,12 +1,25 @@
 // Audio falso para las pruebas: no suena. Anota lo que se le pidió decir, y la prueba decide
 // cuándo «termina de hablar» con `terminarDeHablar()`.
 
-import type { Audio, FrasePorDecir, ResultadoDeDecir } from '../../puertos/audio.ts';
+import { VOLUMENES_POR_DEFECTO } from '../../dominio/volumenes.ts';
+import type { VolumenesDeAudio } from '../../dominio/volumenes.ts';
+import type { Audio, FrasePorDecir, OpcionesDeSonido, ResultadoDeDecir } from '../../puertos/audio.ts';
+
+/** Un sonido que se pidió tocar, con las opciones que traía. */
+export interface SonidoTocado {
+  readonly direccion: string;
+  /** `undefined` = se pidió sin opciones. */
+  readonly opciones: OpcionesDeSonido | undefined;
+}
 
 export class AudioDeMemoria implements Audio {
   /** Todo lo que se ha pedido decir, en orden. */
   readonly frasesDichas: FrasePorDecir[] = [];
   readonly sonidosTocados: string[] = [];
+  /** Los mismos sonidos de `sonidosTocados`, con sus opciones. */
+  readonly sonidosConOpciones: SonidoTocado[] = [];
+  /** Los últimos volúmenes que se ajustaron. */
+  volumenes: VolumenesDeAudio = VOLUMENES_POR_DEFECTO;
   /** Las frecuencias de los tonos que se han tocado, en orden. */
   readonly tonosTocados: number[] = [];
   /** La música que está puesta. `undefined` = ninguna. */
@@ -42,8 +55,13 @@ export class AudioDeMemoria implements Audio {
     });
   }
 
-  tocar(direccionDelSonido: string): void {
+  tocar(direccionDelSonido: string, opciones?: OpcionesDeSonido): void {
     this.sonidosTocados.push(direccionDelSonido);
+    this.sonidosConOpciones.push({ direccion: direccionDelSonido, opciones });
+  }
+
+  ajustarVolumenes(volumenes: VolumenesDeAudio): void {
+    this.volumenes = volumenes;
   }
 
   tocarTono(frecuenciaEnHertz: number, duracionEnSegundos: number): void {

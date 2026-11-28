@@ -28,6 +28,10 @@ export interface PiezasDeEscena {
   readonly idiomaBase: Idioma;
   readonly escenario: Escenario;
   readonly interfaz: Interfaz;
+  /**
+   * En el juego es la fila de voces (voz-en-orden.ts): una frase a la vez, y con tope de tiempo si la voz
+   * sintetizada nunca avisa que terminó.
+   */
   readonly audio: Audio;
   readonly reloj: Reloj;
   /** El azar del juego. Lo reciben los minijuegos, para que una `semilla` los haga repetibles también a ellos. */

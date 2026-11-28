@@ -3,8 +3,8 @@
     "id": "barrio",
     "titulo": "El barrio",
     "personajes": {
-      "tommy": { "idioma": "en", "sprite": "spr_tommy" },
-      "tortu": { "idioma": "es", "sprite": "spr_tortu" }
+      "tommy": { "idioma": "en", "sprite": "spr_tommy", "voz": { "tono": 1.4, "velocidad": 1.05 } },
+      "tortu": { "idioma": "es", "sprite": "spr_tortu", "voz": { "tono": 0.7, "velocidad": 0.9 } }
     }
   },
   "jugador": { "personaje": "tommy" },

@@ -18,6 +18,9 @@ import { leerNivelPorJugar } from './aplicacion/leer-nivel-por-jugar.ts';
 import type { FuenteDeNiveles, NivelPorJugar } from './aplicacion/leer-nivel-por-jugar.ts';
 import type { HerramientasDeDepuracion } from './aplicacion/nivel-en-juego.ts';
 import { validarNivel } from './aplicacion/validar-nivel.ts';
+import { VolumenDelJuego } from './aplicacion/volumen-del-juego.ts';
+import { VozDelHost } from './aplicacion/voz-del-host.ts';
+import { VozEnOrden } from './aplicacion/voz-en-orden.ts';
 import { crearAvisosParaElHost } from './avisos-para-el-host.ts';
 import { crearAzarConSemilla } from './dominio/azar-con-semilla.ts';
 import { describirError, ErrorDeEscenario } from './dominio/error-de-escenario.ts';
@@ -61,10 +64,18 @@ export async function crearEscenario(elemento: HTMLElement, opcionesDelHost: Opc
 
   const adaptadores = crearAdaptadores(elemento, crearPanelDeDepuracion);
   const emisor = new EmisorDeEventos();
-  const pausa = new PausaDelJuego(adaptadores.reloj, [adaptadores.audio, adaptadores.video]);
-  const juegoEnCurso = crearJuegoEnCurso(opciones, { adaptadores, emisor, pausa, cargador, fuente, partidaInicial });
+  // Todo lo que se dice pasa por una sola fila, también lo que dice el host con `juego.decir()`.
+  const voz = new VozEnOrden(adaptadores.audio, adaptadores.reloj);
+  const pausa = new PausaDelJuego(adaptadores.reloj, [voz, adaptadores.video]);
+  const base = { adaptadores, voz, emisor, pausa, cargador, fuente, partidaInicial };
+  const juegoEnCurso = crearJuegoEnCurso(opciones, base);
   const dejarDeVigilarLaPagina = pausarAlOcultarLaPagina(opciones, pausa);
-  const juego = new JuegoCreado({ juegoEnCurso, emisor, pausa, adaptadores, dejarDeVigilarLaPagina });
+  const vozDelHost = new VozDelHost({
+    voz,
+    direccionDeAsset: (clave) => juegoEnCurso.direccionDeAsset(clave),
+  });
+  const volumen = new VolumenDelJuego(voz);
+  const juego = new JuegoCreado({ juegoEnCurso, emisor, pausa, adaptadores, voz, vozDelHost, volumen, dejarDeVigilarLaPagina });
 
   try {
     await empezarElPrimerNivel(primerNivel, opciones, { juego, juegoEnCurso, pausa, adaptadores });
@@ -130,6 +141,8 @@ function crearAdaptadores(
 /** Lo que `crearEscenario()` ya tiene armado cuando crea el juego en curso. */
 interface BaseDelJuego {
   readonly adaptadores: AdaptadoresDelJuego;
+  /** El audio del juego, con sus voces en fila: es el que usan los niveles en vez de `adaptadores.audio`. */
+  readonly voz: VozEnOrden;
   readonly emisor: EmisorDeEventos;
   readonly pausa: PausaDelJuego;
   readonly cargador: CargadorDeRed;
@@ -138,7 +151,8 @@ interface BaseDelJuego {
 }
 
 function crearJuegoEnCurso(opciones: OpcionesDeEscenario, base: BaseDelJuego): JuegoEnCurso {
-  const { escenario, interfaz, audio, video, controles, reloj, panelDeDepuracion } = base.adaptadores;
+  const { escenario, interfaz, video, controles, reloj, panelDeDepuracion } = base.adaptadores;
+  const audio = base.voz;
   // Con `semilla`, el azar del juego es siempre el mismo: sirve para pruebas.
   const azar = opciones.semilla === undefined ? Math.random : crearAzarConSemilla(opciones.semilla);
 

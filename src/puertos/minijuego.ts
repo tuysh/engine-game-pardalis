@@ -6,10 +6,27 @@ import type { CambiosDeEstado, LectorDeEstado } from '../dominio/estado.ts';
 import type { Idioma } from '../dominio/idioma.ts';
 import type { Azar } from './azar.ts';
 
+/** Cómo tocar un sonido desde un minijuego. */
+export interface OpcionesDeSonidoParaMinijuego {
+  /** De 0 a 1, antes de aplicar el volumen de los efectos que eligió el host. `undefined` = 1. */
+  readonly volumen?: number;
+  /** De 0.25 a 4: qué tan rápido (y agudo) suena. `undefined` = 1, como está grabado. */
+  readonly tono?: number;
+}
+
 /** El audio del motor, visto desde un minijuego. */
 export interface AudioParaMinijuego {
-  /** Toca un sonido del manifiesto de assets. */
-  tocar(clave: string): void;
+  /**
+   * Toca un sonido del manifiesto de assets sin esperar a que termine.
+   * `opciones.volumen` (de 0 a 1) lo hace más bajito; `opciones.tono` lo reproduce más rápido y más agudo
+   * (2 = una octava arriba) o más lento y más grave (0.5 = una octava abajo). Sirve para que un mismo
+   * sonido suba de nota en cada acierto seguido. Una opción que no sirve se ignora con una advertencia.
+   *
+   * @example
+   * audio.tocar('sfx_atrapa', { tono: 1 + aciertosSeguidos * 0.1 });
+   * audio.tocar('sfx_paso', { volumen: 0.3 });
+   */
+  tocar(clave: string, opciones?: OpcionesDeSonidoParaMinijuego): void;
   /**
    * Toca una nota corta hecha por el dispositivo, sin archivo: sirve para un «ding» sin grabar nada.
    * Ejemplo: `tocarTono(880, 0.2)` es un la agudo de dos décimas de segundo.

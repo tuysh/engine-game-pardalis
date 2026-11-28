@@ -5,7 +5,7 @@ import { EscenarioDeMemoria } from '../adaptadores/memoria/escenario-de-memoria.
 import { InterfazDeMemoria } from '../adaptadores/memoria/interfaz-de-memoria.ts';
 import { RelojDeMemoria } from '../adaptadores/memoria/reloj-de-memoria.ts';
 import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from '../dominio/contenido.ts';
-import type { Contenido } from '../dominio/contenido.ts';
+import type { Contenido, Personaje } from '../dominio/contenido.ts';
 import { crearEstadoDeNivel } from '../dominio/estado.ts';
 import type { PalabraDeVocabulario, PasoDeLinea } from '../dominio/paso.ts';
 import type { ImagenDeEscena } from '../puertos/escenario.ts';
@@ -13,6 +13,7 @@ import { decirLinea } from './decir-linea.ts';
 import { EstadoEnJuego } from './estado-en-juego.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { Reparto } from './reparto.ts';
+import { VozEnOrden } from './voz-en-orden.ts';
 
 const CONTENIDO: Contenido = {
   meta: {
@@ -193,7 +194,10 @@ test('en un dispositivo sin voz, el globo se queda el tiempo que tomaría leerlo
 });
 
 test('si la voz sintetizada nunca avisa que terminó, la línea se cierra sola al pasar un tiempo holgado', async () => {
-  const { piezas, interfaz, audio, reloj } = await crearEscena();
+  const escena = await crearEscena();
+  const { interfaz, audio, reloj } = escena;
+  // El tope de tiempo lo pone la fila de voces, como en el juego (crear.ts).
+  const piezas: PiezasDeEscena = { ...escena.piezas, audio: new VozEnOrden(audio, reloj) };
   const sinVozGrabada: PasoDeLinea = { tipo: 'linea', hablante: 'tortu', texto: '¡Hola!' };
   let termino = false;
 
@@ -277,4 +281,23 @@ test('un pensamiento se muestra en un globo de pensamiento', async () => {
   void decirLinea({ paso: duda, textoCompleto: '¿Y si llueve?', seCierraConUnToque: true }, SIN_INTERRUMPIR, piezas);
 
   expect(interfaz.globo?.esPensamiento).toBe(true);
+});
+
+test('la frase lleva el tono y la velocidad de quien habla; su traducción se dice con la voz normal', async () => {
+  const { piezas, audio } = await crearEscena();
+  const personajes: Record<string, Personaje> = {
+    tortu: { idioma: 'es', sprite: 'spr_tortu' },
+    bobby: { idioma: 'en', sprite: 'spr_bobby', voz: { tono: 1.3, velocidad: 1.05 } },
+  };
+  const conBobby = { ...piezas, contenido: { ...CONTENIDO, meta: { ...CONTENIDO.meta, personajes } } };
+  const paso: PasoDeLinea = { tipo: 'linea', hablante: 'bobby', texto: 'Corn!', traduccion: '¡Maíz!' };
+
+  void decirLinea({ paso, textoCompleto: 'Corn!', seCierraConUnToque: true }, SIN_INTERRUMPIR, conBobby);
+  audio.terminarDeHablar();
+  await new Promise((seguir) => setTimeout(seguir, 0));
+
+  expect(audio.frasesDichas).toEqual([
+    { texto: 'Corn!', idioma: 'en', direccionDeLaVoz: undefined, voz: { tono: 1.3, velocidad: 1.05 } },
+    { texto: '¡Maíz!', idioma: 'es' },
+  ]);
 });

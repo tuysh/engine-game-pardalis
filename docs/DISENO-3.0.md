@@ -123,11 +123,51 @@ no ponerla (salvo `nivel`, que es obligatoria).
 | `cargar(nivel)` | Cambia de nivel reutilizando el mismo lienzo. `nivel` es un id de `niveles` o la dirección de un `nivel.json`. Promesa que se resuelve cuando ya se puede jugar y rechaza con `ErrorDeEscenario` si el nivel tiene errores o no cargó alguna de sus imágenes (entonces sigue el nivel que estaba). |
 | `reproducir(idDeCinematica)` | Lanza una cinemática del nivel actual, aunque ya se haya visto. Promesa que se resuelve al terminar. |
 | `interrumpir()` | Salta la cinemática o cierra el diálogo en curso. |
-| `pausar()` / `reanudar()` | Congela y reanuda juego, audio y video. Volver a la página nunca deshace un `pausar()`. |
+| `pausar()` / `reanudar()` | Congela y reanuda juego, audio y video. Una frase del juego que se estaba diciendo se corta y, al reanudar, se dice otra vez desde el principio. Volver a la página nunca deshace un `pausar()`. Lo que diga el host con `decir()` sí se oye en pausa. |
+| `volumen` | Volumen general, de 0 a 1 (empieza en 1). Multiplica a los tres canales. Ver «Volumen y voz del host». |
+| `silenciado` | `true` = no se oye nada, sin olvidar los volúmenes. El juego sigue avanzando (no es una pausa). |
+| `volumenes` / `ajustarVolumenes(cambios)` | El volumen de cada canal (`musica`, `voces`, `efectos`), de 0 a 1. `ajustarVolumenes({ musica: 0.3 })` cambia solo los canales que se escriben. |
+| `decir(texto, { idioma, clave?, voz? })` | El host dice algo con la voz del motor. Promesa que termina al acabar de hablar. Ver «Volumen y voz del host». |
 | `proyeccion` | Propiedad booleana; se puede cambiar sin reiniciar. |
 | `nivel` | Id del nivel actual (solo lectura). |
 | `estado` | El estado del nivel actual, solo para leer: `estado.obtener('dinero')` y `estado.cumple('tengo maiz')`. Es el mismo lector que reciben los minijuegos. Mientras se carga un nivel, `obtener` entrega `undefined` y `cumple`, `false`. |
 | `destruir()` | Libera todo: WebGL, audio, video, temporizadores y oyentes. Se puede llamar más de una vez. |
+
+### Volumen y voz del host
+
+Para un botón de bocina en el salón de clases, o para bajar la música en casa:
+
+```js
+juego.silenciado = !juego.silenciado;          // todo callado, o todo como estaba
+juego.volumen = 0.5;                           // volumen general
+juego.ajustarVolumenes({ musica: 0.3 });       // solo la música; también `voces` y `efectos`
+```
+
+Un valor que no sirve (fuera de 0 a 1, un canal que no existe) lanza `ErrorDeEscenario` y no cambia nada.
+`efectos` son los sonidos cortos (los de `sonido` y los de los minijuegos) y los tonos.
+
+`juego.decir(texto, { idioma, clave?, voz? })` dice algo del host (una palabra del cuaderno, la pantalla final)
+con la voz del motor, en vez de usar `speechSynthesis` por su cuenta:
+
+- Todo lo que se dice pasa por **una sola fila**: lo del host espera a que termine la línea del juego, y la
+  línea del juego espera a que termine lo del host. Nada se encima ni se corta.
+  El tope de tiempo de una frase (por si la voz del dispositivo nunca avisa que terminó) empieza a contar
+  cuando le toca hablar, no mientras espera en la fila.
+- Se oye **aunque el juego esté en pausa**: el host suele pausar justo para mostrar lo suyo.
+- Una frase nueva de `juego.decir` corta la anterior de `juego.decir` (no las del juego).
+- `clave` es una voz grabada del nivel actual; si falta, se usa la voz sintetizada. `voz` es `{ tono, velocidad }`,
+  como la de `meta.personajes` (docs/NIVELES.md), para decirlo con la voz de un personaje.
+- La promesa termina al acabar de hablar, al cortarla otra frase o al destruir el juego. Solo rechaza si los
+  argumentos no sirven.
+
+```js
+await juego.decir('maíz', { idioma: 'es' });
+await juego.decir('corn', { idioma: 'en', clave: 'vo_bobby_corn', voz: { tono: 1.2 } });
+```
+
+Limitaciones conocidas: una frase de voz sintetizada que ya empezó termina con el volumen que tenía (el navegador
+no deja cambiarlo a media frase); y si la voz del dispositivo nunca avisa que terminó, el tope de tiempo de una
+frase no corre mientras el juego está en pausa.
 
 ### Eventos
 
@@ -271,7 +311,7 @@ export function Tortilleria({ elemento, config, estado, audio, assets, azar, sen
 | `elemento` | `HTMLElement` vacío. El motor lo crea antes y lo borra después. Está en el DOM normal, así que le aplican los estilos del host. |
 | `config` | Lo que venga en el paso `{ "juego": ..., "config": ... }`. |
 | `estado` | Solo lectura: `obtener(nombre)`, `cumple(condicion)`. Para cambiarlo se usa `otorgar` en el resultado. |
-| `audio` | `tocar(clave)`, `tocarTono(frecuenciaEnHertz, duracionEnSegundos)` (un «ding» sin archivo) y `decir(texto, idioma, clave?)`. `decir` devuelve una promesa que termina cuando acaba de hablar: `await audio.decir('¡Lechuga!', 'es'); await audio.decir('lettuce!', 'en');`. Solo se dice una frase a la vez: una frase nueva **corta** la que estuviera sonando. |
+| `audio` | `tocar(clave, { volumen?, tono? })` (`volumen` de 0 a 1; `tono` de 0.25 a 4 es la velocidad de reproducción, y con ella la nota: `1.2` suena más agudo, para que un acierto tras otro suba de nota), `tocarTono(frecuenciaEnHertz, duracionEnSegundos)` (un «ding» sin archivo) y `decir(texto, idioma, clave?)`. `decir` devuelve una promesa que termina cuando acaba de hablar: `await audio.decir('¡Lechuga!', 'es'); await audio.decir('lettuce!', 'en');`. Solo se dice una frase a la vez: una frase nueva **corta** la que estuviera sonando. |
 | `azar` | `azar()` entrega un número de 0 a 1, como `Math.random`, pero sale del azar del motor: con la opción `semilla`, el minijuego también es repetible. |
 | `assets` | `url(clave)` para usar imágenes del manifiesto. |
 | `senal` | `AbortSignal`: se dispara si el host destruye el juego. El minijuego debe limpiar lo suyo. |

@@ -2,6 +2,8 @@
 // Los objetos son estrictos: una clave que el motor no conoce es un error, para atrapar errores de dedo.
 
 import { z } from 'zod';
+import { TONO_MAXIMO, TONO_MINIMO, VELOCIDAD_MAXIMA, VELOCIDAD_MINIMA, VOZ_NORMAL } from '../../dominio/ajustes-de-voz.ts';
+import type { AjustesDeVoz } from '../../dominio/ajustes-de-voz.ts';
 import { AJUSTES_DEL_MUNDO_POR_DEFECTO, VELOCIDAD_DEL_JUGADOR_POR_DEFECTO } from '../../dominio/contenido.ts';
 import type {
   AjustesDeCamara,
@@ -19,9 +21,30 @@ import { esquemaDeCinematicas } from './esquema-de-cinematicas.ts';
 import { esquemaDeCondicion } from './esquema-de-condicion.ts';
 import { esquemaDeLinea, esquemaDePaso, esquemaDePasosOSecuencia } from './esquema-de-pasos.ts';
 
+// Los mensajes nombran los límites y qué es lo normal, para que quien escribe el nivel sepa qué número poner.
+const MENSAJE_DEL_TONO = `el tono va de ${TONO_MINIMO} (más grave) a ${TONO_MAXIMO} (más agudo); 1 es la voz normal`;
+const MENSAJE_DE_LA_VELOCIDAD =
+  `la velocidad va de ${VELOCIDAD_MINIMA} (más despacio) a ${VELOCIDAD_MAXIMA} (más rápido); 1 es la voz normal`;
+
+const esquemaDeVoz = z
+  .strictObject({
+    tono: z
+      .number({ error: MENSAJE_DEL_TONO })
+      .min(TONO_MINIMO, { error: MENSAJE_DEL_TONO })
+      .max(TONO_MAXIMO, { error: MENSAJE_DEL_TONO })
+      .default(VOZ_NORMAL.tono),
+    velocidad: z
+      .number({ error: MENSAJE_DE_LA_VELOCIDAD })
+      .min(VELOCIDAD_MINIMA, { error: MENSAJE_DE_LA_VELOCIDAD })
+      .max(VELOCIDAD_MAXIMA, { error: MENSAJE_DE_LA_VELOCIDAD })
+      .default(VOZ_NORMAL.velocidad),
+  })
+  .transform((json): AjustesDeVoz => ({ tono: json.tono, velocidad: json.velocidad }));
+
 const esquemaDePersonaje = z.strictObject({
   idioma: z.enum(['es', 'en']),
   sprite: z.string().min(1),
+  voz: esquemaDeVoz.optional(),
 });
 
 const esquemaDeMeta = z.strictObject({

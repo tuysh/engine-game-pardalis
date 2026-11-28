@@ -3,7 +3,32 @@
 import type { OrigenDeDialogo } from './aplicacion/conversacion.ts';
 import type { ErrorDeEscenario } from './dominio/error-de-escenario.ts';
 import type { LectorDeEstado, VariablesDeEstado } from './dominio/estado.ts';
+import type { Idioma } from './dominio/idioma.ts';
 import type { Partida } from './dominio/partida.ts';
+import type { VolumenesPorCanal } from './dominio/volumenes.ts';
+
+/** Lo que cambia `juego.ajustarVolumenes()`: solo los canales que se escriben. Cada uno va de 0 a 1. */
+export interface CambiosDeVolumen {
+  /** La música de fondo. */
+  readonly musica?: number;
+  /** Las voces: las grabadas y la sintetizada, del juego, de los minijuegos y de `juego.decir()`. */
+  readonly voces?: number;
+  /** Los sonidos cortos y los tonos. */
+  readonly efectos?: number;
+}
+
+/** Cómo dice algo el host con `juego.decir()`. */
+export interface OpcionesDeVoz {
+  /** En qué idioma está el texto: decide el acento y la voz del dispositivo. */
+  readonly idioma: Idioma;
+  /** Clave de una voz grabada del nivel actual. Si falta o el nivel no la tiene, se usa la voz sintetizada. */
+  readonly clave?: string;
+  /**
+   * Tono y velocidad de la voz sintetizada, de 0.5 a 2 (1 = normal), como la `voz` de `meta.personajes`.
+   * Sirve para que el host diga algo con la voz de un personaje.
+   */
+  readonly voz?: { readonly tono?: number; readonly velocidad?: number };
+}
 
 /** Una palabra de vocabulario, en inglés y en español. */
 export interface PalabraMostrada {
@@ -144,10 +169,50 @@ export interface Juego {
   reproducir(idDeCinematica: string): Promise<void>;
   /** Salta la cinemática o cierra el diálogo en curso. */
   interrumpir(): void;
-  /** Congela juego, audio y video. */
+  /**
+   * Congela juego, audio y video. Si el juego estaba diciendo una frase, se corta y al reanudar se dice
+   * otra vez desde el principio. Lo que diga el host con `decir()` sí se oye durante la pausa.
+   */
   pausar(): void;
   /** Sigue desde donde `pausar()` lo dejó. */
   reanudar(): void;
+  /**
+   * El volumen general, de 0 (callado) a 1 (completo). Empieza en 1. Multiplica a la música, las voces y los
+   * efectos. Un valor fuera de 0 a 1 lanza `ErrorDeEscenario` y no cambia nada.
+   *
+   * @example
+   * juego.volumen = 0.5;
+   */
+  volumen: number;
+  /**
+   * `true` = no se oye nada, sin olvidar los volúmenes: al volver a `false` todo suena como antes.
+   * Empieza en `false`. A diferencia de `pausar()`, el juego sigue avanzando.
+   *
+   * @example
+   * botonDeBocina.onclick = () => { juego.silenciado = !juego.silenciado; };
+   */
+  silenciado: boolean;
+  /** El volumen de cada canal, de 0 a 1, sin contar el general ni el silencio. Para cambiarlo: `ajustarVolumenes`. */
+  readonly volumenes: VolumenesPorCanal;
+  /**
+   * Cambia el volumen de los canales que se escriban; los demás quedan igual. Lanza `ErrorDeEscenario`
+   * (sin cambiar nada) si un canal no existe o su volumen no va de 0 a 1.
+   *
+   * @example
+   * juego.ajustarVolumenes({ musica: 0.3 });
+   */
+  ajustarVolumenes(cambios: CambiosDeVolumen): void;
+  /**
+   * Dice un texto en voz alta con la voz del motor. Espera su turno: no se encima con lo que dice el juego
+   * ni lo corta. Se oye aunque el juego esté en pausa. Una frase nueva de `juego.decir` corta la anterior.
+   * La promesa termina cuando acaba de hablar (o cuando la corta otra, o al destruir el juego) y rechaza con
+   * `ErrorDeEscenario` solo si los argumentos no sirven.
+   *
+   * @example
+   * await juego.decir('maíz', { idioma: 'es' });
+   * await juego.decir('corn', { idioma: 'en', clave: 'vo_bobby_corn', voz: { tono: 1.3 } });
+   */
+  decir(texto: string, opciones: OpcionesDeVoz): Promise<void>;
   /** Modo salón de clases. Se puede cambiar sin reiniciar. */
   proyeccion: boolean;
   /** Id del nivel actual. */
