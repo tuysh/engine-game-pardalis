@@ -295,6 +295,8 @@ export class InterfazDelNavegador implements Interfaz {
     const hayAlguienEscuchando = this.funcionesParaSeguir.length > 0;
     if (hayAlguienEscuchando && (evento.key === 'Enter' || evento.key === ' ')) {
       evento.preventDefault();
+      // `repeat` llega mientras la tecla se queda oprimida: dejarla así no debe ir saltando una línea tras otra.
+      if (evento.repeat) return;
       this.alTocarLaCapa();
     }
   };
