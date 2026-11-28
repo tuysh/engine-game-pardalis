@@ -30,10 +30,11 @@ export const Tortilleria: Minijuego = ({ elemento, config, audio, assets, senal,
     elemento.style.cssText =
       'display:flex; flex-direction:column; align-items:center; justify-content:center; gap:32px; background:#3a2a1a;';
 
-    // El comal: un círculo oscuro con las tortillas encima.
+    // El comal: un círculo oscuro con las tortillas encima (y el vapor, que se coloca respecto a él).
     const comal = document.createElement('div');
     comal.style.cssText =
-      'display:flex; gap:24px; padding:48px 56px; border-radius:50%; background:#555; border:10px solid #2b2b2b;';
+      'position:relative; display:flex; gap:24px; padding:48px 56px;' +
+      ' border-radius:50%; background:#555; border:10px solid #2b2b2b;';
 
     // Doña Tortu: una imagen que se anima sola, quieta y parpadeando, hasta que habla.
     const tortu = document.createElement('img');
@@ -83,17 +84,22 @@ export const Tortilleria: Minijuego = ({ elemento, config, audio, assets, senal,
       'position:absolute; top:16px; right:16px; width:64px; height:64px; border-radius:50%; border:4px solid #2b2b2b; background:#fffdf5; font-size:32px; cursor:pointer;';
     salir.addEventListener('click', () => terminar({ exito: false }), { signal: senal });
 
-    // El vapor: un óvalo blanco que sube y se desvanece, una y otra vez. No se toca ni se lee: es decorado.
+    // El vapor: un óvalo blanco que sube del comal y se desvanece, una y otra vez. No se toca ni se lee: es
+    // decorado. Va encima del comal y fuera del acomodo, para no empujar las tortillas fuera de una pantalla baja.
     const vapor = document.createElement('div');
-    vapor.style.cssText = 'width:60px; height:30px; border-radius:50%; background:#fffdf5; pointer-events:none;';
+    vapor.style.cssText =
+      'position:absolute; left:50%; top:-40px; width:60px; height:30px; margin-left:-30px;' +
+      ' border-radius:50%; background:#fffdf5; pointer-events:none;';
     let alturaDelVapor = 0;
     enCadaCuadro((segundos) => {
-      alturaDelVapor = (alturaDelVapor + VELOCIDAD_DEL_VAPOR_EN_PUNTOS_POR_SEGUNDO * segundos) % ALTURA_DEL_VAPOR_EN_PUNTOS;
+      const alturaNueva = alturaDelVapor + VELOCIDAD_DEL_VAPOR_EN_PUNTOS_POR_SEGUNDO * segundos;
+      alturaDelVapor = alturaNueva % ALTURA_DEL_VAPOR_EN_PUNTOS;
       vapor.style.transform = `translateY(${-alturaDelVapor}px)`;
       vapor.style.opacity = String(1 - alturaDelVapor / ALTURA_DEL_VAPOR_EN_PUNTOS);
     });
 
-    elemento.append(tortu, vapor, comal, salir);
+    comal.append(vapor);
+    elemento.append(tortu, comal, salir);
 
     // Cuántas frases se han empezado: solo la última devuelve a Doña Tortu a su pose quieta.
     let frasesEmpezadas = 0;
