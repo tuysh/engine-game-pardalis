@@ -17,9 +17,13 @@ import { calcularAlturaDelDecorado } from './altura-del-decorado.ts';
 import type { EstadoEnJuego } from './estado-en-juego.ts';
 import type { Reparto } from './reparto.ts';
 
-/** Cuánto más arriba de la cabeza va la estrellita: deja lugar al aviso de «a la mano» y al globo. */
-const SEPARACION_SOBRE_LA_CABEZA_EN_METROS = 0.35;
+/**
+ * Cuánto más arriba de la cabeza va la estrellita. Poco: si flota muy alto parece señalar lo que está detrás
+ * (el letrero de un puesto) y no a quien vende. No choca con el aviso de «a la mano», que nunca está a la vez.
+ */
+const SEPARACION_SOBRE_LA_CABEZA_EN_METROS = 0.1;
 
+/** Lo que necesitan las señales de lo pendiente: el nivel, su estado, quién está dónde y dónde dibujarlas. */
 export interface PiezasDeLasSenales {
   readonly nivel: Nivel;
   readonly estado: EstadoEnJuego;
@@ -31,6 +35,7 @@ export interface PiezasDeLasSenales {
 /** Lo que el jugador tiene a la mano en este cuadro, si algo. */
 export type LoQueEstaALaMano = Pick<Interactuable, 'tipo' | 'id'> | undefined;
 
+/** Decide en cada cuadro sobre quién va una estrellita de lo pendiente y se lo pasa a la interfaz. */
 export class SenalesDePendientes {
   private readonly piezas: PiezasDeLasSenales;
   /** `true` si en el último cuadro había alguna señal: así se quitan una sola vez. */
