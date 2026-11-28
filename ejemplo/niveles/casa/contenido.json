@@ -3,8 +3,8 @@
     "id": "casa",
     "titulo": "La casa",
     "personajes": {
-      "tommy": { "idioma": "en", "sprite": "spr_tommy" },
-      "mama": { "idioma": "es", "sprite": "spr_mama" }
+      "tommy": { "idioma": "en", "sprite": "spr_tommy", "voz": { "tono": 1.4, "velocidad": 1.05 } },
+      "mama": { "idioma": "es", "sprite": "spr_mama", "voz": { "tono": 0.85, "velocidad": 0.95 } }
     }
   },
   "mundo": {

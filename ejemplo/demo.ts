@@ -7,6 +7,7 @@
 //   http://localhost:3000/?nivel=barrio&depurar
 
 import { crearEscenario } from '../src/index.ts';
+import type { Juego } from '../src/index.ts';
 import { Tortilleria } from './tortilleria.ts';
 
 const NIVELES = {
@@ -40,6 +41,9 @@ try {
   juego.on('nivel', (cambio) => console.log('nivel:', cambio.id, '(antes:', cambio.anterior + ')'));
   juego.on('salida', (destino) => console.log('el jugador salió hacia:', destino));
   juego.on('error', (error) => console.error('el juego avisó de un error:', error.problemas));
+  ponerElBotonDeBocina(juego);
+  // Para probar la API desde la consola del navegador: `juegoDeLaDemo.decir('corn', { idioma: 'en' })`.
+  Reflect.set(globalThis, 'juegoDeLaDemo', juego);
   addEventListener('pagehide', () => juego.destruir());
 } catch (error) {
   // Un nivel mal escrito se explica en la propia página: cada problema en su línea.
@@ -54,4 +58,26 @@ function leerNivelDeLaDireccion(): string | undefined {
   const pedido = new URLSearchParams(location.search).get('nivel');
   if (pedido === null || !Object.hasOwn(NIVELES, pedido)) return undefined;
   return pedido;
+}
+
+/**
+ * Un botón de bocina, como el que pondría un host para el salón de clases: quita y pone el sonido.
+ * Al volver a ponerlo, el host dice algo con `juego.decir`, que espera su turno si el juego está hablando.
+ */
+function ponerElBotonDeBocina(juego: Juego): void {
+  const boton = document.querySelector<HTMLButtonElement>('#bocina');
+  if (boton === null) return;
+  const pintar = (): void => {
+    boton.textContent = juego.silenciado ? '🔇' : '🔊';
+    boton.setAttribute('aria-label', juego.silenciado ? 'Poner el sonido' : 'Quitar el sonido');
+  };
+  boton.hidden = false;
+  pintar();
+  boton.addEventListener('click', () => {
+    juego.silenciado = !juego.silenciado;
+    pintar();
+    if (!juego.silenciado) {
+      void juego.decir('¡Ya se oye otra vez!', { idioma: 'es' });
+    }
+  });
 }
