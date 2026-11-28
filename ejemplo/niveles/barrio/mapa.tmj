@@ -169,6 +169,65 @@
        "value": "flecha_piso"
       }
      ]
+    },
+    {
+     "id": 14,
+     "name": "Tapete",
+     "type": "plano",
+     "x": 120,
+     "y": 560,
+     "width": 300,
+     "height": 150,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "asset",
+       "type": "string",
+       "value": "tapete"
+      }
+     ]
+    },
+    {
+     "id": 15,
+     "name": "Cojín",
+     "type": "plano",
+     "x": 225,
+     "y": 600,
+     "width": 90,
+     "height": 70,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "asset",
+       "type": "string",
+       "value": "cojin"
+      }
+     ]
+    },
+    {
+     "id": 16,
+     "name": "Árbol",
+     "type": "parado",
+     "x": 1280,
+     "y": 700,
+     "width": 60,
+     "height": 30,
+     "rotation": 0,
+     "visible": true,
+     "properties": [
+      {
+       "name": "asset",
+       "type": "string",
+       "value": "arbol"
+      },
+      {
+       "name": "id",
+       "type": "string",
+       "value": "arbol"
+      }
+     ]
     }
    ]
   },
@@ -203,6 +262,30 @@
        "name": "mira",
        "type": "string",
        "value": "izquierda"
+      }
+     ]
+    },
+    {
+     "id": 17,
+     "name": "Canelo",
+     "type": "npc",
+     "x": 170,
+     "y": 470,
+     "width": 0,
+     "height": 0,
+     "rotation": 0,
+     "visible": true,
+     "point": true,
+     "properties": [
+      {
+       "name": "id",
+       "type": "string",
+       "value": "canelo"
+      },
+      {
+       "name": "mira",
+       "type": "string",
+       "value": "derecha"
       }
      ]
     }
@@ -340,7 +423,7 @@
   }
  ],
  "nextlayerid": 7,
- "nextobjectid": 14,
+ "nextobjectid": 18,
  "orientation": "orthogonal",
  "renderorder": "right-down",
  "tiledversion": "1.11.0",

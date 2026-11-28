@@ -69,8 +69,20 @@ La clase de un objeto de `decorado` dice cómo se dibuja:
 | `plano` | Pintado sobre el piso, estirado a su huella (un tapete, una flecha). | No. |
 | `colgado` | Papel vertical en lo alto. Propiedad `altura` (píxeles del piso a su borde inferior; por defecto 2.2 m). | No. |
 
+**Lo parado que se encima:** entre personajes y objetos `parado`, se dibuja encima el que pisa más cerca de la
+cámara (el de `y` mayor en el mapa), sin importar lo alto que sea.
+
+**Lo `plano` que se encima** (un cojín sobre el tapete): el que va **después** en la capa `decorado` se pinta
+encima. En Tiled es el orden de la lista de objetos de la capa (con «Orden de dibujo: manual», el mapa se ve
+igual que en el juego); para subir uno, usa «Subir objeto». Lo `plano` siempre queda bajo las sombras y los pies
+de los personajes.
+
 Con la propiedad `id`, el objeto se puede tocar: su diálogo está en `interactivos` del contenido.
 Lo que se dibuja en el plano es exactamente lo que bloquea: no hay ajustes de «huella» a mano.
+
+**Lo `parado` no tapa al jugador:** si un objeto `parado` queda entre la cámara y el jugador (un árbol o alguien
+parado cerca de la cámara) y le cubre la cabeza o el cuerpo, se vuelve transparente poco a poco mientras lo tapa,
+y recupera su color al dejar de taparlo. Lo bajito que solo le tapa los pies (una banca) no cambia. No hace falta mover el dibujo; aun así, no pongas cosas altas donde el jugador camina seguido.
 
 Si el `asset` de un objeto es una **animación** (archivos numerados, ver §4), se repite sola todo el tiempo:
 sirve para una tele encendida, una bandera o un foco que parpadea.
@@ -175,6 +187,7 @@ personaje suene distinto, `voz` le cambia el tono y la velocidad (es opcional, y
 | `jugador.personaje` | — | Id en `meta.personajes` (obligatorio si hay `jugador`). |
 | `jugador.velocidad` | 2.4 | Metros por segundo al caminar. |
 | `jugador.acompanante` | — | Id del personaje que **sigue al jugador** mientras explora. Ver «Acompañante». |
+| `jugador.distanciaDelAcompanante` | 0.9 | Metros entre el jugador y el lugar donde se queda su acompañante. |
 | `mundo.pixelesPorMetro` | 100 | Cuántos píxeles del mapa y de las imágenes son un metro del escenario. |
 | `mundo.camara.distancia` | 8 | Metros entre la cámara y lo que sigue. |
 | `mundo.camara.altura` | 4 | Metros de la cámara sobre el piso. |
@@ -194,7 +207,12 @@ La cámara sigue al jugador; en un nivel sin jugador mira al centro del lugar.
 El acompañante es un personaje que va con el jugador: lo sigue a un paso de distancia mientras explora.
 
 - Camina por el piso rodeando el decorado, igual que el jugador, y voltea hacia donde camina.
-- Cuando el jugador se detiene, se queda cerca, del lado por el que venía: no se encima ni se le adelanta.
+- **Va detrás del jugador y un poco más lejos de la cámara:** del lado contrario al que camina el jugador, a
+  `jugador.distanciaDelAcompanante` metros (0.9 si no se dice), y un poco hacia el fondo. Así, al caminar de lado,
+  su dibujo queda detrás del del jugador y no lo tapa. Si ahí hay una pared o un puesto, se pone del otro lado
+  o a la misma altura.
+- Cuando el jugador se detiene, el acompañante se queda en su lugar: no se encima ni se le adelanta. Vuelve a
+  caminar cuando el jugador se aleja (su distancia y 0.6 m más) o si quedó delante de él, tapándolo.
 - **Durante un diálogo o una cinemática deja de seguir:** ahí lo mueven los pasos `camina`, `mira` y `anima`
   como a cualquier personaje. Al terminar la escena vuelve a seguir desde donde quedó.
 - Debe estar en el escenario: ser un NPC del mapa o entrar con un paso `aparece` (empieza a seguir en cuanto
@@ -294,7 +312,7 @@ Gana **la primera rama cuya condición se cumple**. Una rama sin `cuando` siempr
 | --- | --- | --- |
 | Línea | `{ "dice": "tortu", "texto": "¡Hola!", "audio": "vo_hola" }` | Globo sobre quien habla. Termina con un toque o al acabar el audio. Opcional: `trad`, y `en` + `es` (siempre juntos) para una **tarjeta de vocabulario**; `con`, `reacciona` y `piensa` (ver «Caras y pensamientos»). |
 | Opción | `{ "elige": "¿Cuál quieres?", "opciones": [ { "imagen": "img_rosa", "audio": "vo_rosa", "secuencia": [...] } ] }` | Espera la elección. Cada opción: `texto`, `trad`, `imagen`, `audio`, `cuando`, y `secuencia` (pasos o nombre de secuencia). Una opción sin `imagen` da advertencia. |
-| Efecto | `{ "efecto": "magia" }` | Partículas y sonido. Disponibles: `magia`, `confeti`. |
+| Efecto | `{ "efecto": "magia" }` | Partículas y sonido. Disponibles: `magia` (chispas alrededor del jugador o del centro del lugar) y `confeti` (papelitos que llueven sobre todo lo que se ve; se ven del mismo tamaño con la cámara cerca o lejos). |
 | Estado | `{ "pon": { "globo": "rosa" } }` | Asigna objetivos o variables. Con números también suma y resta: `{ "pon": { "dinero": { "resta": 10 }, "estrellas": { "suma": 1 } } }`. |
 | Minijuego | `{ "juego": "Tortilleria", "config": { "palabras": ["hot"] } }` | Abre el minijuego que registró el host y, al volver, ejecuta `alVolver`. |
 | Caminar | `{ "camina": "frente_tortilleria", "quien": "tortu" }` | Camina hasta un `punto` del mapa. Sin `quien`, camina el jugador. Sigue el piso y rodea el decorado; ver «Por dónde camina». |
@@ -684,7 +702,7 @@ Y los de las cinemáticas y los pasos de escena:
 
 | Para… | Con dedo o ratón | Con teclado |
 | --- | --- | --- |
-| Caminar | Tocar un lugar del piso | Mantener oprimida `W` `A` `S` `D` o una flecha |
+| Caminar | Tocar un lugar del piso | Mantener oprimida `W` `A` `S` `D` o una flecha (rodea lo pequeño que estorba) |
 | Hablar con alguien o usar un objeto | Tocarlo: el jugador camina hasta ahí | — |
 | Hablar con quien se tiene a la mano | — | `E`, `Enter` o la barra espaciadora |
 | Seguir un diálogo | Tocar la pantalla | `Enter` o la barra espaciadora |

@@ -6,6 +6,7 @@ import type { Punto } from '../dominio/geometria.ts';
 import type { Nivel } from '../dominio/nivel.ts';
 import { crearMapaDeCaminos } from '../dominio/rejilla-de-caminos.ts';
 import type { MapaDeCaminos } from '../dominio/rejilla-de-caminos.ts';
+import { DISTANCIA_DEL_ACOMPANANTE_POR_DEFECTO_EN_METROS } from '../dominio/seguir.ts';
 import { crearTerreno } from '../dominio/terreno.ts';
 import { completarTexto } from '../dominio/texto-con-variables.ts';
 import { Acompanante } from './acompanante.ts';
@@ -157,6 +158,7 @@ function crearAcompanante(nivel: Nivel, reparto: Reparto, caminos: MapaDeCaminos
     caminos,
     idDelJugador: jugador.personaje,
     velocidadEnMetrosPorSegundo: jugador.velocidadEnMetrosPorSegundo,
+    distanciaEnMetros: jugador.distanciaDelAcompananteEnMetros ?? DISTANCIA_DEL_ACOMPANANTE_POR_DEFECTO_EN_METROS,
     idDelAcompananteInicial: jugador.acompanante,
   });
 }

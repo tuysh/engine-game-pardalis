@@ -483,9 +483,26 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   una nube. En código son opciones de `escena.dice` con los mismos nombres. Al saltar una cinemática la línea
   se omite, así que nadie cambia de dibujo.
 - **Acompañante:** `jugador.acompanante` nombra a un personaje que sigue al jugador mientras explora, por el
-  piso y rodeando el decorado. Empieza a caminar cuando el jugador se aleja metro y medio y se detiene a
-  menos de un metro. Durante un diálogo o una cinemática no sigue: lo mueven los pasos. El paso `acompana`
+  piso y rodeando el decorado. Su lugar está a `jugador.distanciaDelAcompanante` metros del jugador (0.9 por
+  defecto), del lado contrario al que camina el jugador y un poco atrás (más lejos de la cámara), para que su
+  dibujo no tape al del jugador. Empieza a caminar cuando el jugador se aleja esa distancia y 0.6 m más, o cuando
+  quedó delante de él tapándolo; mientras el jugador camina lo sigue sin pararse. Durante un diálogo o una
+  cinemática no sigue: lo mueven los pasos; al terminar, se queda del lado donde lo dejaron. El paso `acompana`
   lo cambia o lo quita; ese cambio todavía no se guarda en la partida.
+- **Quién se dibuja encima:** entre hojas paradas (personajes y decorado `parado` o `colgado`), la que pisa más
+  cerca de la cámara se dibuja encima, medido desde el punto donde pisa cada una y no desde su centro: si no, un
+  árbol alto detrás del jugador se dibujaba encima de él (`orden-de-lo-transparente.ts`).
+- **Lo que tapa al jugador se aclara:** el escenario sabe quién es el jugador
+  (`Escenario.marcarJugador`, que llama la aplicación al montar el nivel) y, en cada cuadro, aclara hasta 35 % de
+  opacidad cada objeto `parado` que pise más cerca de la cámara que el jugador (o sea, que se dibuja encima de él)
+  y le cubra en la pantalla al menos una cuarta parte de su mitad de arriba (lo bajito que solo le tapa los pies,
+  como una banca o una fuente, no se aclara). A media vuelta del jugador se mide con su ancho completo,
+  para que el objeto no parpadee. Vuelve a su color con la misma suavidad (unas dos décimas de segundo).
+- **Lo `plano` se encima en el orden del mapa:** entre dos objetos `plano` que se cruzan, el que va después en la
+  capa `decorado` se pinta encima. Todos quedan bajo las sombras y los pies de los personajes.
+- **`confeti`** son papelitos (rectángulos que giran), repartidos a lo ancho de lo que ve la cámara y con un tamaño
+  que crece con la distancia, para verse igual en un plano cercano que en uno de 13 metros. `magia` siguen siendo
+  chispas alrededor del punto del efecto.
 - **Caminos:** al cargar el nivel se corta el piso en una rejilla (celdas de un cuarto de metro, sin las huellas
   del decorado `parado`). Con ella, el jugador al tocar un lugar y los pasos `camina` rodean lo que estorba.
   Un `camina` va en línea recta solo si quien camina o su punto están fuera del piso.
@@ -669,7 +686,9 @@ El jugador se mueve de dos formas, que conviven:
   no se puede alcanzar, llega lo más cerca que se pueda. Tocar a un personaje o a un objeto interactivo lo lleva
   junto a él y empieza su diálogo.
 - **Teclado:** mantener oprimida `W` `A` `S` `D` o una flecha lo hace caminar hacia ese lado. El teclado manda
-  sobre el lugar tocado. Durante un diálogo o un minijuego no mueve al jugador.
+  sobre el lugar tocado. Durante un diálogo o un minijuego no mueve al jugador. Contra lo que estorba, el jugador
+  se desliza por su orilla; si va de frente contra algo y a menos de medio metro de lado puede librarlo (un
+  arbusto, una maceta), lo rodea por el lado más cercano en vez de quedarse pegado.
 
 En los diálogos, `Enter` o la barra espaciadora siguen la línea, y las teclas `1` a `9` eligen una opción.
 

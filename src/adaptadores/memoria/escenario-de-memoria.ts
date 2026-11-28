@@ -44,6 +44,8 @@ export class EscenarioDeMemoria implements Escenario {
   cuadrosDibujados = 0;
   /** Las guías de depuración que se están mostrando. */
   guias: readonly GuiaDeDepuracion[] = [];
+  /** El personaje que se marcó como jugador. `undefined` = ninguno. */
+  idDelJugador: string | undefined;
   /** Los efectos que se han pedido, en orden. */
   readonly efectosReproducidos: { nombre: string; punto: Punto }[] = [];
   /** Para las pruebas: con `true`, el siguiente `montar` falla como si una imagen no hubiera cargado. */
@@ -139,6 +141,10 @@ export class EscenarioDeMemoria implements Escenario {
 
   reproducirEfecto(nombre: string, punto: Punto): void {
     this.efectosReproducidos.push({ nombre, punto });
+  }
+
+  marcarJugador(id: string | undefined): void {
+    this.idDelJugador = id;
   }
 
   enfocar(punto: Punto, camara: AjustesDeCamara): void {

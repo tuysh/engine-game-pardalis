@@ -143,6 +143,13 @@ export interface Escenario {
   reproducirEfecto(nombre: string, punto: Punto): void;
 
   /**
+   * Dice qué personaje es el jugador (`undefined` = el nivel no tiene). Lo `parado` del decorado que quede
+   * entre la cámara y él (un árbol, alguien parado cerca de la cámara) se vuelve transparente mientras lo tapa.
+   * Sigue valiendo al montar otra escenografía, hasta que se llame otra vez.
+   */
+  marcarJugador(id: string | undefined): void;
+
+  /**
    * Coloca la cámara: apunta a un punto del piso desde donde dicen los ajustes. La cámara salta ahí;
    * quien quiera un movimiento suave llama en cada cuadro con un encuadre un poco más cerca del final.
    */

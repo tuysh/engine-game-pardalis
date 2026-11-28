@@ -4,14 +4,16 @@
     "titulo": "El barrio",
     "personajes": {
       "tommy": { "idioma": "en", "sprite": "spr_tommy", "voz": { "tono": 1.4, "velocidad": 1.05 } },
-      "tortu": { "idioma": "es", "sprite": "spr_tortu", "voz": { "tono": 0.7, "velocidad": 0.9 } }
+      "tortu": { "idioma": "es", "sprite": "spr_tortu", "voz": { "tono": 0.7, "velocidad": 0.9 } },
+      "canelo": { "idioma": "es", "sprite": "spr_canelo" }
     }
   },
-  "jugador": { "personaje": "tommy" },
+  "jugador": { "personaje": "tommy", "acompanante": "canelo", "distanciaDelAcompanante": 1.1 },
   "mundo": {
     "planos": {
       "plano_puesto": { "mira": "tortu", "distancia": 5.5, "altura": 2.4, "giro": -14 },
-      "plano_salida": { "mira": "junto_a_la_salida", "distancia": 7, "altura": 3, "giro": 10 }
+      "plano_salida": { "mira": "junto_a_la_salida", "distancia": 7, "altura": 3, "giro": 10 },
+      "plano_lejos": { "mira": "arbol", "distancia": 13, "altura": 4, "giro": 0 }
     }
   },
   "estado": {
@@ -62,6 +64,20 @@
         ],
         "siNo": "aun_no_item"
       }
+    }
+  },
+  "interactivos": {
+    "arbol": {
+      "dialogo": [
+        {
+          "dice": [
+            { "camara": "plano_lejos", "duracion": 1 },
+            { "efecto": "confeti" },
+            { "dice": "tommy", "texto": "A big tree!", "trad": "¡Un árbol grandote!", "audio": "vo_tommy_arbol" },
+            { "camara": "jugador", "duracion": 1 }
+          ]
+        }
+      ]
     }
   },
   "cinematicas": {

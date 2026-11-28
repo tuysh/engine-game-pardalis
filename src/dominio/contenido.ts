@@ -38,6 +38,11 @@ export interface Jugador {
    * `undefined` = nadie lo acompaña al empezar. Un paso `acompana` puede cambiarlo después.
    */
   readonly acompanante?: string;
+  /**
+   * A cuántos metros del jugador se queda quien lo acompaña (`jugador.distanciaDelAcompanante`).
+   * `undefined` = la distancia por defecto (`DISTANCIA_DEL_ACOMPANANTE_POR_DEFECTO_EN_METROS`, en seguir.ts).
+   */
+  readonly distanciaDelAcompananteEnMetros?: number;
 }
 
 /** Desde dónde mira la cámara a lo que sigue. Son los mismos campos que un plano de cinemática. */

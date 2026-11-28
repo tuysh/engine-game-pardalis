@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 280">
+  <!-- Un árbol parado cerca de la cámara. Provisional: muestra que se aclara cuando tapa al jugador. -->
+  <rect x="74" y="150" width="32" height="126" rx="8" fill="#8a5a33" stroke="#572d09" stroke-width="5"/>
+  <circle cx="90" cy="90" r="80" fill="#3fa34d" stroke="#1f5e2a" stroke-width="6"/>
+  <circle cx="58" cy="70" r="20" fill="#6cc36b"/>
+  <circle cx="118" cy="110" r="16" fill="#6cc36b"/>
+</svg>
