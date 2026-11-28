@@ -46,5 +46,31 @@
     "archivo": "img/telon_fachadas.svg",
     "ancho": 2048,
     "alto": 500
+  },
+  "tortu_habla": {
+    "tipo": "animacion",
+    "cuadros": [
+      "img/tortu_habla_1.svg",
+      "img/tortu_habla_2.svg"
+    ],
+    "fps": 6,
+    "ancho": 110,
+    "alto": 170
+  },
+  "tortu_quieta": {
+    "tipo": "animacion",
+    "cuadros": [
+      "img/tortu_quieta_1.svg",
+      "img/tortu_quieta_1.svg",
+      "img/tortu_quieta_1.svg",
+      "img/tortu_quieta_1.svg",
+      "img/tortu_quieta_1.svg",
+      "img/tortu_quieta_1.svg",
+      "img/tortu_quieta_1.svg",
+      "img/tortu_quieta_2.svg"
+    ],
+    "fps": 4,
+    "ancho": 110,
+    "alto": 170
   }
 }

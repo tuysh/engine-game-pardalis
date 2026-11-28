@@ -13,7 +13,7 @@ import { CamaraDeEscena } from './camara-de-escena.ts';
 import { Cercania } from './cercania.ts';
 import { ComentariosDeZona } from './comentarios-de-zona.ts';
 import { decirLinea } from './decir-linea.ts';
-import { buscarDireccionDeAsset } from './direccion-de-asset.ts';
+import { buscarCuadrosDeAsset, buscarDireccionDeAsset } from './direccion-de-asset.ts';
 import { EscenasDelNivel } from './escenas-del-nivel.ts';
 import { EstadoEnJuego } from './estado-en-juego.ts';
 import { Exploracion } from './exploracion.ts';
@@ -126,6 +126,7 @@ function crearPiezasDeEscena(base: BaseDelNivel): PiezasDeEscena {
     estado: base.estado,
     minijuegos: pedido.minijuegos,
     direccionDeAsset: (clave) => buscarDireccionDeAsset(clave, nivel.assets, pedido.ubicacion),
+    cuadrosDeAsset: (clave) => buscarCuadrosDeAsset(clave, nivel.assets, pedido.ubicacion),
     imagenDeAsset: (clave) => crearImagenDeEscena(clave, nivel, pedido.ubicacion),
     alVerPalabra: (palabra) => avisos.alVerPalabra(palabra),
     alEmpezarMinijuego: (nombre) => avisos.alEmpezarMinijuego(nombre),

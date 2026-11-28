@@ -38,9 +38,12 @@ export type { Azar } from './puertos/azar.ts';
 export type { Partida, PartidaDeNivel } from './dominio/partida.ts';
 
 export type {
+  AnimacionDeImagen,
   AssetsParaMinijuego,
   AudioParaMinijuego,
   ContextoDeMinijuego,
+  CuadrosDeAsset,
+  ImagenAnimable,
   Minijuego,
   OpcionesDeSonidoParaMinijuego,
   ResultadoDeMinijuego,

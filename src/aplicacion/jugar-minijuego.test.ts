@@ -6,7 +6,7 @@ import { InterfazDeMemoria } from '../adaptadores/memoria/interfaz-de-memoria.ts
 import { RelojDeMemoria } from '../adaptadores/memoria/reloj-de-memoria.ts';
 import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from '../dominio/contenido.ts';
 import { crearEstadoDeNivel, valorDe } from '../dominio/estado.ts';
-import type { ContextoDeMinijuego, Minijuego, ResultadoDeMinijuego } from '../puertos/minijuego.ts';
+import type { AnimacionDeImagen, ContextoDeMinijuego, Minijuego, ResultadoDeMinijuego } from '../puertos/minijuego.ts';
 import { EstadoEnJuego } from './estado-en-juego.ts';
 import { jugarMinijuego } from './jugar-minijuego.ts';
 import type { CierreDeMinijuego } from './jugar-minijuego.ts';
@@ -49,6 +49,15 @@ function crearEscena(minijuegos: Record<string, Minijuego>) {
     }),
     minijuegos,
     direccionDeAsset: (clave) => (clave === 'comal' ? '/assets/img/comal.svg' : undefined),
+    cuadrosDeAsset: (clave) => {
+      if (clave === 'comal') return { urls: ['/assets/img/comal.svg'], cuadrosPorSegundo: 0 };
+      // Parpadea con dos dibujos: tres cuadros con los ojos abiertos y uno cerrados, a 4 por segundo.
+      if (clave === 'spr_tepo') {
+        return { urls: ['/tepo_1.svg', '/tepo_1.svg', '/tepo_1.svg', '/tepo_2.svg'], cuadrosPorSegundo: 4 };
+      }
+      if (clave === 'tepo_habla') return { urls: ['/tepo_habla_1.svg', '/tepo_habla_2.svg'], cuadrosPorSegundo: 8 };
+      return undefined;
+    },
     azar: () => 0.25,
     imagenDeAsset: (clave) => ({
       direcciones: [`/img/${clave}.svg`],
@@ -350,4 +359,135 @@ test('el minijuego puede tocar un sonido más bajito o más agudo, y una opción
     { direccion: '/assets/img/comal.svg', opciones: { volumen: 0.3, tono: undefined } },
     { direccion: '/assets/img/comal.svg', opciones: undefined },
   ]);
+});
+
+test('el minijuego puede pedir los cuadros de una animación, con su ritmo, para dibujarla a mano', async () => {
+  const pedidos: unknown[] = [];
+  const Tortilleria: Minijuego = async (contexto) => {
+    pedidos.push(contexto.assets.cuadros('spr_tepo'));
+    pedidos.push(contexto.assets.cuadros('comal'));
+    pedidos.push(contexto.assets.cuadros('no_existe'));
+    return { exito: true };
+  };
+  const { piezas } = crearEscena({ Tortilleria });
+
+  await jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+
+  expect(pedidos).toEqual([
+    { urls: ['/tepo_1.svg', '/tepo_1.svg', '/tepo_1.svg', '/tepo_2.svg'], cuadrosPorSegundo: 4 },
+    { urls: ['/assets/img/comal.svg'], cuadrosPorSegundo: 0 },
+    { urls: [], cuadrosPorSegundo: 0 },
+  ]);
+});
+
+test('una imagen animada por el minijuego parpadea con el reloj del juego y se detiene al cerrarse', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const tepo = { src: '' };
+  const Tortilleria: Minijuego = (contexto) => {
+    contexto.assets.animar(tepo, 'spr_tepo');
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Tortilleria });
+
+  const jugando = jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+  expect(tepo.src).toBe('/tepo_1.svg');
+  await reloj.avanzar(0.75);
+  expect(tepo.src).toBe('/tepo_2.svg');
+  terminar({ exito: true });
+  await jugando;
+  await reloj.avanzar(0.25);
+
+  expect(tepo.src).toBe('/tepo_2.svg');
+});
+
+test('cambiar pasa la imagen a otra animación desde el principio; una clave que no existe se ignora', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const tepo = { src: '' };
+  let animacion: AnimacionDeImagen | undefined;
+  const Tortilleria: Minijuego = (contexto) => {
+    animacion = contexto.assets.animar(tepo, 'spr_tepo');
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Tortilleria });
+  const vistos: string[] = [];
+
+  const jugando = jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(0.5);
+  animacion?.cambiar('tepo_habla');
+  vistos.push(tepo.src);
+  await reloj.avanzar(0.125);
+  vistos.push(tepo.src);
+  animacion?.cambiar('no_existe');
+  vistos.push(tepo.src);
+  animacion?.cambiar('spr_tepo');
+  vistos.push(tepo.src);
+  terminar({ exito: true });
+  await jugando;
+
+  expect(vistos).toEqual(['/tepo_habla_1.svg', '/tepo_habla_2.svg', '/tepo_habla_2.svg', '/tepo_1.svg']);
+});
+
+test('animar otra vez la misma imagen detiene la animación anterior', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const tepo = { src: '' };
+  let primera: AnimacionDeImagen | undefined;
+  const Tortilleria: Minijuego = (contexto) => {
+    primera = contexto.assets.animar(tepo, 'spr_tepo');
+    contexto.assets.animar(tepo, 'tepo_habla');
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Tortilleria });
+
+  const jugando = jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+  // Si la primera siguiera viva, a los 0.75 s pondría el cuadro con los ojos cerrados.
+  primera?.cambiar('spr_tepo');
+  await reloj.avanzar(0.75);
+  terminar({ exito: true });
+  await jugando;
+
+  expect(tepo.src).toBe('/tepo_habla_1.svg');
+});
+
+test('la señal que el minijuego le da a animar detiene solo esa imagen, antes de cerrarse', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const quitada = { src: '' };
+  const queSigue = { src: '' };
+  const alQuitarLaImagen = new AbortController();
+  const Tortilleria: Minijuego = (contexto) => {
+    contexto.assets.animar(quitada, 'spr_tepo', alQuitarLaImagen.signal);
+    contexto.assets.animar(queSigue, 'spr_tepo');
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Tortilleria });
+
+  const jugando = jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+  alQuitarLaImagen.abort();
+  await reloj.avanzar(0.75);
+  terminar({ exito: true });
+  await jugando;
+
+  expect(quitada.src).toBe('/tepo_1.svg');
+  expect(queSigue.src).toBe('/tepo_2.svg');
+});
+
+test('una imagen fija solo se pone, y cambiar después de detener ya no hace nada', async () => {
+  let terminar = (resultado: ResultadoDeMinijuego): void => {};
+  const comal = { src: '' };
+  const tepo = { src: '' };
+  const Tortilleria: Minijuego = (contexto) => {
+    contexto.assets.animar(comal, 'comal');
+    const animacion = contexto.assets.animar(tepo, 'spr_tepo');
+    animacion.detener();
+    animacion.cambiar('tepo_habla');
+    return new Promise((resolver) => (terminar = resolver));
+  };
+  const { piezas, reloj } = crearEscena({ Tortilleria });
+
+  const jugando = jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+  await reloj.avanzar(1);
+  terminar({ exito: true });
+  await jugando;
+
+  expect(comal.src).toBe('/assets/img/comal.svg');
+  expect(tepo.src).toBe('/tepo_1.svg');
 });

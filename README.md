@@ -146,6 +146,9 @@ El minijuego recibe además `audio` y `azar`. Como nada requiere leer, un miniju
 da un «ding» sin grabar nada. `audio.tocar('sfx_atrapa', { tono: 1.2, volumen: 0.5 })` toca un sonido
 más agudo o más bajito: así un mismo sonido sube de nota en cada acierto seguido. Para sortear algo conviene `azar()` en lugar de `Math.random()`: con la opción
 `semilla` el minijuego sale igual cada vez.
+Los personajes se animan como en el escenario, con el ritmo y la secuencia de `assets.config.json`:
+`const tepo = assets.animar(img, 'spr_tepo')` lo hace parpadear y `tepo.cambiar('tepo_habla')` le mueve la boca
+(detalles en [`docs/DISENO-3.0.md`](docs/DISENO-3.0.md) §6).
 Un ejemplo completo: [`ejemplo/tortilleria.ts`](ejemplo/tortilleria.ts).
 
 ### Una cinemática en código

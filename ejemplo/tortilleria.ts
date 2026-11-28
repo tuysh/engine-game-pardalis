@@ -5,6 +5,9 @@
 // Reglas de Pardalis que respeta:
 // - Nada requiere leer: se juega tocando dibujos, y cada tortilla dice una palabra en voz alta.
 // - Nunca castiga: no se puede perder. El botón de salir solo termina sin éxito, y el nivel responde amable.
+//
+// Doña Tortu acompaña desde un lado: parpadea con `assets.animar` y mueve la boca (`cambiar`) mientras dice
+// cada palabra. Sus cuadros y su ritmo están en `niveles/barrio/assets.config.json`.
 
 import type { Minijuego } from '../src/index.ts';
 
@@ -13,7 +16,7 @@ const PAUSA_ANTES_DE_TERMINAR_EN_MILISEGUNDOS = 900;
 const COLOR_DE_TORTILLA_CRUDA = '#f6e3b0';
 const COLOR_DE_TORTILLA_LISTA = '#d9a253';
 
-export const Tortilleria: Minijuego = ({ elemento, config, audio, senal }) => {
+export const Tortilleria: Minijuego = ({ elemento, config, audio, assets, senal }) => {
   return new Promise((terminar) => {
     const palabras = leerPalabras(config);
     let tortillasVolteadas = 0;
@@ -25,6 +28,18 @@ export const Tortilleria: Minijuego = ({ elemento, config, audio, senal }) => {
     const comal = document.createElement('div');
     comal.style.cssText =
       'display:flex; gap:24px; padding:48px 56px; border-radius:50%; background:#555; border:10px solid #2b2b2b;';
+
+    // Doña Tortu: una imagen que se anima sola, quieta y parpadeando, hasta que habla.
+    const tortu = document.createElement('img');
+    tortu.alt = '';
+    tortu.style.cssText = 'height:220px;';
+    const tortuAnimada = assets.animar(tortu, 'tortu_quieta');
+    // Se precargan sus cuadros: así el primer parpadeo y la primera vez que habla no esperan a la red.
+    for (const clave of ['tortu_quieta', 'tortu_habla']) {
+      for (const direccion of new Set(assets.cuadros(clave).urls)) {
+        new Image().src = direccion;
+      }
+    }
 
     for (let i = 0; i < TORTILLAS_POR_VOLTEAR; i++) {
       const tortilla = document.createElement('button');
@@ -42,7 +57,7 @@ export const Tortilleria: Minijuego = ({ elemento, config, audio, senal }) => {
           const palabra = palabras[i % palabras.length];
           if (palabra !== undefined) {
             // No se espera a que termine de decirla: se puede voltear otra tortilla mientras tanto.
-            void audio.decir(palabra, 'en');
+            void decirMoviendoLaBoca(palabra);
           }
           if (tortillasVolteadas === TORTILLAS_POR_VOLTEAR) {
             terminarConExito();
@@ -62,7 +77,24 @@ export const Tortilleria: Minijuego = ({ elemento, config, audio, senal }) => {
       'position:absolute; top:16px; right:16px; width:64px; height:64px; border-radius:50%; border:4px solid #2b2b2b; background:#fffdf5; font-size:32px; cursor:pointer;';
     salir.addEventListener('click', () => terminar({ exito: false }), { signal: senal });
 
-    elemento.append(comal, salir);
+    elemento.append(tortu, comal, salir);
+
+    // Cuántas frases se han empezado: solo la última devuelve a Doña Tortu a su pose quieta.
+    let frasesEmpezadas = 0;
+
+    /**
+     * Doña Tortu mueve la boca mientras dice la palabra. Si otra palabra corta esta, la que la cortó es la que
+     * después la deja quieta: así no se queda callada moviendo la boca, ni quieta mientras habla.
+     */
+    async function decirMoviendoLaBoca(palabra: string): Promise<void> {
+      frasesEmpezadas++;
+      const estaFrase = frasesEmpezadas;
+      tortuAnimada.cambiar('tortu_habla');
+      await audio.decir(palabra, 'en');
+      if (estaFrase === frasesEmpezadas) {
+        tortuAnimada.cambiar('tortu_quieta');
+      }
+    }
 
     function terminarConExito(): void {
       // Una pausa corta para que se vea la última tortilla volteada antes de volver al nivel.

@@ -313,7 +313,7 @@ export function Tortilleria({ elemento, config, estado, audio, assets, azar, sen
 | `estado` | Solo lectura: `obtener(nombre)`, `cumple(condicion)`. Para cambiarlo se usa `otorgar` en el resultado. |
 | `audio` | `tocar(clave, { volumen?, tono? })` (`volumen` de 0 a 1; `tono` de 0.25 a 4 es la velocidad de reproducción, y con ella la nota: `1.2` suena más agudo, para que un acierto tras otro suba de nota), `tocarTono(frecuenciaEnHertz, duracionEnSegundos)` (un «ding» sin archivo) y `decir(texto, idioma, clave?)`. `decir` devuelve una promesa que termina cuando acaba de hablar: `await audio.decir('¡Lechuga!', 'es'); await audio.decir('lettuce!', 'en');`. Solo se dice una frase a la vez: una frase nueva **corta** la que estuviera sonando. |
 | `azar` | `azar()` entrega un número de 0 a 1, como `Math.random`, pero sale del azar del motor: con la opción `semilla`, el minijuego también es repetible. |
-| `assets` | `url(clave)` para usar imágenes del manifiesto. |
+| `assets` | `url(clave)` para usar imágenes del manifiesto (de una animación, su primer cuadro); `cuadros(clave)` y `animar(imagen, clave, senal?)` para las animaciones: ver «Imágenes animadas en un minijuego». |
 | `senal` | `AbortSignal`: se dispara si el host destruye el juego. El minijuego debe limpiar lo suyo. |
 
 Resultado: `{ exito: boolean, otorgar?: Record<string, valor> }`. Si la función lanza un error se trata como
@@ -323,6 +323,51 @@ no tiene que leer el total y devolverlo.
 
 El motor coloca `elemento` a pantalla completa con un marco propio, así que el minijuego puede ponerle cualquier
 estilo sin perder su lugar. Un ejemplo completo está en [`ejemplo/tortilleria.ts`](../ejemplo/tortilleria.ts).
+
+### Imágenes animadas en un minijuego
+
+Los personajes de un minijuego se mueven igual que en el escenario: parpadean, respiran y mueven la boca al
+hablar. `assets.animar(imagen, clave)` le va cambiando el `src` a un `<img>` con los cuadros de una animación
+del manifiesto, al ritmo (`fps`) y en el orden (`secuencia`) de `assets.config.json`, y la repite sin fin.
+Devuelve un control con dos métodos:
+
+- `cambiar(clave)`: pasa a otra animación en la misma imagen, desde su primer cuadro. Con él se alterna entre
+  estar quieto (`spr_tepo`) y hablar (`tepo_habla`). Una clave que no existe se ignora con una advertencia.
+- `detener()`: la deja en el cuadro que mostraba. Después, `cambiar` ya no hace nada.
+
+```js
+const tepo = document.createElement('img');
+tepo.alt = '';
+const animacion = assets.animar(tepo, 'spr_tepo');   // quieto, parpadeando
+elemento.append(tepo);
+
+animacion.cambiar('tepo_habla');                     // mueve la boca mientras habla
+await audio.decir('¡Buenos días!', 'es');
+animacion.cambiar('spr_tepo');
+```
+
+- Todo se detiene solo al cerrarse el minijuego. El tercer parámetro, una `AbortSignal` opcional, la detiene
+  antes (por ejemplo, al quitar esa imagen).
+- Volver a animar la misma imagen detiene la animación que tenía: nunca quedan dos peleándose por el `src`.
+- El tiempo es el del juego: si el host pausa el juego, la animación también se pausa.
+- Una imagen fija se pone y no se anima, así que `animar` sirve para cualquier imagen.
+- `imagen` puede ser cualquier objeto con `src` (`ImagenAnimable`), no solo un `<img>`.
+- Con una clave que no es imagen del nivel, `animar` avisa en la consola y deja la imagen como estaba.
+
+Para dibujar una animación por su cuenta (en un `<canvas>`, en una textura de Three.js) o para precargar sus
+cuadros, `assets.cuadros(clave)` entrega `{ urls, cuadrosPorSegundo }`: `urls` ya viene en el orden de la
+`secuencia`, con los cuadros repetidos que pida; una imagen fija trae una sola dirección y `cuadrosPorSegundo: 0`,
+y una clave que no es imagen del nivel trae `urls: []` y una advertencia.
+
+```js
+// El primer cambio de cuadro no parpadea si cada dibujo ya está en la memoria del navegador.
+for (const url of new Set(assets.cuadros('tepo_habla').urls)) new Image().src = url;
+```
+
+Un host que arma a mano un `ContextoDeMinijuego` (por ejemplo, una mesa de pruebas que abre un minijuego sin
+el motor) ahora tiene que darle también `assets.cuadros` y `assets.animar`; TypeScript lo señala. Para una
+prueba basta con poner el primer cuadro: `animar: (imagen, clave) => { imagen.src = url(clave); return { cambiar:
+(otra) => { imagen.src = url(otra); }, detener: () => {} }; }`.
 
 ## 7. Cinemáticas
 

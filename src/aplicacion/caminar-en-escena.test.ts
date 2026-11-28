@@ -52,6 +52,7 @@ async function crearEscena() {
     estado: new EstadoEnJuego(crearEstadoDeNivel({ objetivos: [], variables: [], lista: {} }), () => {}),
     minijuegos: {},
     direccionDeAsset: () => undefined,
+    cuadrosDeAsset: () => undefined,
     azar: () => 0,
     imagenDeAsset: (clave) => ({
       direcciones: [`/img/${clave}.svg`],

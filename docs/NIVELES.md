@@ -620,6 +620,9 @@ secuencia de arriba deja los ojos abiertos cinco cuadros y los cierra uno; a `"f
 casi dos segundos abiertos y un instante cerrados. Cada número es el del archivo; nombrar uno que no existe
 es error. Sin `secuencia`, los cuadros pasan del primero al último.
 
+Los minijuegos usan las mismas animaciones, con el mismo ritmo y la misma secuencia: `assets.animar(img, clave)`
+mueve un `<img>` (ver `docs/DISENO-3.0.md` §6, «Imágenes animadas en un minijuego»).
+
 El generador avisa si un SVG enlaza archivos externos (una foto, una fuente): al usarse en el juego no se cargan.
 
 Al terminar dice qué animaciones formó, para que una que nadie quiso se note al momento:
