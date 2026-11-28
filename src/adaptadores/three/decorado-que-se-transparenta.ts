@@ -5,10 +5,13 @@
 // se aclara poco a poco hasta dejarlo ver; cuando ya no lo tapa, vuelve a verse completa.
 //
 // «Lo tapa» se mide en la pantalla: cuánto del rectángulo que ocupa el jugador queda dentro del rectángulo
-// que ocupa la pieza. Solo cuentan las piezas que están más cerca de la cámara que el jugador.
+// que ocupa la pieza. Solo cuentan las piezas que están más cerca de la cámara que el jugador, medido igual que
+// el orden de dibujo (orden-de-lo-transparente.ts): desde el punto donde pisa cada hoja. Así solo se aclara
+// lo que de verdad se dibuja encima del jugador.
 
 import { Box3, MeshBasicMaterial, Vector3 } from 'three';
 import type { Camera, Mesh } from 'three';
+import { profundidadAnteLaCamara } from './orden-de-lo-transparente.ts';
 
 /** Qué tanto se ve una pieza mientras tapa al jugador: 1 = completa, 0 = nada. */
 const OPACIDAD_MIENTRAS_TAPA = 0.35;
@@ -44,18 +47,23 @@ export class DecoradoQueSeTransparenta {
    * Sin jugador (`undefined`), todo vuelve a verse completo. `segundos` es el tiempo desde el cuadro anterior.
    */
   actualizar(camara: Camera, hojaDelJugador: Mesh | undefined, segundos: number): void {
+    // La cámara pudo moverse desde el último dibujo: así las medidas son las de este cuadro.
+    camara.updateMatrixWorld();
     let rectanguloDelJugador: RectanguloEnPantalla | undefined;
-    let distanciaDelJugador = 0;
+    let profundidadDelJugador = 0;
     if (hojaDelJugador !== undefined) {
-      rectanguloDelJugador = rectanguloEnPantallaDe(hojaDelJugador, camara);
-      distanciaDelJugador = distanciaALaCamara(hojaDelJugador, camara);
+      rectanguloDelJugador = rectanguloEnPantallaDe(cajaDeLaHojaSinVoltear(hojaDelJugador), camara);
+      profundidadDelJugador = profundidadAnteLaCamara(hojaDelJugador, camara);
     }
 
     for (const pieza of this.piezas) {
       let opacidadDeseada = 1;
-      const estaMasCercaDeLaCamara = distanciaALaCamara(pieza, camara) < distanciaDelJugador;
+      const profundidad = profundidadAnteLaCamara(pieza, camara);
+      // Lo que queda detrás de la cámara no se ve, y llevado a la pantalla daría un rectángulo sin sentido.
+      const estaMasCercaDeLaCamara = profundidad > 0 && profundidad < profundidadDelJugador;
       if (rectanguloDelJugador !== undefined && estaMasCercaDeLaCamara) {
-        const cubierta = parteCubierta(rectanguloDelJugador, rectanguloEnPantallaDe(pieza, camara));
+        const cajaDeLaPieza = new Box3().setFromObject(pieza);
+        const cubierta = parteCubierta(rectanguloDelJugador, rectanguloEnPantallaDe(cajaDeLaPieza, camara));
         if (cubierta >= PARTE_CUBIERTA_QUE_CUENTA) {
           opacidadDeseada = OPACIDAD_MIENTRAS_TAPA;
         }
@@ -79,19 +87,34 @@ function acercarOpacidad(pieza: Mesh, opacidadDeseada: number, cambioMaximo: num
   material.opacity += Math.sign(diferencia) * cambioMaximo;
 }
 
-function distanciaALaCamara(pieza: Mesh, camara: Camera): number {
-  const centro = new Box3().setFromObject(pieza).getCenter(new Vector3());
-  return centro.distanceTo(camara.position);
+/**
+ * La caja que ocupa la hoja de un personaje con todo su ancho, aunque esté volteándose.
+ * Un personaje se voltea encogiendo su hoja hasta dejarla de canto (personajes-de-papel.ts); medida así,
+ * a media vuelta no taparía nada y el árbol que lo tapa parpadearía cada vez que el jugador da la vuelta.
+ */
+function cajaDeLaHojaSinVoltear(hoja: Mesh): Box3 {
+  const caja = new Box3().setFromObject(hoja);
+  if (hoja.geometry.boundingBox === null) {
+    hoja.geometry.computeBoundingBox();
+  }
+  const cajaDeLaForma = hoja.geometry.boundingBox;
+  if (cajaDeLaForma === null) return caja;
+
+  // Las hojas son de frente a lo largo de `x` (crearHojaParada): su ancho completo es el de su forma.
+  const medioAncho = (cajaDeLaForma.max.x - cajaDeLaForma.min.x) / 2;
+  const centroEnX = hoja.getWorldPosition(new Vector3()).x;
+  caja.min.x = centroEnX - medioAncho;
+  caja.max.x = centroEnX + medioAncho;
+  return caja;
 }
 
-/** El rectángulo de la pantalla que encierra a la pieza tal como la ve la cámara. */
-function rectanguloEnPantallaDe(pieza: Mesh, camara: Camera): RectanguloEnPantalla {
-  const caja = new Box3().setFromObject(pieza);
+/** El rectángulo de la pantalla que encierra a una caja del espacio tal como la ve la cámara. */
+function rectanguloEnPantallaDe(caja: Box3, camara: Camera): RectanguloEnPantalla {
   let izquierda = Infinity;
   let derecha = -Infinity;
   let abajo = Infinity;
   let arriba = -Infinity;
-  // Las ocho esquinas de la caja que ocupa la pieza en el espacio, llevadas a la pantalla.
+  // Las ocho esquinas de la caja, llevadas a la pantalla.
   for (const x of [caja.min.x, caja.max.x]) {
     for (const y of [caja.min.y, caja.max.y]) {
       for (const z of [caja.min.z, caja.max.z]) {
