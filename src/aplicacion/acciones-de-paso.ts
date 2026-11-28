@@ -15,6 +15,7 @@ import type {
   PasoDeAnimacion,
   PasoDeAparicion,
   PasoDeCamara,
+  PasoDeEfecto,
   PasoDeFundido,
   PasoDeLinea,
   PasoDeMirada,
@@ -29,7 +30,8 @@ export interface AccionesDeDialogo {
   /** Muestra la pregunta con esas opciones y devuelve la posición en la lista de la que eligió el jugador. */
   elegirOpcion(pregunta: string, opciones: readonly Opcion[], senal: AbortSignal): Promise<number>;
 
-  reproducirEfecto(nombre: string, senal: AbortSignal): Promise<void>;
+  /** Muestra y hace sonar un efecto (`magia`, `confeti`, `destello`). Termina cuando el efecto acabó. */
+  reproducirEfecto(efecto: PasoDeEfecto, senal: AbortSignal): Promise<void>;
 
   /** Lleva al personaje caminando hasta un punto del mapa. */
   caminar(personaje: string, punto: string, senal: AbortSignal): Promise<void>;

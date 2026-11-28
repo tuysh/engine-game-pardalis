@@ -435,3 +435,16 @@ test('mundo.franjas acepta "normales", "delgadas" y "ninguna"; otro valor es err
   if (gruesas.tipo !== 'invalido') return;
   expect(gruesas.errores).toEqual(['mundo.franjas: Opción inválida: se esperaba una de "normales"|"delgadas"|"ninguna"']);
 });
+
+test('un paso "efecto" puede nombrar el sonido que lo acompaña', () => {
+  const lectura = new LectorDeNivelesDeJson().leerContenido({
+    meta: META,
+    secuencias: { foto: [{ efecto: 'destello', sonido: 'sfx_foto' }, { efecto: 'magia' }] },
+  });
+
+  if (lectura.tipo !== 'leido') throw new Error(`no se pudo leer: ${lectura.errores.join('; ')}`);
+  expect(lectura.valor.secuencias['foto']).toEqual([
+    { tipo: 'efecto', nombre: 'destello', sonido: 'sfx_foto' },
+    { tipo: 'efecto', nombre: 'magia' },
+  ]);
+});

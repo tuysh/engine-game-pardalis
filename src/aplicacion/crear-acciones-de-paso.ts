@@ -25,8 +25,8 @@ function crearAccionesDeDialogo(escena: PiezasDeEscena): AccionesDeDialogo {
     elegirOpcion(pregunta, opciones, senal) {
       return elegirOpcion({ pregunta, opciones }, senal, escena);
     },
-    reproducirEfecto(nombre, senal) {
-      return reproducirEfecto(nombre, senal, escena);
+    reproducirEfecto(efecto, senal) {
+      return reproducirEfecto(efecto, senal, escena);
     },
     caminar(personaje, punto, senal) {
       return caminarEnEscena({ personaje, punto }, senal, escena);

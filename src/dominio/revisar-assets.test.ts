@@ -179,6 +179,7 @@ test('en los pasos de escena, la animación y el video deben existir; un sonido 
     { tipo: 'musica', clave: 'mus_barrio' },
     { tipo: 'video', clavePorIdioma: { es: 'intro_es', en: 'intro_en' } },
     { tipo: 'video', clavePorIdioma: { es: 'vo_hola', en: 'vo_hola' } },
+    { tipo: 'efecto', nombre: 'destello', sonido: 'sfx_foto' },
   ]);
 
   expect(diagnostico.errores).toEqual([
@@ -190,6 +191,7 @@ test('en los pasos de escena, la animación y el video deben existir; un sonido 
   expect(diagnostico.advertencias).toEqual([
     'secuencias.prueba[3].sonido: no existe el audio "puerta_abre"; no sonará',
     'secuencias.prueba[4].musica: no existe el audio "mus_barrio"; no sonará',
+    'secuencias.prueba[7].sonido: no existe el audio "sfx_foto"; no sonará',
   ]);
 });
 

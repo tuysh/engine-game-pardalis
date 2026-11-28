@@ -43,6 +43,7 @@ export class InterfazDelNavegador implements Interfaz {
   private readonly aviso = new SenalEnPantalla('aviso');
   private readonly capaDeToque = crearOculto('div', 'capa-de-toque');
   private readonly fundido = crearOculto('div', 'fundido');
+  private readonly destello = crearOculto('div', 'destello');
   private readonly franjas = crearOculto('div', 'franjas');
   /** Qué parte del alto ocupa cada franja mientras se ven. */
   private proporcionDeLaFranja = 0;
@@ -72,6 +73,7 @@ export class InterfazDelNavegador implements Interfaz {
       this.flecha.elemento,
       this.aviso.elemento,
       this.fundido,
+      this.destello,
       this.franjas,
       this.capaDeToque,
       this.globo.elemento,
@@ -164,6 +166,11 @@ export class InterfazDelNavegador implements Interfaz {
   ponerFundido(opacidad: number): void {
     this.fundido.style.opacity = String(opacidad);
     this.fundido.hidden = opacidad <= 0;
+  }
+
+  ponerDestello(opacidad: number): void {
+    this.destello.style.opacity = String(opacidad);
+    this.destello.hidden = opacidad <= 0;
   }
 
   mostrarFranjasDeCine(alSaltar: (() => void) | undefined, grosor: GrosorDeFranjas): void {

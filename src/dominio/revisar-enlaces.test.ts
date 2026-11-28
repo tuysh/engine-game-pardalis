@@ -113,7 +113,7 @@ test('un efecto que no existe lista los disponibles', () => {
   const diagnostico = revisarPasosDeTortu([{ tipo: 'efecto', nombre: 'chispas' }]);
 
   expect(diagnostico.errores).toEqual([
-    'efecto "chispas" en npcs.tortu.dialogo[0].dice[0] no existe; los disponibles son: magia, confeti',
+    'efecto "chispas" en npcs.tortu.dialogo[0].dice[0] no existe; los disponibles son: magia, confeti, destello',
   ]);
 });
 
@@ -193,8 +193,8 @@ test('se revisan también los pasos de adentro de un condicional y de una opció
   ]);
 
   expect(diagnostico.errores).toEqual([
-    'efecto "chispas" en npcs.tortu.dialogo[0].dice[0].dice[0] no existe; los disponibles son: magia, confeti',
-    'efecto "humo" en npcs.tortu.dialogo[0].dice[1].opciones[0].secuencia[0] no existe; los disponibles son: magia, confeti',
+    'efecto "chispas" en npcs.tortu.dialogo[0].dice[0].dice[0] no existe; los disponibles son: magia, confeti, destello',
+    'efecto "humo" en npcs.tortu.dialogo[0].dice[1].opciones[0].secuencia[0] no existe; los disponibles son: magia, confeti, destello',
   ]);
 });
 

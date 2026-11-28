@@ -80,6 +80,12 @@ export interface Interfaz {
   ponerFundido(opacidad: number): void;
 
   /**
+   * Cubre toda la pantalla de blanco, como el flash de una cámara (el efecto `destello`).
+   * `opacidad` va de 0 (no se ve) a 1 (todo blanco). Los globos de diálogo se siguen viendo encima.
+   */
+  ponerDestello(opacidad: number): void;
+
+  /**
    * Muestra las franjas negras de arriba y abajo que dicen «esto es una cinemática», y no deja que
    * los toques lleguen al escenario. Si se da `alSaltar`, aparece un botón que lo llama al tocarlo.
    * `grosor` es el de `mundo.franjas` del nivel. Mientras se ven, los globos se acomodan entre las dos franjas.

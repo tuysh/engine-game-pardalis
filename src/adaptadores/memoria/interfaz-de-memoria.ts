@@ -30,6 +30,10 @@ export class InterfazDeMemoria implements Interfaz {
   lugarDelAviso: LugarEnPantalla | undefined;
   /** Qué tan oscura está la pantalla: 0 = nada, 1 = todo negro. */
   opacidadDelFundido = 0;
+  /** Qué tan blanca está la pantalla por un destello: 0 = nada, 1 = todo blanco. */
+  opacidadDelDestello = 0;
+  /** La opacidad más alta que llegó a tener el destello: dice si alguna vez se vio. */
+  opacidadMaximaDelDestello = 0;
   /** `true` mientras se ven las franjas de cine. */
   hayFranjasDeCine = false;
   /** El grosor con que se mostraron las franjas la última vez. */
@@ -110,6 +114,11 @@ export class InterfazDeMemoria implements Interfaz {
 
   ponerFundido(opacidad: number): void {
     this.opacidadDelFundido = opacidad;
+  }
+
+  ponerDestello(opacidad: number): void {
+    this.opacidadDelDestello = opacidad;
+    this.opacidadMaximaDelDestello = Math.max(this.opacidadMaximaDelDestello, opacidad);
   }
 
   mostrarFranjasDeCine(alSaltar: (() => void) | undefined, grosor: GrosorDeFranjas): void {

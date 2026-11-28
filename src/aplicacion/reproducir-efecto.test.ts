@@ -77,7 +77,7 @@ const TOMMY: Jugador = { personaje: 'tommy', velocidadEnMetrosPorSegundo: 2 };
 test('el efecto aparece sobre el jugador', async () => {
   const { piezas, escenario } = await crearEscena(TOMMY);
 
-  void reproducirEfecto('magia', SIN_INTERRUMPIR, piezas);
+  void reproducirEfecto({ nombre: 'magia' }, SIN_INTERRUMPIR, piezas);
 
   expect(escenario.efectosReproducidos).toEqual([{ nombre: 'magia', punto: { x: 2, y: 3 } }]);
 });
@@ -85,7 +85,7 @@ test('el efecto aparece sobre el jugador', async () => {
 test('en un nivel sin jugador, el efecto aparece en el centro del lugar', async () => {
   const { piezas, escenario } = await crearEscena();
 
-  void reproducirEfecto('confeti', SIN_INTERRUMPIR, piezas);
+  void reproducirEfecto({ nombre: 'confeti' }, SIN_INTERRUMPIR, piezas);
 
   expect(escenario.efectosReproducidos).toEqual([{ nombre: 'confeti', punto: { x: 5, y: 2 } }]);
 });
@@ -93,7 +93,7 @@ test('en un nivel sin jugador, el efecto aparece en el centro del lugar', async 
 test('"magia" toca tres notas que suben, una tras otra', async () => {
   const { piezas, audio, reloj } = await crearEscena(TOMMY);
 
-  void reproducirEfecto('magia', SIN_INTERRUMPIR, piezas);
+  void reproducirEfecto({ nombre: 'magia' }, SIN_INTERRUMPIR, piezas);
   await reloj.avanzar(0.05);
   expect(audio.tonosTocados).toEqual([660]);
   await reloj.avanzar(0.3);
@@ -105,7 +105,7 @@ test('el efecto termina al segundo de empezar', async () => {
   const { piezas, reloj } = await crearEscena(TOMMY);
   let termino = false;
 
-  void reproducirEfecto('confeti', SIN_INTERRUMPIR, piezas).then(() => {
+  void reproducirEfecto({ nombre: 'confeti' }, SIN_INTERRUMPIR, piezas).then(() => {
     termino = true;
   });
   await reloj.avanzar(0.9);
@@ -119,7 +119,7 @@ test('al interrumpir, termina enseguida y ya no toca las notas que faltaban', as
   const { piezas, audio, reloj } = await crearEscena(TOMMY);
   const interrupcion = new AbortController();
 
-  const efecto = reproducirEfecto('magia', interrupcion.signal, piezas);
+  const efecto = reproducirEfecto({ nombre: 'magia' }, interrupcion.signal, piezas);
   await reloj.avanzar(0.05);
   interrupcion.abort();
   await efecto;
@@ -127,4 +127,49 @@ test('al interrumpir, termina enseguida y ya no toca las notas que faltaban', as
 
   expect(audio.tonosTocados).toEqual([660]);
   expect(reloj.hayEsperasPendientes).toBe(false);
+});
+
+test('"destello" pone la pantalla blanca de golpe, la aclara poco a poco y no lanza partículas', async () => {
+  const { piezas, escenario, reloj } = await crearEscena(TOMMY);
+  const interfaz = piezas.interfaz as InterfazDeMemoria; // `crearEscena` usa siempre una interfaz de memoria
+  let termino = false;
+
+  void reproducirEfecto({ nombre: 'destello' }, SIN_INTERRUMPIR, piezas).then(() => {
+    termino = true;
+  });
+  expect(interfaz.opacidadDelDestello).toBe(1);
+  await reloj.avanzar(0.1);
+  await reloj.avanzar(0.3);
+  expect(interfaz.opacidadDelDestello).toBeCloseTo(0.5);
+  await reloj.avanzar(0.3);
+  expect(interfaz.opacidadDelDestello).toBe(0);
+  await reloj.avanzar(0.3);
+
+  expect(interfaz.opacidadDelDestello).toBe(0);
+  expect(termino).toBe(true);
+  expect(escenario.efectosReproducidos).toEqual([]);
+});
+
+test('al interrumpir un destello, la pantalla no se queda blanca', async () => {
+  const { piezas, reloj } = await crearEscena(TOMMY);
+  const interfaz = piezas.interfaz as InterfazDeMemoria; // `crearEscena` usa siempre una interfaz de memoria
+  const interrupcion = new AbortController();
+
+  const efecto = reproducirEfecto({ nombre: 'destello' }, interrupcion.signal, piezas);
+  await reloj.avanzar(0.02);
+  interrupcion.abort();
+  await efecto;
+
+  expect(interfaz.opacidadDelDestello).toBe(0);
+  expect(reloj.hayEsperasPendientes).toBe(false);
+});
+
+test('un efecto con "sonido" toca ese sonido en vez de sus notas', async () => {
+  const { piezas, audio } = await crearEscena(TOMMY);
+  const conSonidos: PiezasDeEscena = { ...piezas, direccionDeAsset: (clave) => `/voz/${clave}.mp3` };
+
+  void reproducirEfecto({ nombre: 'destello', sonido: 'sfx_foto' }, SIN_INTERRUMPIR, conSonidos);
+
+  expect(audio.sonidosTocados).toEqual(['/voz/sfx_foto.mp3']);
+  expect(audio.tonosTocados).toEqual([]);
 });

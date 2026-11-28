@@ -156,6 +156,6 @@ test('los pasos de adentro de "juntos" también se revisan, con su ruta', () => 
   ]);
 
   expect(diagnostico.errores).toEqual([
-    'efecto "chispas" en cinematicas.intro.pasos[0].juntos[1] no existe; los disponibles son: magia, confeti',
+    'efecto "chispas" en cinematicas.intro.pasos[0].juntos[1] no existe; los disponibles son: magia, confeti, destello',
   ]);
 });

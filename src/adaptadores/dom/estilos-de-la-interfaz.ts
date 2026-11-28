@@ -174,6 +174,13 @@ export const ESTILOS_DE_LA_INTERFAZ = `
   background: #000000;
 }
 
+/* El destello: un flash blanco de toda la pantalla, como el de una cámara de fotos. */
+.destello {
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+}
+
 /* Las franjas de cine: una arriba y una abajo. La capa completa atrapa los toques durante la cinemática. */
 .franjas {
   position: absolute;
@@ -336,6 +343,10 @@ export const ESTILOS_DE_LA_INTERFAZ = `
   .flecha svg,
   .aviso svg {
     animation: none;
+  }
+  /* Con menos movimiento, el flash es más suave: un golpe de blanco total puede molestar. */
+  .destello {
+    background: rgb(255 255 255 / 55%);
   }
 }
 `;
