@@ -546,6 +546,34 @@ test('la tecla de hablar no hace nada si no hay nadie cerca, ni durante un diál
   expect(interfaz.globo).toBeUndefined();
 });
 
+test('mientras un minijuego está abierto, la tecla de hablar no empieza otra plática con quien está cerca', async () => {
+  // Doña Tortu abre un minijuego que sigue abierto hasta que la prueba lo cierra.
+  const nivelConMinijuego: Nivel = {
+    ...NIVEL,
+    contenido: {
+      ...NIVEL.contenido,
+      npcs: { tortu: { dialogo: [{ pasos: [{ tipo: 'juego', nombre: 'Comal', config: undefined }] }] } },
+    },
+  };
+  let cerrarElMinijuego = (): void => {};
+  const Comal: Minijuego = () =>
+    new Promise((terminar) => {
+      cerrarElMinijuego = () => terminar({ exito: true });
+    });
+  const { escenario, controles, reloj, dialogos } = await empezar(nivelConMinijuego, undefined, { Comal });
+  escenario.simularToque({ tipo: 'personaje', id: 'tortu' });
+  await reloj.avanzar(3);
+  expect(dialogos).toEqual(['inicio npc tortu']);
+
+  // Enter en un botón del minijuego llega al motor como la tecla de hablar, y doña Tortu sigue cerca.
+  controles.simularTeclaDeHablar();
+  await reloj.avanzar(1);
+  cerrarElMinijuego();
+  await reloj.avanzar(1);
+
+  expect(dialogos).toEqual(['inicio npc tortu', 'fin npc tortu']);
+});
+
 test('pedir hablar con una tecla de movimiento todavía oprimida inicia el diálogo igual', async () => {
   const { escenario, interfaz, controles, reloj } = await empezar(NIVEL);
   escenario.simularToque({ tipo: 'piso', punto: { x: 4.5, y: 2 } });

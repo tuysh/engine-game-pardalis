@@ -1,12 +1,20 @@
 // Los controles del jugador con el teclado: las flechas o las teclas W, A, S y D para caminar,
 // y E, Enter o la barra espaciadora para hablar con quien tenga cerca.
 //
+// Enter o la barra espaciadora oprimidas en un control de la página (un botón del host, una tarjeta de
+// opciones, algo dentro de un minijuego o de un diálogo del host) son de ese control: aquí no se cancelan
+// ni piden hablar. `E` sí habla con el foco en un botón (tras tocar la bocina, por ejemplo), pero no dentro
+// de un minijuego o de un diálogo del host, que tapan a quien está detrás; ahí tampoco las flechas mueven
+// al jugador.
+//
 // Las teclas se reconocen por su lugar en el teclado (`code`) y no por la letra que escriben (`key`):
 // así W, A, S y D quedan bajo los mismos dedos también en teclados con otra distribución.
 //
-// Se verifica a mano en la demo; no tiene pruebas automáticas porque necesita un navegador.
+// Se verifica a mano en la demo; la decisión de qué tecla es de un control se prueba en
+// `tecla-de-un-control.test.ts`.
 
 import type { Controles, DireccionDeControl } from '../../puertos/controles.ts';
+import { esTeclaDeUnCampo, esTeclaDeUnControl, esTeclaDeUnaVentana } from './tecla-de-un-control.ts';
 
 /** Qué eje y qué sentido mueve cada tecla. */
 const MOVIMIENTO_POR_TECLA: Readonly<Record<string, DireccionDeControl>> = {
@@ -22,6 +30,9 @@ const MOVIMIENTO_POR_TECLA: Readonly<Record<string, DireccionDeControl>> = {
 
 /** Las teclas que piden hablar, por su `code`. */
 const TECLAS_DE_HABLAR: readonly string[] = ['KeyE', 'Enter', 'Space'];
+
+/** Las teclas de hablar que, además, oprimen el botón que tiene el foco. */
+const TECLAS_QUE_OPRIMEN_BOTONES: readonly string[] = ['Enter', 'Space'];
 
 export class ControlesDelTeclado implements Controles {
   /** Las teclas de movimiento que están oprimidas ahora, por su `code`. */
@@ -68,8 +79,12 @@ export class ControlesDelTeclado implements Controles {
   // Estas funciones se guardan como propiedades (y no como métodos) para poder quitarlas
   // después con `removeEventListener`, que necesita exactamente la misma función que se registró.
   private readonly alOprimir = (evento: KeyboardEvent): void => {
+    const camino = evento.composedPath();
     // Si el host tiene un campo de texto y la persona está escribiendo, sus teclas no son para el juego.
-    if (estaEscribiendo(evento)) return;
+    if (esTeclaDeUnCampo(camino)) return;
+    // Dentro de un minijuego o de un diálogo del host las teclas son de esa ventana: las flechas no mueven al
+    // jugador que quedó detrás (ni se cancelan, por si la ventana las usa) y `E` no pide hablar con nadie.
+    if (esTeclaDeUnaVentana(camino)) return;
 
     if (Object.hasOwn(MOVIMIENTO_POR_TECLA, evento.code)) {
       this.teclasOprimidas.add(evento.code);
@@ -80,6 +95,9 @@ export class ControlesDelTeclado implements Controles {
 
     // `repeat` es verdadero en los avisos que el teclado repite al dejar una tecla oprimida: se pide hablar una vez.
     const esTeclaDeHablar = TECLAS_DE_HABLAR.includes(evento.code) && !evento.repeat;
+    // En un botón, Enter y la barra espaciadora lo oprimen. Cancelarlas aquí lo dejaría sin funcionar con
+    // teclado, y pedir hablar empezaría una plática con quien está cerca que nadie pidió.
+    if (TECLAS_QUE_OPRIMEN_BOTONES.includes(evento.code) && esTeclaDeUnControl(camino)) return;
     // Enter y la barra espaciadora también siguen el diálogo, y la interfaz las atiende antes (escucha en
     // `document`, que recibe la tecla antes que `window`) y lo marca con `preventDefault`. Si esa tecla cerró
     // la última línea, aquí el diálogo ya terminó: pedir hablar lo empezaría otra vez con quien está cerca.
@@ -101,10 +119,4 @@ export class ControlesDelTeclado implements Controles {
   private readonly alPerderElFoco = (): void => {
     this.teclasOprimidas.clear();
   };
-}
-
-function estaEscribiendo(evento: KeyboardEvent): boolean {
-  const destino = evento.target;
-  if (!(destino instanceof HTMLElement)) return false;
-  return destino.isContentEditable || destino instanceof HTMLInputElement || destino instanceof HTMLTextAreaElement;
 }

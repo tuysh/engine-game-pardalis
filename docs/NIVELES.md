@@ -778,8 +778,13 @@ Y los de las cinemáticas y los pasos de escena:
 | Hablar con alguien o usar un objeto | Tocarlo: el jugador camina hasta ahí | — |
 | Hablar con quien se tiene a la mano | — | `E`, `Enter` o la barra espaciadora |
 | Seguir un diálogo | Tocar la pantalla | `Enter` o la barra espaciadora |
-| Elegir una opción | Tocar su tarjeta | Las teclas `1` a `9` |
-| Saltar una cinemática | Tocar el botón de saltar | — |
+| Elegir una opción | Tocar su tarjeta | Las teclas `1` a `9`, o `Tab` hasta la tarjeta y `Enter` o la barra espaciadora |
+| Saltar una cinemática | Tocar el botón de saltar | `Tab` hasta el botón y `Enter` |
+
+Si el foco está en un botón, un enlace, un campo o algo con `role="button"` o `role="dialog"` (los del tablero
+del host, los de un minijuego, las tarjetas), `Enter` y la barra espaciadora oprimen ese botón: el motor no
+las toma para hablar ni para seguir el diálogo. `E` sigue sirviendo para hablar, salvo dentro de un
+minijuego o de un diálogo del host, que tapan a quien está detrás; ahí tampoco las flechas mueven al jugador.
 
 ### Verlo en la demo
 
