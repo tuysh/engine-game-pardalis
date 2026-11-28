@@ -9,6 +9,11 @@
 // y elegir algo que no quiso (gastar su dinero en un antojo) sería un tropiezo. Tampoco eligen la tarjeta
 // resaltada: el resalte solo marca de cuál se está hablando en voz alta, no lo que escogió.
 //
+// Por lo mismo, `Enter` o la barra no hacen nada durante medio segundo después de que salen las tarjetas y
+// después de que una de esas teclas enfocó una: quien las oprime una y otra vez, deprisa, para seguir el
+// diálogo, no llega a escoger la primera tarjeta con dos oprimidas seguidas. Es el mismo medio segundo que
+// una línea debe llevar a la vista para que un toque la cierre.
+//
 // `Tab` con el foco en ningún lado también va directo a las tarjetas (la primera; con mayúsculas, la última),
 // en vez de pasar antes por los botones del host que están antes en la página.
 //
@@ -30,12 +35,20 @@ export interface TeclaConTarjetas {
   readonly esDeUnCampo: boolean;
   /** `true` si ningún elemento tiene el foco (lo tiene el cuerpo de la página). */
   readonly nadaTieneElFoco: boolean;
+  /**
+   * Cuánto hace que salieron las tarjetas o que `Enter` o la barra enfocaron una, lo que pasó al último.
+   * Antes de `MILISEGUNDOS_SIN_ENTER_EN_LAS_TARJETAS`, esas teclas no hacen nada.
+   */
+  readonly milisegundosDesdeElUltimoCambio: number;
 }
+
+/** Cuánto descansan `Enter` y la barra después de que salen las tarjetas o de que enfocaron una. */
+export const MILISEGUNDOS_SIN_ENTER_EN_LAS_TARJETAS = 500;
 
 /**
  * - `dejar`: la tecla no es para las tarjetas; no se cancela.
- * - `ignorar`: se cancela y no hace nada (una tecla que se quedó oprimida; cancelarla evita que oprima la
- *   tarjeta enfocada).
+ * - `ignorar`: se cancela y no hace nada (una tecla que se quedó oprimida o que llegó muy pronto;
+ *   cancelarla evita que oprima la tarjeta enfocada).
  * - `elegir` / `enfocar`: se cancela y se elige o se enfoca la tarjeta de esa posición.
  */
 export type QueHaceLaTecla =
@@ -57,6 +70,8 @@ export function queHaceLaTeclaConTarjetas(entrada: TeclaConTarjetas): QueHaceLaT
     // Quedarse oprimida no elige: la primera vez enfoca la primera tarjeta, y sin esto la repetición
     // siguiente ya la oprimiría (también una tarjeta enfocada con `Tab`).
     if (entrada.repetida) return { tipo: 'ignorar' };
+    // Recién salidas las tarjetas, o recién enfocada una, es casi seguro una oprimida de más.
+    if (entrada.milisegundosDesdeElUltimoCambio < MILISEGUNDOS_SIN_ENTER_EN_LAS_TARJETAS) return { tipo: 'ignorar' };
     // En un botón (una tarjeta, la bocina del host) la tecla oprime ese botón.
     if (entrada.esDeUnControl) return DEJAR;
     return { tipo: 'enfocar', posicion: 0 };

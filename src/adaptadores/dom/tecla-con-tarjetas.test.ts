@@ -1,7 +1,14 @@
 import { expect, test } from 'bun:test';
-import { queHaceLaTeclaConTarjetas, type TeclaConTarjetas } from './tecla-con-tarjetas.ts';
+import {
+  MILISEGUNDOS_SIN_ENTER_EN_LAS_TARJETAS,
+  queHaceLaTeclaConTarjetas,
+  type TeclaConTarjetas,
+} from './tecla-con-tarjetas.ts';
 
-/** Tres tarjetas a la vista y el foco en el cuerpo de la página, como queda tras seguir el diálogo con `Enter`. */
+/**
+ * Tres tarjetas a la vista desde hace rato y el foco en el cuerpo de la página, como queda tras seguir el
+ * diálogo con `Enter`.
+ */
 function tecla(cambios: Partial<TeclaConTarjetas>): TeclaConTarjetas {
   return {
     tecla: 'Enter',
@@ -11,6 +18,7 @@ function tecla(cambios: Partial<TeclaConTarjetas>): TeclaConTarjetas {
     esDeUnControl: false,
     esDeUnCampo: false,
     nadaTieneElFoco: true,
+    milisegundosDesdeElUltimoCambio: MILISEGUNDOS_SIN_ENTER_EN_LAS_TARJETAS,
     ...cambios,
   };
 }
@@ -60,4 +68,21 @@ test('las teclas 1 a la cantidad de tarjetas eligen, aunque el foco esté en otr
 test('otra tecla no es para las tarjetas', () => {
   expect(queHaceLaTeclaConTarjetas(tecla({ tecla: 'e' }))).toEqual({ tipo: 'dejar' });
   expect(queHaceLaTeclaConTarjetas(tecla({ tecla: 'ArrowRight' }))).toEqual({ tipo: 'dejar' });
+});
+
+test('Enter o la barra recién salidas las tarjetas, o recién enfocada una, no hacen nada, pero se cancelan', () => {
+  const muyPronto = MILISEGUNDOS_SIN_ENTER_EN_LAS_TARJETAS - 1;
+  expect(queHaceLaTeclaConTarjetas(tecla({ milisegundosDesdeElUltimoCambio: muyPronto }))).toEqual({ tipo: 'ignorar' });
+  // La segunda oprimida, deprisa, ya con la primera tarjeta enfocada: no la elige.
+  const enLaTarjeta = { esDeUnControl: true, nadaTieneElFoco: false, milisegundosDesdeElUltimoCambio: muyPronto };
+  expect(queHaceLaTeclaConTarjetas(tecla({ ...enLaTarjeta }))).toEqual({ tipo: 'ignorar' });
+  expect(queHaceLaTeclaConTarjetas(tecla({ ...enLaTarjeta, tecla: ' ' }))).toEqual({ tipo: 'ignorar' });
+});
+
+test('recién salidas las tarjetas, Tab y las teclas de número sí sirven', () => {
+  const muyPronto = { milisegundosDesdeElUltimoCambio: 0 };
+  expect(queHaceLaTeclaConTarjetas(tecla({ ...muyPronto, tecla: 'Tab' }))).toEqual({ tipo: 'enfocar', posicion: 0 });
+  expect(queHaceLaTeclaConTarjetas(tecla({ ...muyPronto, tecla: '2' }))).toEqual({ tipo: 'elegir', posicion: 1 });
+  const enUnCampo = { ...muyPronto, esDeUnControl: true, esDeUnCampo: true, nadaTieneElFoco: false };
+  expect(queHaceLaTeclaConTarjetas(tecla(enUnCampo))).toEqual({ tipo: 'dejar' });
 });

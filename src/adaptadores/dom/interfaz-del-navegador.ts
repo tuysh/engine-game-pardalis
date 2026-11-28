@@ -64,6 +64,8 @@ export class InterfazDelNavegador implements Interfaz {
   /** El temporizador que esconderá la capa de toque. `undefined` = no hay ninguno pendiente. */
   private temporizadorDeLaCapa: ReturnType<typeof setTimeout> | undefined;
   private funcionesDeEleccion: ((posicion: number) => void)[] = [];
+  /** Cuándo salieron las tarjetas o `Enter` enfocó una (`performance.now()`): ver `tecla-con-tarjetas.ts`. */
+  private momentoDelUltimoCambioDeLasTarjetas = 0;
   private estaDestruida = false;
 
   /** Pone la capa de la interfaz dentro de `elemento`, encima de lo que ya tenga. */
@@ -130,6 +132,7 @@ export class InterfazDelNavegador implements Interfaz {
 
   mostrarOpciones(pregunta: string, opciones: readonly OpcionPorMostrar[]): void {
     this.opciones.mostrar(pregunta, opciones, (posicion) => this.avisarEleccion(posicion));
+    this.momentoDelUltimoCambioDeLasTarjetas = performance.now();
   }
 
   resaltarOpcion(posicion: number | undefined): void {
@@ -354,6 +357,7 @@ export class InterfazDelNavegador implements Interfaz {
       esDeUnControl: esTeclaDeUnControl(camino),
       esDeUnCampo: esTeclaDeUnCampo(camino),
       nadaTieneElFoco: enfocado === null || enfocado === document.body,
+      milisegundosDesdeElUltimoCambio: performance.now() - this.momentoDelUltimoCambioDeLasTarjetas,
     });
     if (accion.tipo === 'dejar') return;
     evento.preventDefault();
@@ -363,6 +367,8 @@ export class InterfazDelNavegador implements Interfaz {
     }
     if (accion.tipo === 'enfocar') {
       this.opciones.enfocar(accion.posicion);
+      // Solo `Enter` y la barra descansan tras enfocar: `Tab` es para moverse, no se oprime de más.
+      if (evento.key !== 'Tab') this.momentoDelUltimoCambioDeLasTarjetas = performance.now();
     }
   }
 }

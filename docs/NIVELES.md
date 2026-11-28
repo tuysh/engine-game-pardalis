@@ -790,8 +790,9 @@ minijuego o de un diálogo del host, que tapan a quien está detrás; ahí tampo
 
 Con las tarjetas de un `elige` a la vista y el foco en ningún lado, `Enter` o la barra espaciadora no eligen:
 llevan el foco a la primera tarjeta (se ve su marco), y la segunda vez la eligen. Así quien venía siguiendo el
-diálogo con `Enter` sigue con la misma tecla, pero un `Enter` de más no escoge algo sin querer. Una tecla que
-se queda oprimida tampoco elige: hay que soltarla y oprimirla otra vez. `Tab` también va
+diálogo con `Enter` sigue con la misma tecla, pero un `Enter` de más no escoge algo sin querer. Por lo mismo,
+`Enter` y la barra descansan medio segundo al salir las tarjetas y al enfocar una: dos oprimidas seguidas, de
+prisa, no eligen la primera. Una tecla que se queda oprimida tampoco elige: hay que soltarla y oprimirla otra vez. `Tab` también va
 directo a la primera tarjeta (con mayúsculas, a la última), antes que los botones del host.
 
 Después de que un toque, `Enter` o la barra espaciadora cierran la última línea de una plática o de una escena,
