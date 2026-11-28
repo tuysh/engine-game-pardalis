@@ -61,7 +61,42 @@ test('un texto no puede usar una variable entre llaves que no existe', () => {
   const diagnostico = revisarPasosDeTortu([{ tipo: 'linea', hablante: 'tortu', texto: 'Te faltan {falta}.' }]);
 
   expect(diagnostico.errores).toEqual([
-    'npcs.tortu.dialogo[0].dice[0]: el texto usa {falta}, que no existe; se puede usar {faltan} y {dinero}',
+    'npcs.tortu.dialogo[0].dice[0]: el texto usa {falta}, que no existe; se puede usar {faltan}, {falta_o_faltan}, ' +
+      '{cuantos_faltan}, {dinero} y las variables de estado.variables y estado.compartidas',
+  ]);
+});
+
+test('un texto puede mostrar el número de una variable declarada, pero no el de un objetivo', () => {
+  const diagnostico = revisarPasosDeTortu([
+    { tipo: 'linea', hablante: 'tortu', texto: 'Llevas {globo} globos y {cuantos_faltan} cosas por comprar.' },
+    { tipo: 'elige', pregunta: '¿{tortillas}?', opciones: [] },
+  ]);
+
+  expect(diagnostico.errores).toContain(
+    'npcs.tortu.dialogo[0].dice[1]: el texto usa {tortillas}, que no existe; se puede usar {faltan}, {falta_o_faltan}, ' +
+      '{cuantos_faltan}, {dinero} y las variables de estado.variables y estado.compartidas',
+  );
+  expect(diagnostico.errores.filter((error) => error.includes('dice[0]'))).toEqual([]);
+});
+
+test('{falta_o_faltan} avisa una sola vez de cada objetivo cuyo nombre no dice si es singular o plural', () => {
+  const contenido: Contenido = {
+    ...CONTENIDO_CORRECTO,
+    estado: { objetivos: ['tortillas', 'pan'], variables: [], lista: { tortillas: 'las tortillas' } },
+    secuencias: {
+      faltan: [
+        { tipo: 'linea', hablante: 'tortu', texto: 'Te {falta_o_faltan} {faltan}.' },
+        { tipo: 'linea', hablante: 'tortu', texto: 'Aún {falta_o_faltan} {faltan}.' },
+      ],
+    },
+  };
+  const diagnostico = crearDiagnostico();
+
+  revisarEnlaces(contenido, {}, diagnostico);
+
+  expect(diagnostico.advertencias).toEqual([
+    'estado.lista.pan: "pan" no empieza con el, la, los, las, un, una, unos o unas; ' +
+      '{falta_o_faltan} dirá «faltan» cuando sea lo único que falta',
   ]);
 });
 
@@ -297,7 +332,40 @@ test('una comparación sin número a la derecha explica cómo se escribe', () =>
 
   expect(diagnostico.errores).toEqual([
     'condición "globo >= mucho" usada en npcs.tortu.dialogo[0].dice[0]: una comparación lleva el nombre de ' +
-      'una variable, un signo (>=, <=, >, < o =) y un número, como "dinero >= 10"',
+      'una variable, un signo (>=, <=, >, < o =) y un número, como "dinero >= 10"; ' +
+      'con un texto a la derecha solo se usa =, como "premio = pizarron"',
+  ]);
+});
+
+test('una igualdad de texto que nunca podría cumplirse explica cómo se escribe', () => {
+  const diagnostico = revisarPasosDeTortu([
+    { tipo: 'condicional', condicion: leerCondicionDeTexto("globo = 'rosa'"), pasos: [] },
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('globo = true'), pasos: [] },
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('tortillas = muchas'), pasos: [] },
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('charlas.tortu = hola'), pasos: [] },
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('globo = rosa'), pasos: [] },
+  ]);
+
+  expect(diagnostico.errores).toEqual([
+    `condición "globo = 'rosa'" usada en npcs.tortu.dialogo[0].dice[0]: el texto de la derecha va sin comillas, ` +
+      'como "premio = pizarron"',
+    'condición "globo = true" usada en npcs.tortu.dialogo[0].dice[1]: para preguntar si "globo" ya tiene valor ' +
+      'se escribe "tengo globo" o "no globo"',
+    'condición "tortillas = muchas" usada en npcs.tortu.dialogo[0].dice[2]: "tortillas" solo guarda si ya pasó, ' +
+      'nunca un texto; se pregunta con "tengo tortillas"',
+    'condición "charlas.tortu = hola" usada en npcs.tortu.dialogo[0].dice[3]: "charlas.tortu" solo guarda si ya ' +
+      'pasó, nunca un texto; se pregunta con "tengo charlas.tortu"',
+  ]);
+});
+
+test('la variable de una igualdad de texto debe estar declarada', () => {
+  const diagnostico = revisarPasosDeTortu([
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('globo = rosa'), pasos: [] },
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('premio = pizarron'), pasos: [] },
+  ]);
+
+  expect(diagnostico.errores).toEqual([
+    'condición "premio" usada en npcs.tortu.dialogo[0].dice[1]: no está en estado.objetivos, ni en estado.variables, ni en estado.compartidas',
   ]);
 });
 

@@ -52,7 +52,7 @@ export interface PasoDeLinea {
   readonly tipo: 'linea';
   /** Id del personaje que habla (clave de `meta.personajes`). */
   readonly hablante: string;
-  /** Puede llevar `{faltan}` y `{dinero}`. */
+  /** Puede llevar variables entre llaves, como `{faltan}` o `{dinero}` (ver texto-con-variables.ts). */
   readonly texto: string;
   /** Traducción al idioma base, cuando el personaje habla en el otro idioma. */
   readonly traduccion?: string;

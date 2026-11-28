@@ -465,6 +465,11 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   con su estado guardado y el host recibe el evento `error`.
 - **Números en el contenido:** `pon` suma y resta (`{ "dinero": { "resta": 10 } }`) y las condiciones comparan
   con un número (`"dinero >= 10"`). Una variable sin valor, o con un valor que no es un número, cuenta como 0.
+- **Variables en los textos:** `{faltan}`, `{falta_o_faltan}` (el verbo que concuerda: «falta el maíz», «faltan las
+  tortillas»), `{cuantos_faltan}`, `{dinero}` y el número de cualquier variable de `estado.variables` o
+  `estado.compartidas` (`{estrellas}`). Otro nombre entre llaves es error de validación.
+- **Textos en las condiciones:** `"premio = pizarron"` pregunta si la variable guarda justo ese texto (lo pone un
+  `pon` o el `otorgar` de un minijuego). Solo con `=`: un texto no es mayor ni menor que otro.
 - **Cada nivel tiene su propio estado.** Un nivel no puede preguntar por las variables de otro, salvo por las
   que los dos declaran en `estado.compartidas`: esas son de la aventura y viajan con la partida (§10).
 - **Todavía no se hace:** que el nivel termine de cargar por detrás mientras se ve un video (§7.4).

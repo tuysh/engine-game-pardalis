@@ -16,14 +16,15 @@
   },
   "estado": {
     "objetivos": ["tortillas"],
-    "lista": { "tortillas": "las tortillas" }
+    "variables": ["salsa", "visitas"],
+    "lista": { "tortillas": "el kilo de tortillas" }
   },
   "secuencias": {
     "aun_no_item": [
       { "dice": "tortu", "texto": "¡Otro día lo intentamos!", "audio": "vo_tortu_otro_dia" }
     ],
     "bloquea_salida": [
-      { "dice": "tortu", "texto": "¡Espérate! Te faltan {faltan}.", "audio": "vo_tortu_faltan" }
+      { "dice": "tortu", "texto": "¡Espérate! Te {falta_o_faltan} {faltan}.", "audio": "vo_tortu_faltan" }
     ]
   },
   "npcs": {
@@ -32,7 +33,11 @@
         {
           "cuando": "tengo tortillas",
           "dice": [
-            { "dice": "tortu", "texto": "¡Que te aprovechen!", "audio": "vo_tortu_provecho" }
+            { "dice": "tortu", "texto": "¡Que te aprovechen!", "audio": "vo_tortu_provecho" },
+            { "pon": { "visitas": { "suma": 1 } } },
+            { "cuando": "salsa = verde", "dice": [
+              { "dice": "tortu", "texto": "¡Visita número {visitas}! Y con salsa verde, como te gusta." }
+            ] }
           ]
         },
         {
@@ -52,6 +57,7 @@
       "alVolver": {
         "siLogrado": [
           { "efecto": "magia" },
+          { "pon": { "salsa": "verde" } },
           { "dice": "tommy", "texto": "Thank you!", "trad": "¡Gracias!", "audio": "vo_tommy_gracias" }
         ],
         "siNo": "aun_no_item"
