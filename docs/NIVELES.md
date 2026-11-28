@@ -77,6 +77,10 @@ de los personajes.
 Con la propiedad `id`, el objeto se puede tocar: su diálogo está en `interactivos` del contenido.
 Lo que se dibuja en el plano es exactamente lo que bloquea: no hay ajustes de «huella» a mano.
 
+**Lo `parado` no tapa al jugador:** si un objeto `parado` queda entre la cámara y el jugador (un árbol o alguien
+parado cerca de la cámara) y lo cubre, se vuelve transparente poco a poco mientras lo tapa, y recupera su color
+al dejar de taparlo. No hace falta mover el dibujo; aun así, no pongas cosas altas donde el jugador camina seguido.
+
 Si el `asset` de un objeto es una **animación** (archivos numerados, ver §4), se repite sola todo el tiempo:
 sirve para una tele encendida, una bandera o un foco que parpadea.
 

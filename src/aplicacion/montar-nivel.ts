@@ -23,6 +23,8 @@ export async function montarNivel(pedido: PedidoDeJuego, escenario: Escenario): 
   const reparto = new Reparto(escenario);
   try {
     await escenario.montar(escenografia);
+    // Así el escenario sabe a quién no debe tapar el decorado que queda cerca de la cámara.
+    escenario.marcarJugador(nivel.contenido.jugador?.personaje);
     // Todas las imágenes de personajes se piden a la vez, para que la carga dure lo que dura la más lenta.
     await Promise.all(personajes.map((personaje) => reparto.agregar(personaje)));
     // Lo que las escenas usarán más tarde se descarga desde ahora, para que aparezca sin demora cuando le toque.

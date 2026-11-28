@@ -130,6 +130,12 @@ test('pone en el escenario a los NPCs del mapa y al jugador en su inicio', async
   expect(escenario.personajes.get('tommy')).toEqual({ posicion: { x: 2, y: 3 }, mira: 'derecha', sePuedeTocar: false });
 });
 
+test('el escenario sabe quién es el jugador, para que el decorado cerca de la cámara no lo tape', async () => {
+  const { escenario } = await empezar(NIVEL);
+
+  expect(escenario.idDelJugador).toBe('tommy');
+});
+
 test('tocar el piso hace caminar al jugador hacia ahí, cuadro tras cuadro', async () => {
   const { escenario, reloj } = await empezar(NIVEL);
 

@@ -23,6 +23,7 @@ import { AlmacenDeTexturas } from './almacen-de-texturas.ts';
 import { AnimacionesDeHojas } from './animaciones-de-hojas.ts';
 import { armarEscenografia } from './armar-escenografia.ts';
 import { CamaraEnPerspectiva } from './camara-en-perspectiva.ts';
+import { DecoradoQueSeTransparenta } from './decorado-que-se-transparenta.ts';
 import { EfectoDeParticulas } from './efecto-de-particulas.ts';
 import { PersonajesDePapel } from './personajes-de-papel.ts';
 import { liberarPieza } from './piezas-de-papel.ts';
@@ -50,6 +51,10 @@ export class EscenarioDeThree implements Escenario {
   private readonly escenografia = new Group();
   /** Cambia con cada `montar`: una escenografía que terminó de cargar tarde, para un lugar anterior, no se pone. */
   private numeroDeMontaje = 0;
+  /** Lo parado del decorado, que se aclara mientras tapa al jugador. */
+  private readonly loQueTapa = new DecoradoQueSeTransparenta();
+  /** El personaje que es el jugador. `undefined` = el nivel no tiene. */
+  private idDelJugador: string | undefined;
   /** Los efectos que se están animando ahora. */
   private efectos: EfectoDeParticulas[] = [];
   /** Quita y libera las guías del modo depuración que se ven ahora. `undefined` = no hay ninguna. */
@@ -103,6 +108,9 @@ export class EscenarioDeThree implements Escenario {
     }
     for (const { objeto, texturas, pieza } of lista.decorado) {
       this.escenografia.add(pieza);
+      if (objeto.clase === 'parado') {
+        this.loQueTapa.agregar(pieza);
+      }
       if (objeto.id !== undefined) {
         this.tocables.set(pieza, { tipo: 'decorado', id: objeto.id });
       }
@@ -172,6 +180,10 @@ export class EscenarioDeThree implements Escenario {
     this.escena.add(efecto.puntos);
   }
 
+  marcarJugador(id: string | undefined): void {
+    this.idDelJugador = id;
+  }
+
   enfocar(punto: Punto, camara: AjustesDeCamara): void {
     this.camara.colocar(punto, camara);
     // Las medidas de pantalla que se piden después (dónde va un globo) deben salir de la cámara ya colocada.
@@ -183,6 +195,8 @@ export class EscenarioDeThree implements Escenario {
     this.personajes.avanzar(segundos);
     this.animaciones.avanzar(segundos);
     this.animarEfectos(segundos);
+    const hojaDelJugador = this.idDelJugador === undefined ? undefined : this.personajes.buscarHoja(this.idDelJugador);
+    this.loQueTapa.actualizar(this.camara.camara, hojaDelJugador, segundos);
     this.dibujante.render(this.escena, this.camara.camara);
   }
 
@@ -253,6 +267,7 @@ export class EscenarioDeThree implements Escenario {
   }
 
   private quitarEscenografia(): void {
+    this.loQueTapa.olvidarTodas();
     for (const pieza of this.escenografia.children) {
       this.tocables.delete(pieza);
       this.animaciones.olvidar(pieza);
