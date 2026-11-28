@@ -56,7 +56,75 @@ test('un texto sin llaves queda igual', () => {
 });
 
 test('detecta los nombres entre llaves que no existen', () => {
-  expect(variablesDesconocidasEn('Te faltan {falta} y tienes {dinero}.')).toEqual(['falta']);
-  expect(variablesDesconocidasEn('Te faltan {faltan}.')).toEqual([]);
-  expect(variablesDesconocidasEn('¡Hola!')).toEqual([]);
+  const declaracion = ESTADO_INICIAL.declaracion;
+
+  expect(variablesDesconocidasEn('Te faltan {falta} y tienes {dinero}.', declaracion)).toEqual(['falta']);
+  expect(variablesDesconocidasEn('Te faltan {faltan}.', declaracion)).toEqual([]);
+  expect(variablesDesconocidasEn('¡Hola!', declaracion)).toEqual([]);
+});
+
+const MERCADO = crearEstadoDeNivel({
+  objetivos: ['verduras', 'maiz'],
+  variables: ['compras'],
+  compartidas: ['estrellas'],
+  lista: { verduras: 'las verduras', maiz: 'el maíz' },
+});
+
+test('{falta_o_faltan} dice «falta» cuando lo único que falta es singular', () => {
+  const estado = conCambios(MERCADO, { verduras: true });
+
+  expect(completarTexto('Nos {falta_o_faltan} {faltan}.', estado)).toBe('Nos falta el maíz.');
+});
+
+test('{falta_o_faltan} dice «faltan» cuando lo único que falta es plural', () => {
+  const estado = conCambios(MERCADO, { maiz: true });
+
+  expect(completarTexto('Nos {falta_o_faltan} {faltan}.', estado)).toBe('Nos faltan las verduras.');
+});
+
+test('{falta_o_faltan} dice «faltan» con dos o más objetivos pendientes, aunque el primero sea singular', () => {
+  const estado = crearEstadoDeNivel({
+    objetivos: ['maiz', 'pan'],
+    variables: [],
+    lista: { maiz: 'el maíz', pan: 'el pan' },
+  });
+
+  expect(completarTexto('Nos {falta_o_faltan} {faltan}.', estado)).toBe('Nos faltan el maíz y el pan.');
+});
+
+test('{falta_o_faltan} dice «faltan» si el nombre no empieza con un artículo', () => {
+  const estado = crearEstadoDeNivel({ objetivos: ['pan'], variables: [], lista: {} });
+
+  expect(completarTexto('Te {falta_o_faltan} {faltan}.', estado)).toBe('Te faltan pan.');
+});
+
+test('{cuantos_faltan} cuenta los objetivos pendientes', () => {
+  expect(completarTexto('Faltan {cuantos_faltan}.', MERCADO)).toBe('Faltan 2.');
+  expect(completarTexto('Faltan {cuantos_faltan}.', conCambios(MERCADO, { verduras: true, maiz: true }))).toBe(
+    'Faltan 0.',
+  );
+});
+
+test('una variable de estado.variables o estado.compartidas se muestra con su número', () => {
+  const estado = conCambios(MERCADO, { estrellas: 7, compras: 2 });
+
+  expect(completarTexto('¡Juntamos {estrellas} estrellas en {compras} compras!', estado)).toBe(
+    '¡Juntamos 7 estrellas en 2 compras!',
+  );
+});
+
+test('una variable sin valor, o con un valor que no es número, se muestra como 0', () => {
+  const conTexto = conCambios(MERCADO, { compras: 'muchas' });
+
+  expect(completarTexto('{estrellas} y {compras}', conTexto)).toBe('0 y 0');
+});
+
+test('un nombre entre llaves que el nivel no declara queda tal cual', () => {
+  const estado = conCambios(MERCADO, { verduras: true });
+
+  expect(completarTexto('{verduras} y {nadie}', estado)).toBe('{verduras} y {nadie}');
+});
+
+test('un objetivo no se puede mostrar en un texto; una variable declarada sí', () => {
+  expect(variablesDesconocidasEn('{maiz} {estrellas} {compras}', MERCADO.declaracion)).toEqual(['maiz']);
 });

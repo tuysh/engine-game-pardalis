@@ -7,7 +7,7 @@ import type { PiezasDeEscena } from './piezas-de-escena.ts';
 
 /** Lo que se le va a preguntar al jugador. */
 export interface EleccionPorHacer {
-  /** La pregunta con `{faltan}` y `{dinero}` ya reemplazados. */
+  /** La pregunta con sus variables entre llaves (`{faltan}`, `{dinero}`...) ya reemplazadas. */
   readonly pregunta: string;
   /** Solo las opciones que se pueden ofrecer ahora. */
   readonly opciones: readonly Opcion[];

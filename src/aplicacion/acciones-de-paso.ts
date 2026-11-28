@@ -23,7 +23,7 @@ import type { ResultadoDeMinijuego } from '../puertos/minijuego.ts';
 
 /** Las acciones de un diálogo: lo que pasa entre el jugador y quien le habla. */
 export interface AccionesDeDialogo {
-  /** Muestra y dice una línea. `textoCompleto` es el texto con `{faltan}` y `{dinero}` ya reemplazados. */
+  /** Muestra y dice una línea. `textoCompleto` ya trae sus variables entre llaves reemplazadas. */
   decirLinea(linea: PasoDeLinea, textoCompleto: string, senal: AbortSignal): Promise<void>;
 
   /** Muestra la pregunta con esas opciones y devuelve la posición en la lista de la que eligió el jugador. */

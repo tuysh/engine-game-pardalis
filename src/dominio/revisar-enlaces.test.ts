@@ -61,7 +61,42 @@ test('un texto no puede usar una variable entre llaves que no existe', () => {
   const diagnostico = revisarPasosDeTortu([{ tipo: 'linea', hablante: 'tortu', texto: 'Te faltan {falta}.' }]);
 
   expect(diagnostico.errores).toEqual([
-    'npcs.tortu.dialogo[0].dice[0]: el texto usa {falta}, que no existe; se puede usar {faltan} y {dinero}',
+    'npcs.tortu.dialogo[0].dice[0]: el texto usa {falta}, que no existe; se puede usar {faltan}, {falta_o_faltan}, ' +
+      '{cuantos_faltan}, {dinero} y las variables de estado.variables y estado.compartidas',
+  ]);
+});
+
+test('un texto puede mostrar el número de una variable declarada, pero no el de un objetivo', () => {
+  const diagnostico = revisarPasosDeTortu([
+    { tipo: 'linea', hablante: 'tortu', texto: 'Llevas {globo} globos y {cuantos_faltan} cosas por comprar.' },
+    { tipo: 'elige', pregunta: '¿{tortillas}?', opciones: [] },
+  ]);
+
+  expect(diagnostico.errores).toContain(
+    'npcs.tortu.dialogo[0].dice[1]: el texto usa {tortillas}, que no existe; se puede usar {faltan}, {falta_o_faltan}, ' +
+      '{cuantos_faltan}, {dinero} y las variables de estado.variables y estado.compartidas',
+  );
+  expect(diagnostico.errores.filter((error) => error.includes('dice[0]'))).toEqual([]);
+});
+
+test('{falta_o_faltan} avisa una sola vez de cada objetivo cuyo nombre no dice si es singular o plural', () => {
+  const contenido: Contenido = {
+    ...CONTENIDO_CORRECTO,
+    estado: { objetivos: ['tortillas', 'pan'], variables: [], lista: { tortillas: 'las tortillas' } },
+    secuencias: {
+      faltan: [
+        { tipo: 'linea', hablante: 'tortu', texto: 'Te {falta_o_faltan} {faltan}.' },
+        { tipo: 'linea', hablante: 'tortu', texto: 'Aún {falta_o_faltan} {faltan}.' },
+      ],
+    },
+  };
+  const diagnostico = crearDiagnostico();
+
+  revisarEnlaces(contenido, {}, diagnostico);
+
+  expect(diagnostico.advertencias).toEqual([
+    'estado.lista.pan: "pan" no empieza con el, la, los, las, un, una, unos o unas; ' +
+      '{falta_o_faltan} dirá «faltan» cuando sea lo único que falta',
   ]);
 });
 

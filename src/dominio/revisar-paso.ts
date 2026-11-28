@@ -7,7 +7,8 @@ import { EFECTOS_DISPONIBLES } from './paso.ts';
 import { revisarPasoDeEscena } from './revisar-paso-de-escena.ts';
 import { revisarCondicion, revisarVariableDePon } from './revisar-variables.ts';
 import type { Revision } from './revision.ts';
-import { variablesDesconocidasEn } from './texto-con-variables.ts';
+import { revisarConcordanciaDeFaltan } from './revisar-concordancia.ts';
+import { nombresEntreLlaves, VARIABLE_DEL_VERBO_FALTAR, variablesDesconocidasEn } from './texto-con-variables.ts';
 
 export function revisarPaso(paso: Paso, ruta: string, revision: Revision): void {
   const errores = revision.diagnostico.errores;
@@ -110,9 +111,13 @@ function revisarCaminata(paso: PasoDeCaminata, ruta: string, revision: Revision)
 }
 
 function revisarVariablesDeTexto(texto: string, ruta: string, revision: Revision): void {
-  for (const nombre of variablesDesconocidasEn(texto)) {
+  for (const nombre of variablesDesconocidasEn(texto, revision.contenido.estado)) {
     revision.diagnostico.errores.push(
-      `${ruta}: el texto usa {${nombre}}, que no existe; se puede usar {faltan} y {dinero}`,
+      `${ruta}: el texto usa {${nombre}}, que no existe; se puede usar {faltan}, {falta_o_faltan}, ` +
+        '{cuantos_faltan}, {dinero} y las variables de estado.variables y estado.compartidas',
     );
+  }
+  if (nombresEntreLlaves(texto).includes(VARIABLE_DEL_VERBO_FALTAR)) {
+    revisarConcordanciaDeFaltan(revision);
   }
 }

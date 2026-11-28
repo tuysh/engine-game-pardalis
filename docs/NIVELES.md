@@ -224,7 +224,8 @@ Los números de un plano no se adivinan: se encuadra a mano con la **cámara lib
   - `dinero`, si el nivel lo trae;
   - `charlas.<id>` por cada NPC e interactivo: el motor la marca sola al hablar con él. No hace falta escribirla.
   - `vista.<id>` por cada cinemática: el motor la marca sola cuando la cinemática termina.
-- `lista` da el nombre con artículo para `{faltan}` → «Te faltan las tortillas y los aguacates».
+- `lista` da el nombre con artículo para `{faltan}` → «Te faltan las tortillas y los aguacates». El artículo
+  también le dice a `{falta_o_faltan}` si el nombre es singular o plural (ver «Variables en los textos»).
 - `compartidas` son las variables **de la aventura**: las únicas que pasan de un nivel a otro. Ver abajo.
 
 #### Variables que pasan de un nivel a otro
@@ -277,7 +278,54 @@ Gana **la primera rama cuya condición se cumple**. Una rama sin `cuando` siempr
 | Secuencia | `{ "secuencia": "aun_no_item" }` | Ejecuta una secuencia de `secuencias`. Los ciclos entre secuencias son error. |
 | Condicional | `{ "cuando": "globo", "dice": [ ...pasos ] }` | Ejecuta sus pasos solo si se cumple la condición. |
 
-Los textos admiten `{faltan}` (objetivos pendientes, en español) y `{dinero}`. Otro nombre entre llaves es error.
+#### Variables en los textos
+
+El `texto` de una línea y la pregunta de `elige` pueden llevar variables entre llaves, que se reemplazan al decirse:
+
+| Variable | Se reemplaza por | Ejemplo |
+| --- | --- | --- |
+| `{faltan}` | los objetivos pendientes, con su nombre de `estado.lista` | «las tortillas y el maíz» |
+| `{falta_o_faltan}` | el verbo que concuerda con `{faltan}`: «falta» o «faltan» | «falta» |
+| `{cuantos_faltan}` | cuántos objetivos faltan | «2» |
+| `{dinero}` | el dinero que tiene el jugador | «35» |
+| `{estrellas}` | el número de cualquier variable de `estado.variables` o `estado.compartidas` | «7» |
+
+Otro nombre entre llaves es error, con la ruta del texto. Los objetivos no se pueden mostrar: guardan «ya lo
+tengo», no un número.
+
+**Que el verbo concuerde.** `"Te faltan {faltan}."` dice bien «Te faltan las tortillas y el maíz», pero cuando
+solo queda el maíz diría «Te faltan el maíz». Para eso está `{falta_o_faltan}`: escribe el verbo con la variable
+y el motor elige.
+
+```json
+{ "dice": "pardi", "texto": "Nos {falta_o_faltan} {faltan}.", "audio": "vo_pardi_faltan" }
+```
+
+| Lo que falta | Se dice |
+| --- | --- |
+| las verduras y el maíz | «Nos faltan las verduras y el maíz.» |
+| el maíz | «Nos falta el maíz.» |
+| las tortillas | «Nos faltan las tortillas.» |
+
+- Dice «falta» solo cuando queda **un** objetivo y su nombre empieza con `el`, `la`, `un`, `una` (o `lo`, `mi`,
+  `tu`, `su`). Con dos o más, o con un nombre plural (`los`, `las`, `unos`, `unas`, `mis`, `tus`, `sus`), «faltan».
+- Si un nivel usa `{falta_o_faltan}` y el nombre de algún objetivo no empieza con una de esas palabras
+  (`"pan"`, o un objetivo que no está en `lista`), hay **advertencia**: en ese caso dirá «faltan».
+- Cuando ya no falta nada, `{faltan}` queda vacío y `{falta_o_faltan}` dice «faltan»: esa línea va dentro de
+  `{ "cuando": "no objetivosCompletos", ... }`.
+
+**Números del nivel.** `{estrellas}`, `{compras}` o cualquier variable declarada en `estado.variables` o
+`estado.compartidas` se muestra con su número. Igual que en las comparaciones, una variable sin valor, o con un
+valor que no es un número, se muestra como `0`.
+
+```json
+{ "dice": "mama", "texto": "¡Juntaron {estrellas} estrellas!", "audio": "vo_mama_estrellas" }
+```
+
+- Una voz grabada dice siempre lo mismo: si la línea lleva un número que cambia, se graba una línea por caso
+  (`"cuando": "estrellas >= 7"`) o se deja sin grabar para que la diga la voz sintetizada.
+- `{faltan}`, `{falta_o_faltan}`, `{cuantos_faltan}` y `{dinero}` son del motor: una variable del nivel con uno de
+  esos nombres no se puede mostrar en un texto.
 
 #### Por dónde camina
 

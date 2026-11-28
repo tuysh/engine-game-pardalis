@@ -23,7 +23,7 @@ const SEGUNDOS_MINIMOS_DE_LECTURA = 1.5;
 /** Una línea lista para decirse. */
 export interface LineaPorDecir {
   readonly paso: PasoDeLinea;
-  /** El texto con `{faltan}` y `{dinero}` ya reemplazados. */
+  /** El texto con sus variables entre llaves (`{faltan}`, `{dinero}`...) ya reemplazadas. */
   readonly textoCompleto: string;
   /**
    * `true` en un diálogo: un toque cierra la línea. `false` en un comentario del jugador:
