@@ -336,12 +336,17 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   piso y rodeando el decorado. Su lugar está a `jugador.distanciaDelAcompanante` metros del jugador (0.9 por
   defecto), del lado contrario al que camina el jugador y un poco atrás (más lejos de la cámara), para que su
   dibujo no tape al del jugador. Empieza a caminar cuando el jugador se aleja esa distancia y 0.6 m más, o cuando
-  quedó delante de él tapándolo; mientras el jugador camina lo sigue sin pararse. Durante un diálogo o una cinemática no sigue: lo mueven los pasos. El paso `acompana`
+  quedó delante de él tapándolo; mientras el jugador camina lo sigue sin pararse. Durante un diálogo o una
+  cinemática no sigue: lo mueven los pasos; al terminar, se queda del lado donde lo dejaron. El paso `acompana`
   lo cambia o lo quita; ese cambio todavía no se guarda en la partida.
+- **Quién se dibuja encima:** entre hojas paradas (personajes y decorado `parado` o `colgado`), la que pisa más
+  cerca de la cámara se dibuja encima, medido desde el punto donde pisa cada una y no desde su centro: si no, un
+  árbol alto detrás del jugador se dibujaba encima de él (`orden-de-lo-transparente.ts`).
 - **Lo que tapa al jugador se aclara:** el escenario sabe quién es el jugador
   (`Escenario.marcarJugador`, que llama la aplicación al montar el nivel) y, en cada cuadro, aclara hasta 35 % de
-  opacidad cada objeto `parado` más cerca de la cámara que el jugador que le cubra al menos una cuarta parte en la
-  pantalla. Vuelve a su color con la misma suavidad (unas dos décimas de segundo).
+  opacidad cada objeto `parado` que pise más cerca de la cámara que el jugador (o sea, que se dibuja encima de él)
+  y le cubra al menos una cuarta parte en la pantalla. A media vuelta del jugador se mide con su ancho completo,
+  para que el objeto no parpadee. Vuelve a su color con la misma suavidad (unas dos décimas de segundo).
 - **Lo `plano` se encima en el orden del mapa:** entre dos objetos `plano` que se cruzan, el que va después en la
   capa `decorado` se pinta encima. Todos quedan bajo las sombras y los pies de los personajes.
 - **`confeti`** son papelitos (rectángulos que giran), repartidos a lo ancho de lo que ve la cámara y con un tamaño

@@ -26,6 +26,7 @@ import { CamaraEnPerspectiva } from './camara-en-perspectiva.ts';
 import { ConfetiDePapel } from './confeti-de-papel.ts';
 import { DecoradoQueSeTransparenta } from './decorado-que-se-transparenta.ts';
 import { EfectoDeParticulas } from './efecto-de-particulas.ts';
+import { crearOrdenDeLoTransparente } from './orden-de-lo-transparente.ts';
 import { PersonajesDePapel } from './personajes-de-papel.ts';
 import { liberarPieza } from './piezas-de-papel.ts';
 import type { FabricaDeTexturas } from './texturas.ts';
@@ -87,6 +88,8 @@ export class EscenarioDeThree implements Escenario {
     });
     this.dibujante = new WebGLRenderer({ antialias: true });
     this.dibujante.setPixelRatio(Math.min(fabrica.densidadDePantalla, DENSIDAD_MAXIMA_DE_DIBUJO));
+    // Las hojas de papel se enciman según dónde pisan, no según su centro: ver orden-de-lo-transparente.ts.
+    this.dibujante.setTransparentSort(crearOrdenDeLoTransparente(this.camara.camara));
     this.escena.add(this.escenografia);
 
     const lienzo = this.dibujante.domElement;
