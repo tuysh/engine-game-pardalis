@@ -275,6 +275,10 @@ Un plano dice **a qué** mira la cámara y **desde dónde**:
   Un `giro` positivo lleva la cámara hacia la derecha de lo que mira.
 - Para ir de un giro a otro la cámara toma el camino recto entre los dos números: de `350` a `10` daría la vuelta
   larga. Escribe giros cercanos (por ejemplo `-10` y `10`).
+- Los planos se componen para una pantalla **16:9**. En una más angosta (una tableta 4:3) la cámara abre su
+  ángulo vertical y se sigue viendo el mismo ancho: nadie queda cortado por la orilla, solo se ve un poco más de
+  cielo y de piso. Ese ajuste tiene un tope: en un teléfono de pie sí se ve menos de ancho. Encuadra en 16:9 y deja
+  un poco de aire arriba y abajo de los personajes.
 
 Los números de un plano no se adivinan: se encuadra a mano con la **cámara libre** y se copia el resultado
 (ver [«Crear planos con la cámara libre»](#crear-planos-con-la-cámara-libre)).
