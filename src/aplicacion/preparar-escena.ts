@@ -38,7 +38,7 @@ export function prepararEscenografia(nivel: Nivel, ubicacion: UbicacionDeAssets)
       imagen: crearImagenDeEscena(objeto.asset, nivel, ubicacion),
       huella: objeto.huella,
       alturaEnMetros: objeto.alturaEnMetros,
-      id: objeto.id,
+      id: idParaTocar(objeto.id, nivel),
     });
   }
 
@@ -47,6 +47,15 @@ export function prepararEscenografia(nivel: Nivel, ubicacion: UbicacionDeAssets)
   }
   const suelo = { imagen: crearImagenDeEscena(mundo.suelo.asset, nivel, ubicacion), esquina: mundo.suelo.esquina };
   return { colorDeFondo, suelo, telones, decorado };
+}
+
+/**
+ * Solo se puede tocar un objeto que tiene diálogo en `interactivos`. Uno que lleva id solo para que lo mire un
+ * plano o lo anime un paso `anima` no se toca.
+ */
+function idParaTocar(id: string | undefined, nivel: Nivel): string | undefined {
+  if (id === undefined || !Object.hasOwn(nivel.contenido.interactivos, id)) return undefined;
+  return id;
 }
 
 /** Los personajes que están en el escenario al empezar: los NPCs del mapa y, si el nivel tiene, el jugador. */
@@ -94,11 +103,33 @@ export function prepararImagenesDeEscenas(nivel: Nivel, ubicacion: UbicacionDeAs
     },
   });
 
+  // Quien empieza en una pose vuelve a su `sprite` en cuanto un paso `anima` sin `repite` termina.
+  for (const clave of clavesDeLosSpritesTrasUnaPoseInicial(nivel)) {
+    claves.add(clave);
+  }
+
   const imagenes: ImagenDeEscena[] = [];
   for (const clave of claves) {
     imagenes.push(crearImagenDeEscena(clave, nivel, ubicacion));
   }
   return imagenes;
+}
+
+/** Los `sprite` de los personajes que empiezan con otro dibujo (la propiedad `anima` del mapa). */
+function clavesDeLosSpritesTrasUnaPoseInicial(nivel: Nivel): string[] {
+  const claves: string[] = [];
+  const personajes = nivel.contenido.meta.personajes;
+  for (const id of Object.keys(nivel.mundo.npcs)) {
+    const lugar = nivel.mundo.npcs[id]!; // `id` viene de `Object.keys`, así que existe
+    if (lugar.dibujoInicial === undefined) continue;
+    claves.push(personajes[id]!.sprite); // la validación garantiza que cada NPC del mapa es un personaje
+  }
+  const jugador = nivel.contenido.jugador;
+  const inicio = nivel.mundo.iniciosDelJugador[0];
+  if (jugador !== undefined && inicio !== undefined && inicio.dibujoInicial !== undefined) {
+    claves.push(personajes[jugador.personaje]!.sprite); // la validación garantiza que el jugador es un personaje
+  }
+  return claves;
 }
 
 /** Las claves de los dibujos que una línea pone mientras dura: el de quien habla y los de quienes escuchan. */
@@ -117,9 +148,11 @@ function crearPersonajeDeEscena(
   ubicacion: UbicacionDeAssets,
 ): PersonajeDeEscena {
   const personaje = nivel.contenido.meta.personajes[datos.id]!; // la validación garantiza que el personaje existe
+  // Con `anima` en el mapa, empieza ya en su pose (sentado, viendo la tele); si no, con su dibujo normal.
+  const dibujo = datos.lugar.dibujoInicial ?? personaje.sprite;
   return {
     id: datos.id,
-    imagen: crearImagenDeEscena(personaje.sprite, nivel, ubicacion),
+    imagen: crearImagenDeEscena(dibujo, nivel, ubicacion),
     posicion: datos.lugar.posicion,
     mira: datos.lugar.mira,
     sePuedeTocar: datos.sePuedeTocar,

@@ -2,9 +2,11 @@
 //
 // - Cada NPC del mapa es un personaje del contenido. Su diálogo es opcional: sin él, no se puede tocar.
 // - Cada diálogo de `npcs` es de alguien que está en el mapa o que entra después con un paso `aparece`.
-// - Cada diálogo de `interactivos` tiene su objeto en el mapa, y cada objeto interactivo su diálogo.
+// - Cada diálogo de `interactivos` tiene su objeto en el mapa, y cada objeto con id su diálogo, salvo que
+//   el id solo esté para nombrarlo desde un plano de cámara o un paso `anima` (entonces no se puede tocar).
 // - Hay piso, y si el nivel tiene jugador, exactamente un inicio dentro del piso.
 // - Los puntos de los pasos `camina`, los grupos de las zonas y la salida existen en los dos lados.
+// - La condición `visibleCuando` de un objeto del decorado usa variables que el contenido declara.
 //
 // Lo que nombran los pasos de escena, los planos y las cinemáticas se cruza en revisar-cruce-de-escena.ts.
 
@@ -15,6 +17,7 @@ import type { Mundo } from './mundo.ts';
 import type { PasoDeCaminata } from './paso.ts';
 import { recorrerPasos } from './recorrer-pasos.ts';
 import { revisarCruceDeEscena } from './revisar-cruce-de-escena.ts';
+import { reunirVariablesDeclaradas, revisarCondicion } from './revisar-variables.ts';
 
 export function revisarCruce(contenido: Contenido, mundo: Mundo, diagnostico: Diagnostico): void {
   revisarNpcs(contenido, mundo, diagnostico);
@@ -22,6 +25,7 @@ export function revisarCruce(contenido: Contenido, mundo: Mundo, diagnostico: Di
   revisarPisoEInicio(contenido, mundo, diagnostico);
   revisarZonas(contenido, mundo, diagnostico);
   revisarSalida(contenido, mundo, diagnostico);
+  revisarVisibilidadDelDecorado(contenido, mundo, diagnostico);
   revisarCruceDeEscena(contenido, mundo, diagnostico);
 
   recorrerPasos(contenido, {
@@ -71,6 +75,7 @@ function reunirQuienesAparecen(contenido: Contenido): Set<string> {
 
 function revisarInteractivos(contenido: Contenido, mundo: Mundo, diagnostico: Diagnostico): void {
   const idsEnElMapa = new Set<string>();
+  const idsQueSeNombran = reunirIdsQueSeNombran(contenido);
 
   for (const objeto of mundo.decorado) {
     if (objeto.id === undefined) continue;
@@ -78,7 +83,7 @@ function revisarInteractivos(contenido: Contenido, mundo: Mundo, diagnostico: Di
       diagnostico.errores.push(`mapa: ${objeto.descripcion} (decorado) repite el id "${objeto.id}" de otro objeto`);
     }
     idsEnElMapa.add(objeto.id);
-    if (!Object.hasOwn(contenido.interactivos, objeto.id)) {
+    if (!Object.hasOwn(contenido.interactivos, objeto.id) && !idsQueSeNombran.has(objeto.id)) {
       diagnostico.errores.push(
         `mapa: ${objeto.descripcion} (decorado) tiene id "${objeto.id}", que no existe en interactivos`,
       );
@@ -89,6 +94,28 @@ function revisarInteractivos(contenido: Contenido, mundo: Mundo, diagnostico: Di
       diagnostico.errores.push(`interactivos.${id} no tiene un objeto con ese id en la capa "decorado" del mapa`);
     }
   }
+}
+
+/**
+ * Los nombres que usan los planos de cámara (`mira`) y los pasos `anima`. Un objeto del decorado puede llevar
+ * id solo para eso: así se puede mirar o animar sin que se pueda tocar.
+ */
+function reunirIdsQueSeNombran(contenido: Contenido): Set<string> {
+  const nombres = new Set<string>();
+  for (const plano of Object.values(contenido.mundo.planos)) {
+    nombres.add(plano.mira);
+  }
+  recorrerPasos(contenido, {
+    alVerPaso(paso) {
+      if (paso.tipo === 'anima') {
+        nombres.add(paso.personaje);
+      }
+    },
+    alVerSecuenciaPorNombre() {
+      // No hace falta: los pasos de cada secuencia ya se recorren.
+    },
+  });
+  return nombres;
 }
 
 function revisarPisoEInicio(contenido: Contenido, mundo: Mundo, diagnostico: Diagnostico): void {
@@ -139,6 +166,22 @@ function revisarSalida(contenido: Contenido, mundo: Mundo, diagnostico: Diagnost
     diagnostico.advertencias.push(
       `mapa: ${mundo.salida.descripcion} (salida) no hace nada: el contenido no tiene la sección "salida"`,
     );
+  }
+}
+
+/** Las condiciones `visibleCuando` del mapa se escriben igual que las del contenido y usan sus variables. */
+function revisarVisibilidadDelDecorado(contenido: Contenido, mundo: Mundo, diagnostico: Diagnostico): void {
+  const revision = { contenido, variablesDeclaradas: reunirVariablesDeclaradas(contenido), diagnostico };
+  for (const objeto of mundo.decorado) {
+    if (objeto.visibleCuando === undefined) continue;
+    revisarCondicion(objeto.visibleCuando, `mapa: ${objeto.descripcion} (decorado).visibleCuando`, revision);
+    // El piso por donde se camina se calcula una sola vez por nivel: esconder algo no abre el paso.
+    if (objeto.clase === 'parado') {
+      diagnostico.advertencias.push(
+        `mapa: ${objeto.descripcion} (decorado) es "parado" y lleva visibleCuando: ` +
+          'mientras no se ve, su huella sigue bloqueando el paso',
+      );
+    }
   }
 }
 

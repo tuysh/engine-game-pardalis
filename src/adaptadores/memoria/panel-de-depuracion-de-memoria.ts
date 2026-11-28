@@ -1,5 +1,6 @@
 // Panel de depuración falso para las pruebas: la prueba da las órdenes y lee el texto que el motor mostró.
 
+import type { GrosorDeFranjas } from '../../dominio/contenido.ts';
 import type { OrdenDeDepuracion, PanelDeDepuracion } from '../../puertos/panel-de-depuracion.ts';
 
 export class PanelDeDepuracionDeMemoria implements PanelDeDepuracion {
@@ -9,6 +10,8 @@ export class PanelDeDepuracionDeMemoria implements PanelDeDepuracion {
   readonly textosCopiados: string[] = [];
   /** `true` mientras el motor dice que la cámara libre está activa. */
   laCamaraLibreEstaActiva = false;
+  /** El grosor de las franjas que la guía marca ahora. `undefined` = no hay guía. */
+  guiaDeFranjas: GrosorDeFranjas | undefined;
   estaDestruido = false;
 
   private funcionesDeOrden: ((orden: OrdenDeDepuracion) => void)[] = [];
@@ -22,6 +25,10 @@ export class PanelDeDepuracionDeMemoria implements PanelDeDepuracion {
 
   avisarCamaraLibre(estaActiva: boolean): void {
     this.laCamaraLibreEstaActiva = estaActiva;
+  }
+
+  mostrarGuiaDeFranjas(grosor: GrosorDeFranjas | undefined): void {
+    this.guiaDeFranjas = grosor;
   }
 
   mostrarTexto(texto: string): void {

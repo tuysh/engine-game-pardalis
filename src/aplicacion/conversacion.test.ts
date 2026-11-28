@@ -37,8 +37,8 @@ function crearAccionesFalsas(bitacora: string[]): AccionesDePaso {
     async elegirOpcion() {
       return 0;
     },
-    async reproducirEfecto(nombre) {
-      bitacora.push(`efecto: ${nombre}`);
+    async reproducirEfecto(efecto) {
+      bitacora.push(`efecto: ${efecto.nombre}`);
     },
     async caminar() {},
     async jugarMinijuego() {

@@ -40,6 +40,11 @@ export class DecoradoQueSeTransparenta {
     this.piezas.push(pieza);
   }
 
+  /** Pone `nueva` en el lugar de `vieja`, si `vieja` estaba anotada (un paso `anima` le cambió el dibujo). */
+  cambiar(vieja: Mesh, nueva: Mesh): void {
+    this.piezas = this.piezas.map((pieza) => (pieza === vieja ? nueva : pieza));
+  }
+
   /** Olvida todas las piezas (se montó otra escenografía). No las libera: eso lo hace quien las creó. */
   olvidarTodas(): void {
     this.piezas = [];

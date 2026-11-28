@@ -52,7 +52,7 @@ a metros del escenario, igual que a las imágenes. Un personaje dibujado de 160 
 | `suelo` | Capa de imagen | La imagen del piso, tal como se ve desde arriba. Propiedad `asset` (clave). Se coloca según el desplazamiento de la capa y mide lo que mide la imagen. |
 | `telones` | Capa de objetos | Una **línea de dos puntos** por cada fondo vertical (fachadas, cielo). Propiedades `asset` y `alto` (en píxeles). |
 | `decorado` | Capa de objetos | Un **rectángulo** por objeto: su forma es **la huella real** del objeto en el piso. Clase del catálogo y propiedad `asset`. |
-| `npcs` | Capa de objetos | Un objeto por personaje (un punto es lo más cómodo). Propiedades `id` y, opcional, `mira`. |
+| `npcs` | Capa de objetos | Un objeto por personaje (un punto es lo más cómodo). Propiedades `id` y, opcionales, `mira` y `anima` (ver «Pose inicial»). |
 | `interaccion` | Capa de objetos | Objetos de clase `inicioJugador`, `punto`, `salida` o `zona`. |
 | `piso` | Capa de objetos | Polígonos (o rectángulos) por donde se puede caminar. |
 
@@ -78,6 +78,8 @@ igual que en el juego); para subir uno, usa «Subir objeto». Lo `plano` siempre
 de los personajes.
 
 Con la propiedad `id`, el objeto se puede tocar: su diálogo está en `interactivos` del contenido.
+Un objeto también puede llevar `id` **solo para nombrarlo** desde un plano de cámara (`mira`) o desde un paso
+`anima`, sin diálogo: entonces no se puede tocar. Un `id` que no está en `interactivos` y que nada nombra es error.
 Lo que se dibuja en el plano es exactamente lo que bloquea: no hay ajustes de «huella» a mano.
 
 **Lo `parado` no tapa al jugador:** si un objeto `parado` queda entre la cámara y el jugador (un árbol o alguien
@@ -87,6 +89,21 @@ y recupera su color al dejar de taparlo. Lo bajito que solo le tapa los pies (un
 Si el `asset` de un objeto es una **animación** (archivos numerados, ver §4), se repite sola todo el tiempo:
 sirve para una tele encendida, una bandera o un foco que parpadea.
 
+#### Decorado que aparece y desaparece (`visibleCuando`)
+
+Con la propiedad de texto `visibleCuando`, un objeto solo se ve mientras se cumple esa condición, escrita igual
+que en el contenido (ver «Condiciones»). Cambia sola en cuanto cambia el estado, también a media cinemática:
+
+| Objeto | `visibleCuando` | Qué pasa |
+| --- | --- | --- |
+| El letrero de «hay verduras» (`colgado`) | `no tengo verduras` | Se quita en cuanto se compran. |
+| Una flecha pintada en el piso (`plano`) | `objetivosCompletos` | Aparece cuando ya se tiene todo. |
+
+- Sus variables deben estar declaradas en el contenido (si no, es error, como en cualquier condición).
+- Mientras no se ve, tampoco se puede tocar ni cuenta como «a la mano».
+- Limitación conocida: el piso por donde se camina se calcula una vez al empezar el nivel, así que un objeto
+  `parado` escondido **sigue bloqueando el paso** (el validador lo advierte). Úsalo en `plano` y `colgado`.
+
 > **Para que el lugar se vea completo:** la cámara de una cinemática puede girar y acercarse, y entonces deja ver
 > lo que hay más allá del fondo. Cierra el lugar con telones también a los lados (como las paredes de la casa
 > de ejemplo) y haz el suelo un poco más grande que el piso por donde se camina.
@@ -95,10 +112,21 @@ sirve para una tele encendida, una bandera o un foco que parpadea.
 
 | Clase | Forma | Propiedades |
 | --- | --- | --- |
-| `inicioJugador` | punto | `mira` (`izquierda`/`derecha`, por defecto `derecha`). Exactamente uno si el nivel tiene jugador, dentro del piso. |
+| `inicioJugador` | punto | `mira` (`izquierda`/`derecha`, por defecto `derecha`) y, opcional, `anima`. Exactamente uno si el nivel tiene jugador, dentro del piso. |
 | `punto` | punto | Su **nombre** es su identificador (p. ej. `frente_tortilleria`); lo usan los pasos `camina`. No se repite. |
 | `salida` | rectángulo o polígono | Máximo una. |
 | `zona` | rectángulo o polígono | Su **nombre** es su identificador. Opcionales: `grupo` (qué lista de `comentarios` usar al entrar) y `espera` (segundos antes de repetir; por defecto 20). |
+
+#### Pose inicial (`anima`)
+
+Un personaje del mapa (un objeto de `npcs`, o el `inicioJugador`) puede llevar la propiedad de texto `anima`:
+la clave de la imagen o animación con que **empieza**, en vez de su `sprite`. Así lo que se ve detrás del botón
+de jugar ya es la primera toma de la cinemática de entrada (Pardi sentado viendo la tele), y no un personaje
+parado que de pronto cambia.
+
+- Es como un paso `anima` con `repite` que ya pasó: las caras de una línea (`con`) vuelven a esta pose al terminar.
+- Para que regrese a su dibujo normal: `{ "anima": "pardi", "con": "spr_pardi", "repite": true }`.
+- La imagen debe existir en los assets (si no, es error).
 
 ### Cómo se une el mapa con el contenido
 
@@ -195,6 +223,7 @@ personaje suene distinto, `voz` le cambia el tono y la velocidad (es opcional, y
 | `mundo.fondo` | `"#bfe6f5"` (cielo claro) | Color de lo que se ve donde no hay piso ni telones, escrito `#rrggbb`. En un interior, ponle el color de las paredes o uno oscuro para que no se asome cielo; en un exterior, el color del cielo de tus telones (un atardecer, la noche). |
 | `mundo.sonidos.musica` | — | Clave de la música de fondo, que se repite mientras se juega. Si falta el archivo, hay advertencia y el nivel se juega sin música. |
 | `mundo.planos` | — | Planos de cámara con nombre, para los pasos `camara`. Ver abajo. |
+| `mundo.franjas` | `"normales"` | Grosor de las franjas negras de cine: `"normales"`, `"delgadas"` (la mitad) o `"ninguna"`. Ver «Franjas de cine». |
 
 La cámara sigue al jugador; en un nivel sin jugador mira al centro del lugar.
 
@@ -306,13 +335,30 @@ en `estado.compartidas`:
 Gana **la primera rama cuya condición se cumple**. Una rama sin `cuando` siempre se cumple: debe ir al final
 (si no, las siguientes son inalcanzables y hay advertencia).
 
+### Señal de lo pendiente (`senal`)
+
+Un NPC o un interactivo puede llevar una estrellita amarilla que brinca encima de él, para que quien todavía no
+lee sepa **a dónde ir**:
+
+```json
+"npcs": {
+  "igu": { "senal": { "visibleCuando": "no tengo verduras" }, "dialogo": [ ... ] }
+}
+```
+
+- Se ve mientras se cumple `visibleCuando` (sin él, siempre). Sus variables deben estar declaradas.
+- Solo se ve mientras el jugador explora: en un diálogo o una cinemática se quita.
+- No se ve sobre lo que el jugador ya tiene a la mano: ahí ya está el aviso de que puede hablar.
+- Sobre un interactivo escondido por su `visibleCuando` del mapa, tampoco.
+- Puede haber varias a la vez; para que guíen, conviene que sean pocas (lo que falta del mandado).
+
 ### Pasos
 
 | Paso | Ejemplo | Qué hace |
 | --- | --- | --- |
 | Línea | `{ "dice": "tortu", "texto": "¡Hola!", "audio": "vo_hola" }` | Globo sobre quien habla. Termina con un toque o al acabar el audio. Opcional: `trad`, y `en` + `es` (siempre juntos) para una **tarjeta de vocabulario**; `con`, `reacciona` y `piensa` (ver «Caras y pensamientos»). |
 | Opción | `{ "elige": "¿Cuál quieres?", "opciones": [ { "imagen": "img_rosa", "audio": "vo_rosa", "secuencia": [...] } ] }` | Espera la elección. Cada opción: `texto`, `trad`, `imagen`, `audio`, `cuando`, y `secuencia` (pasos o nombre de secuencia). Una opción sin `imagen` da advertencia. |
-| Efecto | `{ "efecto": "magia" }` | Partículas y sonido. Disponibles: `magia` (chispas alrededor del jugador o del centro del lugar) y `confeti` (papelitos que llueven sobre todo lo que se ve; se ven del mismo tamaño con la cámara cerca o lejos). |
+| Efecto | `{ "efecto": "magia" }` | Partículas y sonido. Disponibles: `magia`, `confeti` (papelitos que llueven sobre todo lo que se ve; se ven del mismo tamaño con la cámara cerca o lejos) y `destello` (un flash blanco de toda la pantalla, como el de una cámara de fotos). Opcional: `sonido`, la clave del sonido que lo acompaña (por ejemplo un obturador); sin él suenan unas notas cortas. Dura un segundo. |
 | Estado | `{ "pon": { "globo": "rosa" } }` | Asigna objetivos o variables. Con números también suma y resta: `{ "pon": { "dinero": { "resta": 10 }, "estrellas": { "suma": 1 } } }`. |
 | Minijuego | `{ "juego": "Tortilleria", "config": { "palabras": ["hot"] } }` | Abre el minijuego que registró el host y, al volver, ejecuta `alVolver`. |
 | Caminar | `{ "camina": "frente_tortilleria", "quien": "tortu" }` | Camina hasta un `punto` del mapa. Sin `quien`, camina el jugador. Sigue el piso y rodea el decorado; ver «Por dónde camina». |
@@ -411,7 +457,7 @@ Mueven la cámara y a los personajes. Nacieron para las cinemáticas, pero sirve
 | Espera | `{ "espera": 2 }` | Una pausa, en segundos. |
 | Cámara | `{ "camara": "plano_puesto", "duracion": 2 }` | Lleva la cámara a un plano de `mundo.planos`, a un personaje (por su id) o a `"jugador"`. Con `duracion` viaja con suavidad; sin ella es un corte. |
 | Voltear | `{ "mira": "tommy", "hacia": "mama" }` | Voltea a un personaje hacia otro personaje o hacia un `punto` del mapa, con giro de papel. |
-| Animar | `{ "anima": "tommy", "con": "tommy_saluda" }` | Cambia el dibujo de un personaje por una animación (o una imagen) de los assets. Ver abajo. |
+| Animar | `{ "anima": "tommy", "con": "tommy_saluda" }` | Cambia el dibujo de un personaje (o de un objeto del decorado con `id`) por una animación (o una imagen) de los assets. Ver abajo. |
 | Aparecer | `{ "aparece": "mama", "en": "puerta" }` | Mete a un personaje al escenario, parado en un `punto`. Si ya estaba, solo lo cambia de lugar. |
 | Desaparecer | `{ "desaparece": "mama" }` | Lo saca del escenario. No se puede sacar al personaje del jugador. |
 | Música | `{ "musica": "mus_fiesta" }` | Cambia la música de fondo. |
@@ -421,7 +467,12 @@ Mueven la cámara y a los personajes. Nacieron para las cinemáticas, pero sirve
 | Salir | `{ "sale": "barrio" }` | Pide terminar el nivel hacia un destino. Ver abajo. |
 | Acompañar | `{ "acompana": "bobby" }` | Desde ahora ese personaje sigue al jugador mientras explora. Con `{ "acompana": null }`, ya nadie lo sigue. |
 
-**Animar.** Hay dos formas:
+**Animar.** `anima` nombra a un personaje o, si ningún personaje se llama así, a un **objeto del decorado** por
+su `id` del mapa: así la familia sentada a la mesa puede levantar los platos al «¡Provecho!»
+(`{ "anima": "mesa_familia", "con": "mesa_familia_brinda" }`). El objeto toma el dibujo nuevo en su misma huella y,
+sin `repite`, al terminar vuelve a su `asset` del mapa.
+
+Hay dos formas:
 
 - Sin `repite`, la animación pasa **una vez**, el paso espera a que termine y el personaje regresa a su dibujo
   normal (su `sprite`). Sirve para un gesto: saludar, brincar.
@@ -553,6 +604,19 @@ franjas negras de cine. Es una lista de pasos, los mismos de los diálogos.
 - Al terminar, el motor marca `vista.<id>`. Si la partida se guarda a media cinemática, al volver empieza de nuevo.
 - Las líneas (`dice`) se cierran solas al acabar la voz, o con un toque.
 - Con «movimiento reducido» activo en el dispositivo, los viajes de cámara se vuelven cortes.
+
+#### Franjas de cine
+
+Mientras dura una cinemática se ven dos franjas negras, arriba y abajo. Tapan casi una décima del alto cada una,
+así que **lo que quede bajo ellas no se ve**: encuadra los planos con la cámara libre, que las marca con una guía
+punteada (ver «Crear planos con la cámara libre»).
+
+Los globos de diálogo, con su tarjeta de vocabulario, siempre quedan entre las dos franjas: si la cabeza de quien
+habla está muy arriba, el globo baja lo necesario y su piquito sigue apuntándole.
+
+Un nivel que es casi todo cinemática (una casa donde solo se cuenta la historia, una comida final) puede usar
+`"mundo": { "franjas": "delgadas" }` para tapar la mitad, o `"ninguna"` para no dibujarlas. Aun sin franjas, durante
+la cinemática los toques no llegan al escenario y el botón de saltar sigue en su lugar.
 
 La **casa de ejemplo** es un nivel hecho solo de una cinemática: no tiene `jugador`, su `intro` empieza
 `alEntrar` y termina con `{ "sale": "barrio" }`.
@@ -750,6 +814,9 @@ Con la tecla `C` entras a la cámara libre (el juego se pausa mientras tanto):
 | Clic en un personaje, en un objeto con `id` o cerca de un punto | Lo fija como `mira` del plano |
 | `1`–`9` | Salta a los planos que el nivel ya tiene, para compararlos o ajustarlos |
 | `P` | Copia el plano actual |
+
+Mientras la cámara libre está activa, una guía punteada marca dónde quedarán las franjas de cine (con el grosor
+de `mundo.franjas`): lo que encuadres debajo de ellas no se verá en una cinemática.
 
 Arriba del juego se ve siempre el plano que llevas, ya escrito como va en el contenido:
 

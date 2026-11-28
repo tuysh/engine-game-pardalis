@@ -41,6 +41,7 @@ export async function jugarNivel(
       armado.comentarios.callar();
       armado.flecha.ocultar();
       armado.cercania.ocultar();
+      armado.senales.ocultar();
       puertos.audio.ponerMusica(undefined);
       if (camaraLibre !== undefined) {
         camaraLibre.destruir();
@@ -146,6 +147,7 @@ function avanzarUnCuadro(armado: NivelArmado, puertos: PuertosParaJugar, segundo
     armado.acompanante.avanzar(segundos);
   }
   armado.camara.actualizar(segundos);
+  armado.visibilidad.actualizar();
   puertos.escenario.dibujar(segundos);
 
   // La flecha se coloca después de dibujar, cuando la cámara ya está en su lugar de este cuadro.
@@ -155,4 +157,6 @@ function avanzarUnCuadro(armado: NivelArmado, puertos: PuertosParaJugar, segundo
   } else {
     flecha.actualizar();
   }
+  // Las estrellitas de lo pendiente, solo mientras se explora; no encima del aviso de «a la mano».
+  armado.senales.actualizar(!escenas.hayUnaEnCurso, cercania.loQueTieneElAviso);
 }

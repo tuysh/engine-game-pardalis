@@ -225,3 +225,23 @@ test('una capa con el tipo equivocado se reporta', () => {
     'mapa: la capa "piso" debe ser una capa de objetos',
   ]);
 });
+
+test('la propiedad "visibleCuando" de un objeto de decorado se lee como una condición', () => {
+  const letrero = { id: 9, type: 'colgado', x: 0, y: 300, width: 100, height: 10, properties: propiedades({ asset: 'letrero', visibleCuando: 'no tengo verduras' }) };
+
+  const { mundo, diagnostico } = leer(mapaCon([capaDeObjetos('decorado', [letrero])]));
+
+  expect(diagnostico.errores).toEqual([]);
+  expect(mundo?.decorado[0]?.visibleCuando).toEqual({ tipo: 'no', condicion: { tipo: 'variable', nombre: 'verduras' } });
+});
+
+test('la propiedad "anima" de un NPC o del inicio del jugador es el dibujo con que empieza', () => {
+  const tommy = { id: 20, point: true, x: 300, y: 300, properties: propiedades({ id: 'tommy', anima: 'tommy_viendo_tele' }) };
+  const inicio = { id: 21, type: 'inicioJugador', point: true, x: 200, y: 400, properties: propiedades({ anima: 'pardi_sentado' }) };
+
+  const { mundo, diagnostico } = leer(mapaCon([capaDeObjetos('npcs', [tommy]), capaDeObjetos('interaccion', [inicio])]));
+
+  expect(diagnostico.errores).toEqual([]);
+  expect(mundo?.npcs['tommy']?.dibujoInicial).toBe('tommy_viendo_tele');
+  expect(mundo?.iniciosDelJugador[0]?.dibujoInicial).toBe('pardi_sentado');
+});

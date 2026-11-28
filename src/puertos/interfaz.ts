@@ -2,6 +2,7 @@
 // (globos, opciones, tarjetas de vocabulario) y los toques que eso recibe.
 // La aplicación decide qué se muestra y cuándo; el adaptador decide cómo se ve.
 
+import type { GrosorDeFranjas } from '../dominio/contenido.ts';
 import type { PalabraDeVocabulario } from '../dominio/paso.ts';
 import type { LugarEnPantalla } from './escenario.ts';
 
@@ -64,6 +65,13 @@ export interface Interfaz {
   ocultarFlecha(): void;
 
   /**
+   * Pone una señal que sube y baja sobre cada uno de esos lugares de la pantalla: lo que todavía está pendiente
+   * (`senal` de un NPC o interactivo). Reemplaza las que hubiera; con una lista vacía, ya no hay ninguna.
+   * Se llama en cada cuadro, así que debe ser barato llamarla con los mismos lugares.
+   */
+  ponerSenalesDePendientes(lugares: readonly LugarEnPantalla[]): void;
+
+  /**
    * Muestra una señal pequeña sobre el personaje u objeto que el jugador tiene a la mano,
    * para que sepa que puede hablarle o usarlo. Si ya estaba, no cambia nada.
    */
@@ -79,10 +87,17 @@ export interface Interfaz {
   ponerFundido(opacidad: number): void;
 
   /**
+   * Cubre toda la pantalla de blanco, como el flash de una cámara (el efecto `destello`).
+   * `opacidad` va de 0 (no se ve) a 1 (todo blanco). Los globos de diálogo se siguen viendo encima.
+   */
+  ponerDestello(opacidad: number): void;
+
+  /**
    * Muestra las franjas negras de arriba y abajo que dicen «esto es una cinemática», y no deja que
    * los toques lleguen al escenario. Si se da `alSaltar`, aparece un botón que lo llama al tocarlo.
+   * `grosor` es el de `mundo.franjas` del nivel. Mientras se ven, los globos se acomodan entre las dos franjas.
    */
-  mostrarFranjasDeCine(alSaltar: (() => void) | undefined): void;
+  mostrarFranjasDeCine(alSaltar: (() => void) | undefined, grosor: GrosorDeFranjas): void;
   ocultarFranjasDeCine(): void;
 
   /**

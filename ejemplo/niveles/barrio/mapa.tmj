@@ -167,6 +167,11 @@
        "name": "asset",
        "type": "string",
        "value": "flecha_piso"
+      },
+      {
+       "name": "visibleCuando",
+       "type": "string",
+       "value": "objetivosCompletos"
       }
      ]
     },

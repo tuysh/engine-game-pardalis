@@ -155,6 +155,20 @@ test('una cinemática de entrada empieza en el primer cuadro: se ven las franjas
   expect(escenario.personajes.get('mama')?.posicion).toEqual({ x: 9, y: 2 });
 });
 
+test('las franjas tienen el grosor de mundo.franjas, y "normales" si el nivel no lo dice', async () => {
+  const sinGrosor = await empezar(salaCon({ intro: crearCinematica('intro', {}) }));
+  await sinGrosor.reloj.avanzar(0.1);
+  expect(sinGrosor.interfaz.grosorDeLasFranjas).toBe('normales');
+
+  const nivelDelgado = salaCon({ intro: crearCinematica('intro', {}) });
+  const conGrosor = await empezar({
+    ...nivelDelgado,
+    contenido: { ...nivelDelgado.contenido, mundo: { ...nivelDelgado.contenido.mundo, franjas: 'delgadas' } },
+  });
+  await conGrosor.reloj.avanzar(0.1);
+  expect(conGrosor.interfaz.grosorDeLasFranjas).toBe('delgadas');
+});
+
 test('los pasos de la cinemática ocurren uno tras otro, y al terminar se marca como vista', async () => {
   const { nivelEnJuego, escenario, interfaz, reloj, avisosDeCinematicas } = await empezar(
     salaCon({ intro: crearCinematica('intro', {}) }),

@@ -1,6 +1,7 @@
 // Interfaz falsa para las pruebas: no muestra nada. Recuerda lo que se le pidió mostrar
 // y deja que la prueba simule los toques del jugador.
 
+import type { GrosorDeFranjas } from '../../dominio/contenido.ts';
 import type { LugarEnPantalla } from '../../puertos/escenario.ts';
 import type { GloboPorMostrar, Interfaz, OpcionPorMostrar } from '../../puertos/interfaz.ts';
 
@@ -24,13 +25,21 @@ export class InterfazDeMemoria implements Interfaz {
   hayFlecha = false;
   textoDeLaFlecha: string | undefined;
   lugarDeLaFlecha: LugarEnPantalla | undefined;
+  /** Dónde están las señales de lo pendiente ahora. Vacía = no hay ninguna. */
+  lugaresDeLasSenales: readonly LugarEnPantalla[] = [];
   /** `true` mientras se muestra la señal de que hay algo a la mano. */
   hayAviso = false;
   lugarDelAviso: LugarEnPantalla | undefined;
   /** Qué tan oscura está la pantalla: 0 = nada, 1 = todo negro. */
   opacidadDelFundido = 0;
+  /** Qué tan blanca está la pantalla por un destello: 0 = nada, 1 = todo blanco. */
+  opacidadDelDestello = 0;
+  /** La opacidad más alta que llegó a tener el destello: dice si alguna vez se vio. */
+  opacidadMaximaDelDestello = 0;
   /** `true` mientras se ven las franjas de cine. */
   hayFranjasDeCine = false;
+  /** El grosor con que se mostraron las franjas la última vez. */
+  grosorDeLasFranjas: GrosorDeFranjas | undefined;
   /** Lo que hace el botón de saltar. `undefined` = no hay botón. */
   private funcionDeSaltar: (() => void) | undefined;
   /** `true` mientras hay un minijuego abierto. */
@@ -93,6 +102,10 @@ export class InterfazDeMemoria implements Interfaz {
     this.hayFlecha = false;
   }
 
+  ponerSenalesDePendientes(lugares: readonly LugarEnPantalla[]): void {
+    this.lugaresDeLasSenales = lugares;
+  }
+
   mostrarAviso(): void {
     this.hayAviso = true;
   }
@@ -109,8 +122,14 @@ export class InterfazDeMemoria implements Interfaz {
     this.opacidadDelFundido = opacidad;
   }
 
-  mostrarFranjasDeCine(alSaltar: (() => void) | undefined): void {
+  ponerDestello(opacidad: number): void {
+    this.opacidadDelDestello = opacidad;
+    this.opacidadMaximaDelDestello = Math.max(this.opacidadMaximaDelDestello, opacidad);
+  }
+
+  mostrarFranjasDeCine(alSaltar: (() => void) | undefined, grosor: GrosorDeFranjas): void {
     this.hayFranjasDeCine = true;
+    this.grosorDeLasFranjas = grosor;
     this.funcionDeSaltar = alSaltar;
   }
 

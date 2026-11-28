@@ -7,12 +7,15 @@
 //
 // Se verifica a mano en la demo; no tiene pruebas automáticas porque necesita un navegador.
 
+import type { GrosorDeFranjas } from '../../dominio/contenido.ts';
 import type { LugarEnPantalla } from '../../puertos/escenario.ts';
 import type { GloboPorMostrar, Interfaz, OpcionPorMostrar } from '../../puertos/interfaz.ts';
 import { crearBotonConDibujo, crearConTexto, crearDibujo, crearOculto } from './elementos.ts';
 import { ESTILOS_DE_LA_INTERFAZ } from './estilos-de-la-interfaz.ts';
+import { altoDeLaFranjaEnCss, proporcionDeLaFranja } from './franjas-de-cine.ts';
 import { GloboDeDialogo } from './globo-de-dialogo.ts';
 import { SenalEnPantalla } from './senal-en-pantalla.ts';
+import { SenalesDePendientes } from './senales-de-pendientes.ts';
 import { TarjetasDeOpciones } from './tarjetas-de-opciones.ts';
 
 /** Cuánto crece todo en el modo proyección, para que se lea desde el fondo del salón. */
@@ -39,9 +42,13 @@ export class InterfazDelNavegador implements Interfaz {
   private readonly opciones = new TarjetasDeOpciones();
   private readonly flecha = new SenalEnPantalla('flecha');
   private readonly aviso = new SenalEnPantalla('aviso');
+  private readonly senalesDePendientes = new SenalesDePendientes();
   private readonly capaDeToque = crearOculto('div', 'capa-de-toque');
   private readonly fundido = crearOculto('div', 'fundido');
+  private readonly destello = crearOculto('div', 'destello');
   private readonly franjas = crearOculto('div', 'franjas');
+  /** Qué parte del alto ocupa cada franja mientras se ven. */
+  private proporcionDeLaFranja = 0;
   private readonly panelDeSaltar = crearOculto('div', 'panel-de-saltar');
   private readonly panelDeInicio = crearOculto('div', 'inicio');
   /** El marco que sostiene a pantalla completa el espacio del minijuego abierto. `undefined` = no hay ninguno. */
@@ -66,8 +73,10 @@ export class InterfazDelNavegador implements Interfaz {
     raiz.append(
       estilos,
       this.flecha.elemento,
+      this.senalesDePendientes.elemento,
       this.aviso.elemento,
       this.fundido,
+      this.destello,
       this.franjas,
       this.capaDeToque,
       this.globo.elemento,
@@ -86,7 +95,17 @@ export class InterfazDelNavegador implements Interfaz {
   }
 
   apuntarGlobo(lugar: LugarEnPantalla | undefined): void {
-    this.globo.apuntar(lugar, { ancho: this.anfitrion.clientWidth, alto: this.anfitrion.clientHeight });
+    const alto = this.anfitrion.clientHeight;
+    let altoDeUnaFranja = 0;
+    if (!this.franjas.hidden) {
+      altoDeUnaFranja = alto * this.proporcionDeLaFranja;
+    }
+    this.globo.apuntar(lugar, {
+      ancho: this.anfitrion.clientWidth,
+      alto,
+      ocupadoArribaEnPuntos: altoDeUnaFranja,
+      ocupadoAbajoEnPuntos: altoDeUnaFranja,
+    });
   }
 
   alTocarParaSeguir(funcion: () => void): () => void {
@@ -134,6 +153,10 @@ export class InterfazDelNavegador implements Interfaz {
     this.flecha.ocultar();
   }
 
+  ponerSenalesDePendientes(lugares: readonly LugarEnPantalla[]): void {
+    this.senalesDePendientes.poner(lugares);
+  }
+
   mostrarAviso(): void {
     if (this.aviso.estaVisible) return;
     this.aviso.mostrar([crearDibujo(TRAZO_DE_GLOBITO)]);
@@ -152,7 +175,14 @@ export class InterfazDelNavegador implements Interfaz {
     this.fundido.hidden = opacidad <= 0;
   }
 
-  mostrarFranjasDeCine(alSaltar: (() => void) | undefined): void {
+  ponerDestello(opacidad: number): void {
+    this.destello.style.opacity = String(opacidad);
+    this.destello.hidden = opacidad <= 0;
+  }
+
+  mostrarFranjasDeCine(alSaltar: (() => void) | undefined, grosor: GrosorDeFranjas): void {
+    this.proporcionDeLaFranja = proporcionDeLaFranja(grosor);
+    this.franjas.style.setProperty('--alto-de-la-franja', altoDeLaFranjaEnCss(grosor));
     this.franjas.hidden = false;
     this.panelDeSaltar.replaceChildren();
     if (alSaltar === undefined) return;

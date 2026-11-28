@@ -31,6 +31,7 @@
   },
   "npcs": {
     "tortu": {
+      "senal": { "visibleCuando": "no tengo tortillas" },
       "dialogo": [
         {
           "cuando": "tengo tortillas",
@@ -86,13 +87,20 @@
       "pasos": [
         { "fundido": "abrir", "duracion": 0.8 },
         { "camara": "plano_puesto", "duracion": 2 },
-        { "dice": "tortu", "texto": "¡Tortillas calientitas!", "audio": "vo_tortu_pregon" },
+        {
+          "dice": "tortu",
+          "texto": "¡Tortillas calientitas, recién salidas del comal! ¡Pásele, pásele, que se acaban!",
+          "en": "corn",
+          "es": "maíz",
+          "audio": "vo_tortu_pregon"
+        },
         { "camara": "jugador", "duracion": 1.5 }
       ]
     },
     "camino_a_casa": {
       "inicia": { "objetivo": "tortillas" },
       "pasos": [
+        { "efecto": "destello" },
         { "camara": "plano_salida", "duracion": 1.5 },
         { "espera": 1.2 },
         { "camara": "jugador", "duracion": 1.5 }

@@ -2,6 +2,8 @@
 // mientras usa la cámara libre (docs/DISENO-3.0.md §9.3), y el texto con el que el motor le responde.
 // Solo existe cuando el juego se crea con `depurar: true`.
 
+import type { GrosorDeFranjas } from '../dominio/contenido.ts';
+
 /** Lo que pide quien depura. */
 export type OrdenDeDepuracion =
   /** Entrar o salir de la cámara libre (la tecla C). */
@@ -24,6 +26,12 @@ export interface PanelDeDepuracion {
    * (y no deja que la rueda desplace la página).
    */
   avisarCamaraLibre(estaActiva: boolean): void;
+
+  /**
+   * Marca encima del juego dónde quedan las franjas negras de cine de ese grosor, para encuadrar un plano
+   * contra lo que de verdad se verá en una cinemática. Con `undefined`, la marca se quita.
+   */
+  mostrarGuiaDeFranjas(grosor: GrosorDeFranjas | undefined): void;
 
   /** Muestra un texto fijo en una esquina del juego: la ayuda y el plano actual. Reemplaza el anterior. */
   mostrarTexto(texto: string): void;

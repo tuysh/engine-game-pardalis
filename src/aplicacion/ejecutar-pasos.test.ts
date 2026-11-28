@@ -41,8 +41,8 @@ function crearAccionesFalsas(bitacora: string[], respuestas: Respuestas = {}): A
       bitacora.push(`pregunta: ${pregunta} (${opciones.length} opciones)`);
       return respuestas.opcionElegida ?? 0;
     },
-    async reproducirEfecto(nombre) {
-      bitacora.push(`efecto: ${nombre}`);
+    async reproducirEfecto(efecto) {
+      bitacora.push(`efecto: ${efecto.nombre}`);
     },
     async caminar(personaje, punto) {
       bitacora.push(`${personaje} camina a ${punto}`);

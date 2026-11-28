@@ -471,3 +471,45 @@ test('un tono o una velocidad fuera de sus límites dice cuáles son y qué es l
     'meta.personajes.bobby.voz: Llave desconocida: "volumen"',
   ]);
 });
+
+test('mundo.franjas acepta "normales", "delgadas" y "ninguna"; otro valor es error', () => {
+  const lector = new LectorDeNivelesDeJson();
+  const delgadas = lector.leerContenido({ meta: META, mundo: { franjas: 'delgadas' } });
+  if (delgadas.tipo !== 'leido') throw new Error(`no se pudo leer: ${delgadas.errores.join('; ')}`);
+  expect(delgadas.valor.mundo.franjas).toBe('delgadas');
+
+  const gruesas = lector.leerContenido({ meta: META, mundo: { franjas: 'gruesas' } });
+  expect(gruesas.tipo).toBe('invalido');
+  if (gruesas.tipo !== 'invalido') return;
+  expect(gruesas.errores).toEqual(['mundo.franjas: Opción inválida: se esperaba una de "normales"|"delgadas"|"ninguna"']);
+});
+
+test('un paso "efecto" puede nombrar el sonido que lo acompaña', () => {
+  const lectura = new LectorDeNivelesDeJson().leerContenido({
+    meta: META,
+    secuencias: { foto: [{ efecto: 'destello', sonido: 'sfx_foto' }, { efecto: 'magia' }] },
+  });
+
+  if (lectura.tipo !== 'leido') throw new Error(`no se pudo leer: ${lectura.errores.join('; ')}`);
+  expect(lectura.valor.secuencias['foto']).toEqual([
+    { tipo: 'efecto', nombre: 'destello', sonido: 'sfx_foto' },
+    { tipo: 'efecto', nombre: 'magia' },
+  ]);
+});
+
+test('un NPC puede llevar "senal" con su visibleCuando; otra clave dentro de "senal" es error', () => {
+  const lector = new LectorDeNivelesDeJson();
+  const lectura = lector.leerContenido({
+    meta: META,
+    npcs: { tortu: { dialogo: [], senal: { visibleCuando: 'no tengo tortillas' } } },
+  });
+  if (lectura.tipo !== 'leido') throw new Error(`no se pudo leer: ${lectura.errores.join('; ')}`);
+  expect(lectura.valor.npcs['tortu']?.senal).toEqual({
+    visibleCuando: { tipo: 'no', condicion: { tipo: 'variable', nombre: 'tortillas' } },
+  });
+
+  const conError = lector.leerContenido({ meta: META, npcs: { tortu: { dialogo: [], senal: { cuando: 'x' } } } });
+  expect(conError.tipo).toBe('invalido');
+  if (conError.tipo !== 'invalido') return;
+  expect(conError.errores).toEqual(['npcs.tortu.senal: Llave desconocida: "cuando"']);
+});

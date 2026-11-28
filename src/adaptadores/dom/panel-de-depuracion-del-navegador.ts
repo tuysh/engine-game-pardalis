@@ -4,7 +4,14 @@
 //
 // Se verifica a mano en la demo (`?depurar` en la dirección); no tiene pruebas automáticas porque necesita un navegador.
 
+import type { GrosorDeFranjas } from '../../dominio/contenido.ts';
 import type { OrdenDeDepuracion, PanelDeDepuracion } from '../../puertos/panel-de-depuracion.ts';
+import { altoDeLaFranjaEnCss } from './franjas-de-cine.ts';
+
+/** Cómo se ve la guía de cada franja: oscura pero transparente, con borde punteado, para ver lo que tapa. */
+const ESTILO_DE_LA_GUIA_DE_FRANJA =
+  'position:absolute; left:0; right:0; box-sizing:border-box; pointer-events:none; ' +
+  'background:rgb(0 0 0 / 45%); border:2px dashed #ffd23f;';
 
 /** Lo que avanza la rueda del ratón con cada muesca, en las unidades en que el navegador lo informa. */
 const AVANCE_DE_UNA_MUESCA_DE_LA_RUEDA = 100;
@@ -17,6 +24,9 @@ const PREFIJO_DE_LAS_TECLAS_DE_NUMERO = 'Digit';
 export class PanelDeDepuracionDelNavegador implements PanelDeDepuracion {
   private readonly elementoDelJuego: HTMLElement;
   private readonly letrero: HTMLElement;
+  /** Las guías de las dos franjas de cine: se ven solo mientras la cámara libre está activa. */
+  private readonly guiaDeArriba: HTMLElement;
+  private readonly guiaDeAbajo: HTMLElement;
   private funcionesDeOrden: ((orden: OrdenDeDepuracion) => void)[] = [];
   private laCamaraLibreEstaActiva = false;
   /** `true` mientras el botón del ratón está oprimido sobre el juego. */
@@ -32,7 +42,10 @@ export class PanelDeDepuracionDelNavegador implements PanelDeDepuracion {
       'background:rgb(0 0 0 / 70%); color:#fff; font:13px/1.5 ui-monospace, monospace; white-space:pre-wrap; ' +
       // El letrero no atrapa clics (para poder tocar lo que queda debajo), pero su texto sí se puede seleccionar.
       'pointer-events:none; user-select:text; z-index:1;';
-    elementoDelJuego.appendChild(this.letrero);
+    this.guiaDeArriba = crearGuiaDeFranja('top');
+    this.guiaDeAbajo = crearGuiaDeFranja('bottom');
+    // Las guías van antes que el letrero, para que el texto quede encima.
+    elementoDelJuego.append(this.guiaDeArriba, this.guiaDeAbajo, this.letrero);
 
     window.addEventListener('keydown', this.alOprimirUnaTecla);
     elementoDelJuego.addEventListener('pointerdown', this.alApoyar);
@@ -52,6 +65,16 @@ export class PanelDeDepuracionDelNavegador implements PanelDeDepuracion {
   avisarCamaraLibre(estaActiva: boolean): void {
     this.laCamaraLibreEstaActiva = estaActiva;
     this.seEstaArrastrando = false;
+  }
+
+  mostrarGuiaDeFranjas(grosor: GrosorDeFranjas | undefined): void {
+    const hayFranjas = grosor !== undefined && grosor !== 'ninguna';
+    for (const guia of [this.guiaDeArriba, this.guiaDeAbajo]) {
+      guia.hidden = !hayFranjas;
+      if (hayFranjas) {
+        guia.style.height = altoDeLaFranjaEnCss(grosor);
+      }
+    }
   }
 
   mostrarTexto(texto: string): void {
@@ -79,6 +102,8 @@ export class PanelDeDepuracionDelNavegador implements PanelDeDepuracion {
     window.removeEventListener('pointerup', this.alSoltar);
     this.elementoDelJuego.removeEventListener('wheel', this.alGirarLaRueda);
     this.letrero.remove();
+    this.guiaDeArriba.remove();
+    this.guiaDeAbajo.remove();
   }
 
   private darOrden(orden: OrdenDeDepuracion): void {
@@ -133,4 +158,13 @@ export class PanelDeDepuracionDelNavegador implements PanelDeDepuracion {
     evento.preventDefault();
     this.darOrden({ tipo: 'alejar', muescas: evento.deltaY / AVANCE_DE_UNA_MUESCA_DE_LA_RUEDA });
   };
+}
+
+/** La guía de una franja, pegada a la orilla `top` o `bottom` del juego. Empieza escondida. */
+function crearGuiaDeFranja(orilla: 'top' | 'bottom'): HTMLElement {
+  const guia = document.createElement('div');
+  guia.style.cssText = ESTILO_DE_LA_GUIA_DE_FRANJA;
+  guia.style.setProperty(orilla, '0');
+  guia.hidden = true;
+  return guia;
 }

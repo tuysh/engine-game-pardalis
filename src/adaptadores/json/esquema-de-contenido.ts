@@ -4,7 +4,11 @@
 import { z } from 'zod';
 import { TONO_MAXIMO, TONO_MINIMO, VELOCIDAD_MAXIMA, VELOCIDAD_MINIMA, VOZ_NORMAL } from '../../dominio/ajustes-de-voz.ts';
 import type { AjustesDeVoz } from '../../dominio/ajustes-de-voz.ts';
-import { AJUSTES_DEL_MUNDO_POR_DEFECTO, VELOCIDAD_DEL_JUGADOR_POR_DEFECTO } from '../../dominio/contenido.ts';
+import {
+  AJUSTES_DEL_MUNDO_POR_DEFECTO,
+  GROSORES_DE_FRANJAS,
+  VELOCIDAD_DEL_JUGADOR_POR_DEFECTO,
+} from '../../dominio/contenido.ts';
 import type {
   AjustesDeCamara,
   AjustesDelMundo,
@@ -16,6 +20,7 @@ import type {
   Plano,
   Rama,
   Salida,
+  SenalDePendiente,
 } from '../../dominio/contenido.ts';
 import { esquemaDeCinematicas } from './esquema-de-cinematicas.ts';
 import { esquemaDeCondicion } from './esquema-de-condicion.ts';
@@ -117,6 +122,7 @@ const esquemaDeMundo = z
     fondo: esquemaDeColor.default(AJUSTES_DEL_MUNDO_POR_DEFECTO.colorDeFondo),
     sonidos: z.strictObject({ musica: z.string().min(1).optional() }).prefault({}),
     planos: z.record(z.string(), esquemaDePlano).default({}),
+    franjas: z.enum(GROSORES_DE_FRANJAS).optional(),
   })
   .transform(
     (json): AjustesDelMundo => ({
@@ -125,6 +131,7 @@ const esquemaDeMundo = z
       colorDeFondo: json.fondo,
       sonidos: json.sonidos,
       planos: json.planos,
+      franjas: json.franjas,
     }),
   );
 
@@ -145,9 +152,14 @@ const esquemaDeAlVolver: z.ZodType<AlVolver> = z.strictObject({
   siNo: esquemaDePasosOSecuencia,
 });
 
+const esquemaDeSenalDePendiente: z.ZodType<SenalDePendiente> = z.strictObject({
+  visibleCuando: esquemaDeCondicion.optional(),
+});
+
 const esquemaDeInterlocutor: z.ZodType<Interlocutor> = z.strictObject({
   dialogo: z.array(esquemaDeRama),
   alVolver: esquemaDeAlVolver.optional(),
+  senal: esquemaDeSenalDePendiente.optional(),
 });
 
 const esquemaDeFlecha: z.ZodType<FlechaDeSalida> = z.strictObject({

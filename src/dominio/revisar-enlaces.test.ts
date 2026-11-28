@@ -148,7 +148,7 @@ test('un efecto que no existe lista los disponibles', () => {
   const diagnostico = revisarPasosDeTortu([{ tipo: 'efecto', nombre: 'chispas' }]);
 
   expect(diagnostico.errores).toEqual([
-    'efecto "chispas" en npcs.tortu.dialogo[0].dice[0] no existe; los disponibles son: magia, confeti',
+    'efecto "chispas" en npcs.tortu.dialogo[0].dice[0] no existe; los disponibles son: magia, confeti, destello',
   ]);
 });
 
@@ -228,8 +228,8 @@ test('se revisan también los pasos de adentro de un condicional y de una opció
   ]);
 
   expect(diagnostico.errores).toEqual([
-    'efecto "chispas" en npcs.tortu.dialogo[0].dice[0].dice[0] no existe; los disponibles son: magia, confeti',
-    'efecto "humo" en npcs.tortu.dialogo[0].dice[1].opciones[0].secuencia[0] no existe; los disponibles son: magia, confeti',
+    'efecto "chispas" en npcs.tortu.dialogo[0].dice[0].dice[0] no existe; los disponibles son: magia, confeti, destello',
+    'efecto "humo" en npcs.tortu.dialogo[0].dice[1].opciones[0].secuencia[0] no existe; los disponibles son: magia, confeti, destello',
   ]);
 });
 
@@ -411,5 +411,21 @@ test('el paso "acompana" necesita un nivel con jugador y a otro personaje', () =
   expect(diagnostico.errores).toEqual([
     'npcs.tortu.dialogo[0].dice[2]: "acompana": "tommy" es el personaje del jugador: no puede acompañarse a sí mismo',
     'npcs.tortu.dialogo[0].dice[3]: el personaje "pancho" no existe en meta.personajes',
+  ]);
+});
+
+test('la condición de la señal de lo pendiente de un NPC también se revisa', () => {
+  const contenido: Contenido = {
+    ...CONTENIDO_CORRECTO,
+    npcs: {
+      tortu: { dialogo: [], senal: { visibleCuando: leerCondicionDeTexto('no tengo verduras') } },
+    },
+  };
+  const diagnostico = crearDiagnostico();
+
+  revisarEnlaces(contenido, {}, diagnostico);
+
+  expect(diagnostico.errores).toEqual([
+    'condición "verduras" usada en npcs.tortu.senal.visibleCuando: no está en estado.objetivos, ni en estado.variables, ni en estado.compartidas',
   ]);
 });

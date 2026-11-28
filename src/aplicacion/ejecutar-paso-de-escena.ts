@@ -83,7 +83,7 @@ async function ejecutarPasoQueSoloSeVe(paso: PasoQueSoloSeVe, ejecucion: Ejecuci
       break;
     }
     case 'efecto':
-      await esperarOCancelar(acciones.reproducirEfecto(paso.nombre, senal), senal);
+      await esperarOCancelar(acciones.reproducirEfecto(paso, senal), senal);
       break;
     case 'espera':
       await esperarOCancelar(acciones.esperar(paso.esperaEnSegundos, senal), senal);

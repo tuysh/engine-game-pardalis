@@ -25,6 +25,7 @@ import { armarEscenografia } from './armar-escenografia.ts';
 import { CamaraEnPerspectiva } from './camara-en-perspectiva.ts';
 import { ConfetiDePapel } from './confeti-de-papel.ts';
 import { DecoradoQueSeTransparenta } from './decorado-que-se-transparenta.ts';
+import { DecoradoDePapel } from './decorado-de-papel.ts';
 import { EfectoDeParticulas } from './efecto-de-particulas.ts';
 import { crearOrdenDeLoTransparente } from './orden-de-lo-transparente.ts';
 import { PersonajesDePapel } from './personajes-de-papel.ts';
@@ -60,6 +61,7 @@ export class EscenarioDeThree implements Escenario {
   private readonly toques: ToquesDelLienzo;
   /** Todo lo que `montar` puso: se quita completo al montar otra escenografía. */
   private readonly escenografia = new Group();
+  private readonly decorado: DecoradoDePapel;
   /** Cambia con cada `montar`: una escenografía que terminó de cargar tarde, para un lugar anterior, no se pone. */
   private numeroDeMontaje = 0;
   /** Lo parado del decorado, que se aclara mientras tapa al jugador. */
@@ -85,6 +87,13 @@ export class EscenarioDeThree implements Escenario {
       almacen: this.almacen,
       animaciones: this.animaciones,
       tocables: this.tocables,
+    });
+    this.decorado = new DecoradoDePapel({
+      grupo: this.escenografia,
+      almacen: this.almacen,
+      animaciones: this.animaciones,
+      tocables: this.tocables,
+      loQueTapa: this.loQueTapa,
     });
     this.dibujante = new WebGLRenderer({ antialias: true });
     this.dibujante.setPixelRatio(Math.min(fabrica.densidadDePantalla, DENSIDAD_MAXIMA_DE_DIBUJO));
@@ -119,17 +128,19 @@ export class EscenarioDeThree implements Escenario {
     for (const pieza of lista.fondo) {
       this.escenografia.add(pieza);
     }
-    for (const { objeto, texturas, pieza } of lista.decorado) {
-      this.escenografia.add(pieza);
-      if (objeto.clase === 'parado') {
-        this.loQueTapa.agregar(pieza);
-      }
-      if (objeto.id !== undefined) {
-        this.tocables.set(pieza, { tipo: 'decorado', id: objeto.id });
-      }
-      // Un objeto cuyo dibujo es una animación la repite sin parar (una bandera, un foco que parpadea).
-      this.animaciones.animar(pieza, texturas, { cuadrosPorSegundo: objeto.imagen.cuadrosPorSegundo, repite: true });
-    }
+    this.decorado.poner(lista.decorado);
+  }
+
+  cambiarVisibilidadDelDecorado(indice: number, opciones: { readonly esVisible: boolean }): void {
+    this.decorado.cambiarVisibilidad(indice, opciones.esVisible);
+  }
+
+  async ponerDibujoDeDecorado(
+    indice: number,
+    imagen: ImagenDeEscena,
+    opciones: { readonly repite: boolean },
+  ): Promise<void> {
+    await this.decorado.ponerDibujo(indice, imagen, opciones);
   }
 
   async agregarPersonaje(personaje: PersonajeDeEscena): Promise<void> {
@@ -295,6 +306,7 @@ export class EscenarioDeThree implements Escenario {
       liberarPieza(pieza);
     }
     this.escenografia.clear();
+    this.decorado.olvidarTodos();
   }
 
   /** Hace que el lienzo ocupe todo el elemento del host, también cuando este cambia de tamaño. */

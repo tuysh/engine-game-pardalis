@@ -13,7 +13,7 @@
 // - Al terminar, se marca `vista.<id>` en el estado.
 
 import { cumpleCondicion } from '../dominio/condicion.ts';
-import { PREFIJO_DE_VISTAS } from '../dominio/contenido.ts';
+import { GROSOR_DE_FRANJAS_POR_DEFECTO, PREFIJO_DE_VISTAS } from '../dominio/contenido.ts';
 import type { Cinematica, Contenido } from '../dominio/contenido.ts';
 import { ErrorDeEscenario } from '../dominio/error-de-escenario.ts';
 import type { Punto } from '../dominio/geometria.ts';
@@ -193,7 +193,8 @@ export class Cinematicas {
 
     try {
       // Todo va dentro del `try`: si algo falla desde el primer momento, el `finally` deja todo en su lugar.
-      this.piezas.interfaz.mostrarFranjasDeCine(alSaltar);
+      const grosor = this.piezas.contenido.mundo.franjas ?? GROSOR_DE_FRANJAS_POR_DEFECTO;
+      this.piezas.interfaz.mostrarFranjasDeCine(alSaltar, grosor);
       this.piezas.alEmpezar(id);
       await this.ejecutarGuion(cinematica, senal);
       const elNivelSigue = !this.finDelNivel.signal.aborted;
