@@ -730,6 +730,8 @@ El jugador se mueve de dos formas, que conviven:
   arbusto, una maceta), lo rodea por el lado más cercano en vez de quedarse pegado.
 
 En los diálogos, `Enter` o la barra espaciadora siguen la línea, y las teclas `1` a `9` eligen una opción.
+Con las tarjetas de opciones a la vista y el foco en ningún lado, `Enter`, la barra espaciadora o `Tab` llevan el
+foco a la primera tarjeta (`Tab` con mayúsculas, a la última) sin elegirla; la segunda vez, la tecla la elige.
 Con el foco en un botón o un campo (del host, de un minijuego o una tarjeta de opciones), `Enter` y la barra
 espaciadora son de ese botón: el motor no las cancela ni las usa para hablar o seguir la línea.
 Un toque solo cierra una línea cuando ya lleva medio segundo a la vista, y después de que un toque o una tecla

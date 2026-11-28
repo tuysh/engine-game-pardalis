@@ -780,13 +780,19 @@ Y los de las cinemáticas y los pasos de escena:
 | Hablar con alguien o usar un objeto | Tocarlo: el jugador camina hasta ahí | — |
 | Hablar con quien se tiene a la mano | — | `E`, `Enter` o la barra espaciadora |
 | Seguir un diálogo | Tocar la pantalla | `Enter` o la barra espaciadora |
-| Elegir una opción | Tocar su tarjeta | Las teclas `1` a `9`, o `Tab` hasta la tarjeta y `Enter` o la barra espaciadora |
+| Elegir una opción | Tocar su tarjeta | Las teclas `1` a `9`; o `Enter`, la barra espaciadora o `Tab` para llegar a la primera tarjeta, `Tab` hasta la que se quiere y otra vez `Enter` o la barra |
 | Saltar una cinemática | Tocar el botón de saltar | `Tab` hasta el botón y `Enter` |
 
 Si el foco está en un botón, un enlace, un campo o algo con `role="button"` o `role="dialog"` (los del tablero
 del host, los de un minijuego, las tarjetas), `Enter` y la barra espaciadora oprimen ese botón: el motor no
 las toma para hablar ni para seguir el diálogo. `E` sigue sirviendo para hablar, salvo dentro de un
 minijuego o de un diálogo del host, que tapan a quien está detrás; ahí tampoco las flechas mueven al jugador.
+
+Con las tarjetas de un `elige` a la vista y el foco en ningún lado, `Enter` o la barra espaciadora no eligen:
+llevan el foco a la primera tarjeta (se ve su marco), y la segunda vez la eligen. Así quien venía siguiendo el
+diálogo con `Enter` sigue con la misma tecla, pero un `Enter` de más no escoge algo sin querer. Una tecla que
+se queda oprimida tampoco elige: hay que soltarla y oprimirla otra vez. `Tab` también va
+directo a la primera tarjeta (con mayúsculas, a la última), antes que los botones del host.
 
 Después de que un toque, `Enter` o la barra espaciadora cierran la última línea de una plática o de una escena,
 hablar descansa medio segundo: el segundo toque (o la segunda tecla) de un doble toque no empieza otra plática
