@@ -5,10 +5,11 @@ import { EscenarioDeMemoria } from '../adaptadores/memoria/escenario-de-memoria.
 import { InterfazDeMemoria } from '../adaptadores/memoria/interfaz-de-memoria.ts';
 import { RelojDeMemoria } from '../adaptadores/memoria/reloj-de-memoria.ts';
 import { AJUSTES_DEL_MUNDO_POR_DEFECTO } from '../dominio/contenido.ts';
-import { crearEstadoDeNivel } from '../dominio/estado.ts';
+import { crearEstadoDeNivel, valorDe } from '../dominio/estado.ts';
 import type { ContextoDeMinijuego, Minijuego, ResultadoDeMinijuego } from '../puertos/minijuego.ts';
 import { EstadoEnJuego } from './estado-en-juego.ts';
 import { jugarMinijuego } from './jugar-minijuego.ts';
+import type { CierreDeMinijuego } from './jugar-minijuego.ts';
 import type { PiezasDeEscena } from './piezas-de-escena.ts';
 import { Reparto } from './reparto.ts';
 
@@ -18,6 +19,7 @@ function crearEscena(minijuegos: Record<string, Minijuego>) {
   const interfaz = new InterfazDeMemoria();
   const audio = new AudioDeMemoria();
   const avisos: string[] = [];
+  const cierres: CierreDeMinijuego[] = [];
   const reloj = new RelojDeMemoria();
   const estadoInicial = crearEstadoDeNivel({ objetivos: ['tortillas'], variables: ['globo'], lista: {} }, { globo: 'rosa' });
   const piezas: PiezasDeEscena = {
@@ -40,7 +42,10 @@ function crearEscena(minijuegos: Record<string, Minijuego>) {
     audio,
     reloj,
     reparto: new Reparto(escenario),
-    estado: new EstadoEnJuego(estadoInicial, () => {}),
+    estado: new EstadoEnJuego(estadoInicial, () => {}, (cambios) => {
+      const espacio = interfaz.hayEspacioDeMinijuego ? 'abierto' : 'cerrado';
+      avisos.push(`estado ${JSON.stringify(cambios)} con el espacio ${espacio}`);
+    }),
     minijuegos,
     direccionDeAsset: (clave) => (clave === 'comal' ? '/assets/img/comal.svg' : undefined),
     azar: () => 0.25,
@@ -54,9 +59,12 @@ function crearEscena(minijuegos: Record<string, Minijuego>) {
     }),
     alVerPalabra: () => {},
     alEmpezarMinijuego: (nombre) => avisos.push(`inicio ${nombre}`),
-    alTerminarMinijuego: (nombre) => avisos.push(`fin ${nombre}`),
+    alTerminarMinijuego: (nombre, cierre) => {
+      avisos.push(`fin ${nombre}`);
+      cierres.push(cierre);
+    },
   };
-  return { piezas, interfaz, audio, avisos, reloj };
+  return { piezas, interfaz, audio, avisos, cierres, reloj };
 }
 
 const SIN_INTERRUMPIR = new AbortController().signal;
@@ -291,4 +299,33 @@ test('el minijuego recibe el azar del motor y puede tocar tonos sin archivo', as
   expect(numeros).toEqual([0.25]);
   // El tono con una frecuencia que no sirve se ignora con una advertencia.
   expect(audio.tonosTocados).toEqual([880]);
+});
+
+test('lo que otorga se aplica al estado antes de avisar que el minijuego se cerró', async () => {
+  const Tortilleria: Minijuego = async () => ({ exito: true, otorgar: { tortillas: true, globo: 'rosa' } });
+  const { piezas, avisos, cierres } = crearEscena({ Tortilleria });
+
+  await jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+
+  // El globo ya era rosa: no es un cambio, así que no llega en `cambios`.
+  expect(avisos).toEqual([
+    'inicio Tortilleria',
+    'estado {"tortillas":true} con el espacio cerrado',
+    'fin Tortilleria',
+  ]);
+  expect(cierres).toEqual([{ exito: true, cambios: { tortillas: true } }]);
+  expect(valorDe(piezas.estado.actual, 'tortillas')).toBe(true);
+});
+
+test('un minijuego interrumpido no otorga nada y avisa que terminó sin éxito', async () => {
+  const Tortilleria: Minijuego = () => new Promise(() => {});
+  const { piezas, cierres } = crearEscena({ Tortilleria });
+  const interrupcion = new AbortController();
+
+  const juego = jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, interrupcion.signal, piezas);
+  interrupcion.abort();
+  await juego;
+
+  expect(cierres).toEqual([{ exito: false, cambios: {} }]);
+  expect(valorDe(piezas.estado.actual, 'tortillas')).toBeUndefined();
 });

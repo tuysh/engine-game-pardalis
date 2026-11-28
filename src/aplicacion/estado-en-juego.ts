@@ -31,8 +31,11 @@ export class EstadoEnJuego {
     return this.estadoActual;
   }
 
-  /** Cambia variables. Ejemplo: `aplicar({ tortillas: true, dinero: { resta: 10 } })`. */
-  aplicar(cambios: CambiosDeEstado): void {
+  /**
+   * Cambia variables. Ejemplo: `aplicar({ tortillas: true, dinero: { resta: 10 } })`.
+   * Devuelve solo las variables que quedaron con otro valor, con su valor nuevo (las mismas que recibe `alCambiar`).
+   */
+  aplicar(cambios: CambiosDeEstado): VariablesDeEstado {
     const estadoAnterior = this.estadoActual;
     const valoresNuevos = calcularCambios(estadoAnterior, cambios);
     this.estadoActual = conCambios(estadoAnterior, valoresNuevos);
@@ -52,5 +55,6 @@ export class EstadoEnJuego {
     for (const objetivo of objetivosRecienCumplidos(estadoAnterior, this.estadoActual)) {
       this.alCumplirObjetivo(objetivo);
     }
+    return loQueCambio;
   }
 }

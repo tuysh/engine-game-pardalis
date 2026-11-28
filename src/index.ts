@@ -13,6 +13,8 @@ export type {
   CambioDeEstado,
   CambioDeNivel,
   EventosDeJuego,
+  FinDeMinijuego,
+  InicioDeMinijuego,
   Juego,
   NombreDeEvento,
   PalabraMostrada,

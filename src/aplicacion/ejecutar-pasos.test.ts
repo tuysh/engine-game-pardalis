@@ -277,7 +277,7 @@ const AL_VOLVER: AlVolver = {
   siNo: { tipo: 'pasos', pasos: [{ tipo: 'linea', hablante: 'tortu', texto: '¡Otro día lo intentamos!' }] },
 };
 
-test('tras un minijuego con éxito se aplica lo que otorga y sigue "siLogrado"', async () => {
+test('tras un minijuego con éxito sigue "siLogrado"', async () => {
   const bitacora: string[] = [];
   const estado = crearEstado();
   const resultadoDelMinijuego = { exito: true, otorgar: { tortillas: true } };
@@ -290,7 +290,9 @@ test('tras un minijuego con éxito se aplica lo que otorga y sigue "siLogrado"',
     alVolver: AL_VOLVER,
   });
 
-  expect(valorDe(estado.actual, 'tortillas')).toBe(true);
+  // Lo que otorga lo aplica la acción `jugarMinijuego` (ver jugar-minijuego.test.ts), no el ejecutor:
+  // así no se aplica dos veces.
+  expect(valorDe(estado.actual, 'tortillas')).toBeUndefined();
   expect(bitacora).toEqual(['minijuego: Tortilleria', 'tommy: Thank you!']);
 });
 

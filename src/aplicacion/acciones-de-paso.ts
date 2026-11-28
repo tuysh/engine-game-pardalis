@@ -39,6 +39,8 @@ export interface AccionesDeDialogo {
   /**
    * Abre un minijuego del host y espera su resultado. Si el minijuego falla con un error,
    * debe entregar `{ exito: false }` en vez de rechazar: un error del host nunca castiga al jugador.
+   * Lo que el minijuego otorga se aplica al estado aquí, antes de avisar que se cerró:
+   * quien la llama ya no debe aplicarlo otra vez.
    */
   jugarMinijuego(nombre: string, config: unknown, senal: AbortSignal): Promise<ResultadoDeMinijuego>;
 

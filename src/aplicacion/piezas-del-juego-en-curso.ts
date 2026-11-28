@@ -11,6 +11,7 @@ import type { ProgresoDeCarga } from '../dominio/progreso-de-carga.ts';
 import type { Cargador } from '../puertos/cargador.ts';
 import type { CinematicaEnCodigo } from '../puertos/cinematica-en-codigo.ts';
 import type { Minijuego } from '../puertos/minijuego.ts';
+import type { CierreDeMinijuego } from './jugar-minijuego.ts';
 import type { FuenteDeNiveles } from './leer-nivel-por-jugar.ts';
 import type { HerramientasDeDepuracion, PuertosParaJugar } from './nivel-en-juego.ts';
 
@@ -37,7 +38,8 @@ export interface AvisosDelJuego {
   /** Cambió alguna variable del nivel que se juega. */
   alCambiarElEstado(cambio: CambioDeEstadoDelNivel): void;
   alEmpezarMinijuego(nombre: string): void;
-  alTerminarMinijuego(nombre: string): void;
+  /** Se cerró un minijuego, después de aplicar al estado lo que otorgó. */
+  alTerminarMinijuego(nombre: string, cierre: CierreDeMinijuego): void;
   /** El nivel terminó hacia un destino que no es un nivel registrado: el host decide. */
   alSalir(destino: string): void;
   /** Algo falló después de arrancar: un diálogo, una cinemática o la carga del nivel siguiente. */

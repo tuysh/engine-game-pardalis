@@ -233,7 +233,7 @@ export class JuegoEnCurso {
         avisos.alCambiarElEstado({ nivel: idDelNivel, cambios, variables: estado.variables });
       },
       alEmpezarMinijuego: (nombre) => avisos.alEmpezarMinijuego(nombre),
-      alTerminarMinijuego: (nombre) => avisos.alTerminarMinijuego(nombre),
+      alTerminarMinijuego: (nombre, cierre) => avisos.alTerminarMinijuego(nombre, cierre),
     };
   }
 

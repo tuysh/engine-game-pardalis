@@ -22,12 +22,38 @@ export interface AvisoDeCinematica {
   readonly fase: 'inicio' | 'fin';
 }
 
-/** Dato del evento `minijuego`. */
-export interface AvisoDeMinijuego {
+/** Dato del evento `minijuego` cuando se abre. */
+export interface InicioDeMinijuego {
   /** El nombre con el que el host registró el minijuego. */
   readonly nombre: string;
-  readonly fase: 'inicio' | 'fin';
+  readonly fase: 'inicio';
 }
+
+/**
+ * Dato del evento `minijuego` cuando se cierra. Llega **después** de aplicar al estado lo que el minijuego
+ * otorgó (y del evento `estado` de ese cambio): al recibirlo, `juego.estado` ya tiene los valores nuevos.
+ */
+export interface FinDeMinijuego {
+  /** El nombre con el que el host registró el minijuego. */
+  readonly nombre: string;
+  readonly fase: 'fin';
+  /** `true` si el minijuego dijo que se logró. Un error, la ✕ o una interrupción cuentan como `false`. */
+  readonly exito: boolean;
+  /** Las variables que cambiaron por lo que otorgó, con su valor nuevo. Ejemplo: `{ dinero: 85, tortillas: true }`. */
+  readonly cambios: VariablesDeEstado;
+}
+
+/**
+ * Dato del evento `minijuego`: se abrió (`fase: 'inicio'`) o se cerró (`fase: 'fin'`) un minijuego.
+ *
+ * @example
+ * juego.on('minijuego', (aviso) => {
+ *   if (aviso.fase === 'inicio') return ocultarMenu();
+ *   mostrarMenu();
+ *   if (Object.hasOwn(aviso.cambios, 'dinero')) animarMonedero(aviso.cambios.dinero);
+ * });
+ */
+export type AvisoDeMinijuego = InicioDeMinijuego | FinDeMinijuego;
 
 /** Dato del evento `estado`: qué variables del nivel cambiaron. */
 export interface CambioDeEstado {

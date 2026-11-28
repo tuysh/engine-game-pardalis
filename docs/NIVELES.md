@@ -387,7 +387,8 @@ una variable que todavía no tiene valor cuenta como `0`. Así se cobra sin escr
 
 Si el minijuego terminó con éxito → `siLogrado`; si no (o si falló con un error) → `siNo`.
 `siNo` debe ser amable («¡Otro día lo intentamos!»), nunca un «perdiste».
-Lo que el minijuego concede (`otorgar`) se aplica al estado antes de ejecutar cualquiera de los dos.
+Lo que el minijuego concede (`otorgar`) se aplica al estado antes de ejecutar cualquiera de los dos
+(y antes de avisar al host que el minijuego se cerró).
 `otorgar` acepta las mismas sumas y restas que `pon`: `{ "dinero": { "resta": 15 } }`.
 
 ### `comentarios`

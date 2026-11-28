@@ -129,7 +129,7 @@ function crearPiezasDeEscena(base: BaseDelNivel): PiezasDeEscena {
     imagenDeAsset: (clave) => crearImagenDeEscena(clave, nivel, pedido.ubicacion),
     alVerPalabra: (palabra) => avisos.alVerPalabra(palabra),
     alEmpezarMinijuego: (nombre) => avisos.alEmpezarMinijuego(nombre),
-    alTerminarMinijuego: (nombre) => avisos.alTerminarMinijuego(nombre),
+    alTerminarMinijuego: (nombre, cierre) => avisos.alTerminarMinijuego(nombre, cierre),
   };
 }
 

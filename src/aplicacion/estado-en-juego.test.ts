@@ -52,3 +52,13 @@ test('volver a poner el valor que una variable ya tenía no avisa de ningún cam
 
   expect(cambiosAvisados).toEqual([{ globo: 'rosa' }, { tortillas: true }]);
 });
+
+test('aplicar devuelve solo las variables que quedaron con otro valor', () => {
+  const conDinero = crearEstadoDeNivel({ objetivos: [], variables: ['globo'], lista: {}, dinero: 100 });
+  const estado = new EstadoEnJuego(conDinero, () => {});
+  estado.aplicar({ globo: 'rosa' });
+
+  const cambios = estado.aplicar({ dinero: { resta: 10 }, globo: 'rosa' });
+
+  expect(cambios).toEqual({ dinero: 90 });
+});

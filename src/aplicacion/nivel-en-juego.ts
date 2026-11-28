@@ -18,6 +18,7 @@ import type { Reloj } from '../puertos/reloj.ts';
 import type { Video } from '../puertos/video.ts';
 import type { UbicacionDeAssets } from './direccion-de-asset.ts';
 import type { FundidoDePantalla } from './fundido-de-pantalla.ts';
+import type { CierreDeMinijuego } from './jugar-minijuego.ts';
 
 /** Lo que hace falta para el modo depuración (docs/DISENO-3.0.md §9.3). */
 export interface HerramientasDeDepuracion {
@@ -81,8 +82,11 @@ export interface AvisosDelNivel {
   alCambiarElEstado(cambios: VariablesDeEstado, estado: EstadoDeNivel): void;
   /** Se abrió un minijuego. El dato es el nombre con el que el host lo registró. */
   alEmpezarMinijuego(nombre: string): void;
-  /** El minijuego se cerró: terminó, falló o se interrumpió. */
-  alTerminarMinijuego(nombre: string): void;
+  /**
+   * El minijuego se cerró: terminó, falló o se interrumpió. Lo que otorgó ya está en el estado
+   * (y ya se avisó con `alCambiarElEstado`); `cierre.cambios` dice qué cambió.
+   */
+  alTerminarMinijuego(nombre: string, cierre: CierreDeMinijuego): void;
 }
 
 /** Un nivel que se está jugando. */

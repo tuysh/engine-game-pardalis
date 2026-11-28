@@ -13,6 +13,7 @@ import type { Interfaz } from '../puertos/interfaz.ts';
 import type { Minijuego } from '../puertos/minijuego.ts';
 import type { Reloj } from '../puertos/reloj.ts';
 import type { EstadoEnJuego } from './estado-en-juego.ts';
+import type { CierreDeMinijuego } from './jugar-minijuego.ts';
 import type { Reparto } from './reparto.ts';
 
 export interface PiezasDeEscena {
@@ -32,7 +33,10 @@ export interface PiezasDeEscena {
   /** El azar del juego. Lo reciben los minijuegos, para que una `semilla` los haga repetibles también a ellos. */
   readonly azar: Azar;
   readonly reparto: Reparto;
-  /** El estado del nivel. Los minijuegos lo leen; solo el ejecutor de pasos lo cambia. */
+  /**
+   * El estado del nivel. Los minijuegos lo leen; lo cambian el ejecutor de pasos y, con lo que otorga
+   * un minijuego al cerrarse, jugar-minijuego.ts.
+   */
   readonly estado: EstadoEnJuego;
   /** Los minijuegos que registró el host, por nombre. */
   readonly minijuegos: Readonly<Record<string, Minijuego>>;
@@ -42,7 +46,8 @@ export interface PiezasDeEscena {
   readonly imagenDeAsset: (clave: string) => ImagenDeEscena;
   /** Se llama cada vez que una línea muestra una tarjeta de vocabulario. */
   readonly alVerPalabra: (palabra: PalabraDeVocabulario) => void;
-  /** Se llaman al abrirse y al cerrarse el espacio de un minijuego, con el nombre del minijuego. */
+  /** Se llama al abrirse el espacio de un minijuego, con el nombre del minijuego. */
   readonly alEmpezarMinijuego: (nombre: string) => void;
-  readonly alTerminarMinijuego: (nombre: string) => void;
+  /** Se llama al cerrarse, después de aplicar al estado lo que otorgó: con su nombre y cómo terminó. */
+  readonly alTerminarMinijuego: (nombre: string, cierre: CierreDeMinijuego) => void;
 }

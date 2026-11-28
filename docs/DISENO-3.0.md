@@ -138,7 +138,7 @@ no ponerla (salvo `nivel`, que es obligatoria).
 | `palabra` | `{ en, es }` | Se mostró una tarjeta de vocabulario. |
 | `nivel` | `{ id, anterior }` | Se terminó de cargar otro nivel. `anterior` es el id del que se dejó. |
 | `cinematica` | `{ id, fase }` | `fase` es `'inicio'` o `'fin'`. Sirve para ocultar la interfaz del host. |
-| `minijuego` | `{ nombre, fase }` | Se abrió (`'inicio'`) o se cerró (`'fin'`) un minijuego. El minijuego se dibuja dentro del elemento del juego, así que queda debajo de lo que el host tenga encima: con este evento lo esconde. |
+| `minijuego` | `{ nombre, fase }`; al cerrarse, también `{ exito, cambios }` | Se abrió (`'inicio'`) o se cerró (`'fin'`) un minijuego. El minijuego se dibuja dentro del elemento del juego, así que queda debajo de lo que el host tenga encima: con este evento lo esconde. El `'fin'` llega **después** de aplicar lo que el minijuego otorgó: ver «Al cerrarse un minijuego». |
 | `estado` | `{ nivel, cambios, variables }` | Cambió alguna variable del nivel: el dinero después de pagar, un objetivo, lo que hizo un `pon` o concedió un minijuego. `cambios` trae solo lo que cambió, con su valor nuevo; `variables`, todas. |
 | `salida` | `destino` | El jugador salió hacia un destino que **no** es un nivel registrado: el host decide. |
 | `error` | `ErrorDeEscenario` | Falla después de arrancar (por ejemplo, un nivel siguiente que no carga). |
@@ -148,6 +148,27 @@ Cualquier otro destino (`"Selector"`, `"Creditos"`) llega al host por `salida`.
 
 El evento `estado` no se emite al empezar un nivel, solo cuando algo cambia: para pintar por primera vez
 (el monedero, la lista) se lee `juego.estado` al crear el juego y en cada evento `nivel`.
+
+### Al cerrarse un minijuego
+
+El orden es siempre el mismo:
+
+1. se cierra el espacio del minijuego;
+2. lo que otorgó se aplica al estado, y si algo cambió llega el evento `estado`;
+3. llega `minijuego` con `fase: 'fin'`, `exito` y `cambios` (solo las variables que cambiaron por lo que
+   otorgó, con su valor nuevo; `{}` si no cambió nada o si el minijuego se cerró sin terminar);
+4. el diálogo sigue por `siLogrado` o `siNo`.
+
+Así el host puede volver a mostrar su monedero o su lista justo en el `'fin'` y animar ahí lo que cambió,
+en vez de animarlo mientras estaba escondido:
+
+```js
+juego.on('minijuego', (aviso) => {
+  if (aviso.fase === 'inicio') return ocultarMenu();
+  mostrarMenu();
+  if (Object.hasOwn(aviso.cambios, 'dinero')) animarMonedero(aviso.cambios.dinero);
+});
+```
 
 El evento `palabra` solo se emite cuando la tarjeta **se mostró**. Las líneas de una cinemática que se salta
 no se muestran, así que sus palabras no se avisan: el «cuaderno de palabras» del host solo guarda lo que la
