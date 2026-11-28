@@ -8,8 +8,8 @@ import type { Revision } from './revision.ts';
 
 export function revisarPasoDeEscena(paso: Paso, ruta: string, revision: Revision): void {
   switch (paso.tipo) {
+    // `anima` no se revisa aquí: también puede nombrar un objeto del decorado, y eso solo lo sabe el mapa.
     case 'mira':
-    case 'anima':
     case 'aparece':
       revisarPersonaje(paso.personaje, ruta, revision);
       break;

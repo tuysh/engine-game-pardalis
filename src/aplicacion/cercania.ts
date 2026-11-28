@@ -84,7 +84,8 @@ export class Cercania {
       }
     }
     for (const objeto of this.piezas.nivel.mundo.decorado) {
-      if (objeto.id !== undefined && this.seVe(objeto)) {
+      const tieneDialogo = objeto.id !== undefined && Object.hasOwn(this.piezas.nivel.contenido.interactivos, objeto.id);
+      if (objeto.id !== undefined && tieneDialogo && this.seVe(objeto)) {
         interactuables.push({ tipo: 'decorado', id: objeto.id, punto: centroDeRectangulo(objeto.huella) });
       }
     }

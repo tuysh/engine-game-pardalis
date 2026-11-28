@@ -48,7 +48,17 @@ const SALA: Nivel = {
     anchoEnMetros: 10,
     profundidadEnMetros: 4,
     telones: [],
-    decorado: [],
+    // La mesa de la familia lleva id solo para que un paso "anima" la nombre: no tiene diálogo.
+    decorado: [
+      {
+        descripcion: 'objeto #7 "Mesa"',
+        clase: 'parado',
+        asset: 'spr_abuela',
+        huella: { x: 4, y: 1, ancho: 2, alto: 0.5 },
+        alturaEnMetros: 0,
+        id: 'mesa_familia',
+      },
+    ],
     npcs: { mama: { descripcion: 'mamá', posicion: { x: 6, y: 2 }, mira: 'derecha' } },
     iniciosDelJugador: [{ descripcion: 'inicio', posicion: { x: 2, y: 3 }, mira: 'derecha' }],
     puntos: { puerta: { x: 9, y: 2 }, ventana: { x: 1, y: 1 } },
@@ -158,6 +168,20 @@ test('"anima" con repetir deja al personaje con el dibujo nuevo y la escena sigu
 
   expect(escenario.dibujos.get('tommy')?.repite).toBe(true);
   expect(interfaz.globo?.texto).toBe('¡Hola, mijo!');
+});
+
+test('"anima" con el id de un objeto del decorado le cambia el dibujo y luego le devuelve el suyo', async () => {
+  const { escenario, reloj } = await empezarConPasos([
+    { tipo: 'anima', personaje: 'mesa_familia', clave: 'tommy_saluda', repite: false },
+  ]);
+
+  expect(escenario.dibujosDelDecorado.get(0)?.imagen.direcciones).toHaveLength(4);
+  expect(escenario.dibujosDelDecorado.get(0)?.repite).toBe(false);
+  await reloj.avanzar(1);
+
+  expect(escenario.dibujosDelDecorado.get(0)?.imagen.direcciones).toEqual(['/niveles/casa/img/spr_abuela.svg']);
+  // Sin diálogo en "interactivos", el objeto no se puede tocar.
+  expect(escenario.escenografia?.decorado[0]?.id).toBeUndefined();
 });
 
 test('"aparece" mete al personaje en su punto y "desaparece" lo saca', async () => {

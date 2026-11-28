@@ -70,6 +70,8 @@ La clase de un objeto de `decorado` dice cómo se dibuja:
 | `colgado` | Papel vertical en lo alto. Propiedad `altura` (píxeles del piso a su borde inferior; por defecto 2.2 m). | No. |
 
 Con la propiedad `id`, el objeto se puede tocar: su diálogo está en `interactivos` del contenido.
+Un objeto también puede llevar `id` **solo para nombrarlo** desde un plano de cámara (`mira`) o desde un paso
+`anima`, sin diálogo: entonces no se puede tocar. Un `id` que no está en `interactivos` y que nada nombra es error.
 Lo que se dibuja en el plano es exactamente lo que bloquea: no hay ajustes de «huella» a mano.
 
 Si el `asset` de un objeto es una **animación** (archivos numerados, ver §4), se repite sola todo el tiempo:
@@ -336,7 +338,7 @@ Mueven la cámara y a los personajes. Nacieron para las cinemáticas, pero sirve
 | Espera | `{ "espera": 2 }` | Una pausa, en segundos. |
 | Cámara | `{ "camara": "plano_puesto", "duracion": 2 }` | Lleva la cámara a un plano de `mundo.planos`, a un personaje (por su id) o a `"jugador"`. Con `duracion` viaja con suavidad; sin ella es un corte. |
 | Voltear | `{ "mira": "tommy", "hacia": "mama" }` | Voltea a un personaje hacia otro personaje o hacia un `punto` del mapa, con giro de papel. |
-| Animar | `{ "anima": "tommy", "con": "tommy_saluda" }` | Cambia el dibujo de un personaje por una animación (o una imagen) de los assets. Ver abajo. |
+| Animar | `{ "anima": "tommy", "con": "tommy_saluda" }` | Cambia el dibujo de un personaje (o de un objeto del decorado con `id`) por una animación (o una imagen) de los assets. Ver abajo. |
 | Aparecer | `{ "aparece": "mama", "en": "puerta" }` | Mete a un personaje al escenario, parado en un `punto`. Si ya estaba, solo lo cambia de lugar. |
 | Desaparecer | `{ "desaparece": "mama" }` | Lo saca del escenario. No se puede sacar al personaje del jugador. |
 | Música | `{ "musica": "mus_fiesta" }` | Cambia la música de fondo. |
@@ -346,7 +348,12 @@ Mueven la cámara y a los personajes. Nacieron para las cinemáticas, pero sirve
 | Salir | `{ "sale": "barrio" }` | Pide terminar el nivel hacia un destino. Ver abajo. |
 | Acompañar | `{ "acompana": "bobby" }` | Desde ahora ese personaje sigue al jugador mientras explora. Con `{ "acompana": null }`, ya nadie lo sigue. |
 
-**Animar.** Hay dos formas:
+**Animar.** `anima` nombra a un personaje o, si ningún personaje se llama así, a un **objeto del decorado** por
+su `id` del mapa: así la familia sentada a la mesa puede levantar los platos al «¡Provecho!»
+(`{ "anima": "mesa_familia", "con": "mesa_familia_brinda" }`). El objeto toma el dibujo nuevo en su misma huella y,
+sin `repite`, al terminar vuelve a su `asset` del mapa.
+
+Hay dos formas:
 
 - Sin `repite`, la animación pasa **una vez**, el paso espera a que termine y el personaje regresa a su dibujo
   normal (su `sprite`). Sirve para un gesto: saludar, brincar.

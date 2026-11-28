@@ -306,3 +306,38 @@ test('el visibleCuando de un objeto del decorado usa variables declaradas; si es
       'mientras no se ve, su huella sigue bloqueando el paso',
   ]);
 });
+
+test('"anima" nombra a un personaje en el escenario o a un objeto del decorado con id', () => {
+  const contenido: Contenido = {
+    ...CONTENIDO,
+    secuencias: {
+      festejo: [
+        { tipo: 'anima', personaje: 'tortu', clave: 'tortu_baila', repite: false },
+        { tipo: 'anima', personaje: 'comal', clave: 'comal_humea', repite: true },
+        { tipo: 'anima', personaje: 'mesa', clave: 'mesa_brinda', repite: false },
+      ],
+    },
+  };
+
+  expect(revisar(contenido, MUNDO).errores).toEqual([
+    'secuencias.festejo[2]: "anima": "mesa" no es un personaje de meta.personajes ni un objeto del decorado con id',
+  ]);
+});
+
+test('un objeto con id sin diálogo vale si un paso "anima" o un plano lo nombra; si nadie lo nombra, es error', () => {
+  const objeto = { ...MUNDO.decorado[0]!, alturaEnMetros: 0, clase: 'plano' as const };
+  const mesa = { ...objeto, descripcion: 'objeto #8 "Mesa"', id: 'mesa_familia' };
+  const tele = { ...objeto, descripcion: 'objeto #9 "Tele"', id: 'tele' };
+  const lampara = { ...objeto, descripcion: 'objeto #10 "Lámpara"', id: 'lampara' };
+  const contenido: Contenido = {
+    ...CONTENIDO,
+    mundo: { ...CONTENIDO.mundo, planos: { a_la_tele: { mira: 'tele', distanciaEnMetros: 5, alturaEnMetros: 2, giroEnGrados: 0 } } },
+    secuencias: { provecho: [{ tipo: 'anima', personaje: 'mesa_familia', clave: 'mesa_brinda', repite: false }] },
+  };
+
+  const diagnostico = revisar(contenido, { ...MUNDO, decorado: [...MUNDO.decorado, mesa, tele, lampara] });
+
+  expect(diagnostico.errores).toEqual([
+    'mapa: objeto #10 "Lámpara" (decorado) tiene id "lampara", que no existe en interactivos',
+  ]);
+});

@@ -38,7 +38,7 @@ export function prepararEscenografia(nivel: Nivel, ubicacion: UbicacionDeAssets)
       imagen: crearImagenDeEscena(objeto.asset, nivel, ubicacion),
       huella: objeto.huella,
       alturaEnMetros: objeto.alturaEnMetros,
-      id: objeto.id,
+      id: idParaTocar(objeto.id, nivel),
     });
   }
 
@@ -47,6 +47,15 @@ export function prepararEscenografia(nivel: Nivel, ubicacion: UbicacionDeAssets)
   }
   const suelo = { imagen: crearImagenDeEscena(mundo.suelo.asset, nivel, ubicacion), esquina: mundo.suelo.esquina };
   return { colorDeFondo, suelo, telones, decorado };
+}
+
+/**
+ * Solo se puede tocar un objeto que tiene diálogo en `interactivos`. Uno que lleva id solo para que lo mire un
+ * plano o lo anime un paso `anima` no se toca.
+ */
+function idParaTocar(id: string | undefined, nivel: Nivel): string | undefined {
+  if (id === undefined || !Object.hasOwn(nivel.contenido.interactivos, id)) return undefined;
+  return id;
 }
 
 /** Los personajes que están en el escenario al empezar: los NPCs del mapa y, si el nivel tiene, el jugador. */

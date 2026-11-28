@@ -121,6 +121,7 @@ function crearPiezasDeEscena(base: BaseDelNivel): PiezasDeEscena {
   return {
     contenido: nivel.contenido,
     puntos: nivel.mundo.puntos,
+    decorado: nivel.mundo.decorado,
     caminos: base.caminos,
     centroDelLugar: base.centroDelLugar,
     idiomaBase: pedido.idiomaBase,

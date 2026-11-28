@@ -4,6 +4,7 @@
 import type { Contenido } from '../dominio/contenido.ts';
 import type { Punto } from '../dominio/geometria.ts';
 import type { Idioma } from '../dominio/idioma.ts';
+import type { Decorado } from '../dominio/mundo.ts';
 import type { PalabraDeVocabulario } from '../dominio/paso.ts';
 import type { MapaDeCaminos } from '../dominio/rejilla-de-caminos.ts';
 import type { Audio } from '../puertos/audio.ts';
@@ -19,6 +20,11 @@ export interface PiezasDeEscena {
   readonly contenido: Contenido;
   /** Los puntos con nombre del mapa: los destinos de los pasos `camina`. */
   readonly puntos: Readonly<Record<string, Punto>>;
+  /**
+   * El decorado del mapa, en el orden en que se montó: un paso `anima` puede cambiarle el dibujo a un objeto con id.
+   * `undefined` = el nivel no tiene decorado.
+   */
+  readonly decorado?: readonly Decorado[];
   /** El terreno del nivel y su rejilla: con ellos las caminatas de un paso `camina` rodean lo que estorba. */
   readonly caminos: MapaDeCaminos;
   /** El centro del mapa: donde aparecen los efectos en un nivel sin jugador. */

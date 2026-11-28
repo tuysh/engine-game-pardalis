@@ -178,9 +178,13 @@ export interface PasoDeMirada {
   readonly hacia: string;
 }
 
-/** Cambia el dibujo de un personaje por una animación (o una imagen) de los assets. */
+/** Cambia el dibujo de un personaje, o de un objeto del decorado, por una animación (o una imagen) de los assets. */
 export interface PasoDeAnimacion {
   readonly tipo: 'anima';
+  /**
+   * Id de un personaje o, si ningún personaje se llama así, el `id` de un objeto del decorado del mapa
+   * (una familia sentada a la mesa que levanta los platos).
+   */
   readonly personaje: string;
   /** Clave de una animación o de una imagen. */
   readonly clave: string;

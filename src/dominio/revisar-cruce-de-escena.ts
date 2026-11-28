@@ -2,7 +2,8 @@
 // - el punto donde alguien aparece, y hacia dónde voltea alguien;
 // - a qué apunta cada plano de cámara;
 // - la zona que hace empezar una cinemática;
-// - que todo personaje al que se mueve, voltea, anima o hace reaccionar esté alguna vez en el escenario.
+// - que todo personaje al que se mueve, voltea, anima o hace reaccionar esté alguna vez en el escenario;
+// - que lo que anima un paso `anima` sea un personaje o un objeto del decorado con id.
 
 import type { Contenido } from './contenido.ts';
 import type { Diagnostico } from './diagnostico.ts';
@@ -116,6 +117,9 @@ function revisarPaso(paso: Paso, ruta: string, cruce: CruceDeEscena): void {
     }
 
     case 'anima':
+      revisarLoQueSeAnima(paso.personaje, ruta, cruce);
+      break;
+
     case 'desaparece':
       revisarQueEsteEnEscena(paso.personaje, ruta, cruce);
       break;
@@ -135,6 +139,20 @@ function revisarPaso(paso: Paso, ruta: string, cruce: CruceDeEscena): void {
 
     default:
       break; // los demás pasos no nombran nada que se cruce aquí con el mapa
+  }
+}
+
+/** Se anima a un personaje que está en el escenario o, si no hay personaje con ese id, a un objeto del decorado. */
+function revisarLoQueSeAnima(id: string, ruta: string, cruce: CruceDeEscena): void {
+  if (Object.hasOwn(cruce.contenido.meta.personajes, id)) {
+    revisarQueEsteEnEscena(id, ruta, cruce);
+    return;
+  }
+  const esUnObjeto = cruce.mundo.decorado.some((objeto) => objeto.id === id);
+  if (!esUnObjeto) {
+    cruce.diagnostico.errores.push(
+      `${ruta}: "anima": "${id}" no es un personaje de meta.personajes ni un objeto del decorado con id`,
+    );
   }
 }
 
