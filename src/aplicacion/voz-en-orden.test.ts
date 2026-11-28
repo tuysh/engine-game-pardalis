@@ -157,3 +157,24 @@ test('el tope de tiempo de una frase empieza a contar cuando le toca hablar, no 
   await reloj.avanzar(1.1);
   expect(terminoLaDelHost).toBe(true);
 });
+
+test('si se pausa justo cuando a una frase del juego le toca hablar, espera a que se reanude', async () => {
+  const audio = new AudioDeMemoria();
+  const voz = new VozEnOrden(audio, new RelojDeMemoria());
+  const sinCortar = new AbortController().signal;
+  voz.pausar();
+  void voz.decir({ texto: 'Buenos días', idioma: 'es' }, sinCortar);
+  await dejarCorrer();
+  expect(textosDichos(audio)).toEqual([]);
+
+  // `reanudar()` le da el turno y `pausar()` llega antes de que la frase empiece a decirse.
+  voz.reanudar();
+  voz.pausar();
+  await dejarCorrer();
+  expect(audio.hayAlguienHablando).toBe(false);
+
+  voz.reanudar();
+  await dejarCorrer();
+  expect(audio.hayAlguienHablando).toBe(true);
+  expect(textosDichos(audio).at(-1)).toBe('Buenos días');
+});

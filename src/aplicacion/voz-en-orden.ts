@@ -131,6 +131,12 @@ export class VozEnOrden implements Audio {
     if (senal.aborted || this.destruccion.signal.aborted) {
       corte.abort();
     }
+    // También pudieron pausar el juego en ese instante (por ejemplo, `reanudar()` y `pausar()` seguidos):
+    // entonces la frase del juego no empieza y vuelve a la fila, como si la pausa la hubiera cortado.
+    if (this.estaPausado && pedido.origen === 'juego') {
+      pedido.seCortoPorPausa = true;
+      corte.abort();
+    }
     try {
       return await decirSinEsperarDeMas(frase, corte.signal, { audio: this.audio, reloj: this.reloj });
     } finally {
