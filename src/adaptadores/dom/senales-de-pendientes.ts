@@ -11,6 +11,7 @@ import { SenalEnPantalla } from './senal-en-pantalla.ts';
 /** Una estrella de cuatro puntas, como un destello: «aquí hay algo», sobre una cuadrícula de 24 × 24. */
 const TRAZO_DE_ESTRELLITA = 'M12 1 L14.6 9.4 L23 12 L14.6 14.6 L12 23 L9.4 14.6 L1 12 L9.4 9.4 Z';
 
+/** Las estrellitas de lo pendiente en la página: tantas como lugares, reusando las que ya existen. */
 export class SenalesDePendientes {
   /** El contenedor de todas las señales. Siempre está en la página; vacío no se ve. */
   readonly elemento: HTMLElement;

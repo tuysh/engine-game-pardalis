@@ -5,6 +5,7 @@ import { cumpleCondicion } from './condicion.ts';
 import type { EstadoDeNivel } from './estado.ts';
 import type { Decorado } from './mundo.ts';
 
+/** `true` si el objeto se ve con ese estado: no lleva `visibleCuando`, o su condición se cumple. */
 export function estaVisibleElDecorado(objeto: Decorado, estado: EstadoDeNivel): boolean {
   if (objeto.visibleCuando === undefined) return true;
   return cumpleCondicion(objeto.visibleCuando, estado);

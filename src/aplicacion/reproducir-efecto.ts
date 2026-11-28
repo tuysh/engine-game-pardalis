@@ -48,6 +48,7 @@ const NOTAS_POR_EFECTO: Readonly<Record<string, readonly Nota[]>> = {
 /** Lo que hace falta saber de un paso `efecto`: cuál es y, si el paso lo dice, con qué sonido. */
 export type EfectoPorReproducir = Pick<PasoDeEfecto, 'nombre' | 'sonido'>;
 
+/** Muestra y hace sonar un efecto. Termina al cumplirse su duración (un segundo) o cuando `senal` se dispara. */
 export async function reproducirEfecto(
   efecto: EfectoPorReproducir,
   senal: AbortSignal,

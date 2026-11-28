@@ -31,6 +31,7 @@ interface ObjetoPuesto {
   cambiosDeDibujoPedidos: number;
 }
 
+/** Las piezas del decorado de un lugar, por su lugar en la lista: las esconde, las muestra y les cambia el dibujo. */
 export class DecoradoDePapel {
   private readonly piezas: PiezasDelDecorado;
   private objetos: ObjetoPuesto[] = [];

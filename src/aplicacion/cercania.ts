@@ -10,8 +10,8 @@ import type { Decorado } from '../dominio/mundo.ts';
 import type { Nivel } from '../dominio/nivel.ts';
 import type { Escenario, LugarEnPantalla } from '../puertos/escenario.ts';
 import type { Interfaz } from '../puertos/interfaz.ts';
-import type { EstadoEnJuego } from './estado-en-juego.ts';
 import { calcularAlturaDelDecorado } from './altura-del-decorado.ts';
+import type { EstadoEnJuego } from './estado-en-juego.ts';
 import type { Reparto } from './reparto.ts';
 
 export interface PiezasDeCercania {
@@ -91,8 +91,9 @@ export class Cercania {
       }
     }
     for (const objeto of this.piezas.nivel.mundo.decorado) {
-      const tieneDialogo = objeto.id !== undefined && Object.hasOwn(this.piezas.nivel.contenido.interactivos, objeto.id);
-      if (objeto.id !== undefined && tieneDialogo && this.seVe(objeto)) {
+      // Un objeto con id pero sin diálogo (solo lo anima un paso `anima` o lo mira un plano) no se usa.
+      if (objeto.id === undefined || !Object.hasOwn(this.piezas.nivel.contenido.interactivos, objeto.id)) continue;
+      if (this.seVe(objeto)) {
         interactuables.push({ tipo: 'decorado', id: objeto.id, punto: centroDeRectangulo(objeto.huella) });
       }
     }

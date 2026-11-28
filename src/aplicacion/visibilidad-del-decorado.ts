@@ -7,6 +7,7 @@ import type { Decorado } from '../dominio/mundo.ts';
 import type { Escenario } from '../puertos/escenario.ts';
 import type { EstadoEnJuego } from './estado-en-juego.ts';
 
+/** Lo que necesita la visibilidad del decorado para saber qué esconder y a quién avisarle. */
 export interface PiezasDeLaVisibilidad {
   /** El decorado del mapa, en el mismo orden con que se montó la escenografía. */
   readonly decorado: readonly Decorado[];
@@ -14,6 +15,7 @@ export interface PiezasDeLaVisibilidad {
   readonly escenario: Escenario;
 }
 
+/** Lleva la cuenta de qué objetos con `visibleCuando` se ven y avisa al escenario solo cuando uno cambia. */
 export class VisibilidadDelDecorado {
   private readonly piezas: PiezasDeLaVisibilidad;
   /** Si cada objeto se ve ahora, por su lugar en la lista. Al montarse, todo se ve. */
