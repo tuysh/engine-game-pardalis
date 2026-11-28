@@ -69,6 +69,11 @@ La clase de un objeto de `decorado` dice cómo se dibuja:
 | `plano` | Pintado sobre el piso, estirado a su huella (un tapete, una flecha). | No. |
 | `colgado` | Papel vertical en lo alto. Propiedad `altura` (píxeles del piso a su borde inferior; por defecto 2.2 m). | No. |
 
+**Lo `plano` que se encima** (un cojín sobre el tapete): el que va **después** en la capa `decorado` se pinta
+encima. En Tiled es el orden de la lista de objetos de la capa (con «Orden de dibujo: manual», el mapa se ve
+igual que en el juego); para subir uno, usa «Subir objeto». Lo `plano` siempre queda bajo las sombras y los pies
+de los personajes.
+
 Con la propiedad `id`, el objeto se puede tocar: su diálogo está en `interactivos` del contenido.
 Lo que se dibuja en el plano es exactamente lo que bloquea: no hay ajustes de «huella» a mano.
 

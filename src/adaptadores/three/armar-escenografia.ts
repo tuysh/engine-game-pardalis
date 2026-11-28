@@ -4,7 +4,14 @@
 import type { Mesh, Object3D, Texture } from 'three';
 import type { DecoradoDeEscena, Escenografia } from '../../puertos/escenario.ts';
 import type { AlmacenDeTexturas } from './almacen-de-texturas.ts';
-import { crearHojaAcostada, crearPiezaDeDecorado, crearTelon, ORDEN_DEL_PISO } from './piezas-de-papel.ts';
+import {
+  crearHojaAcostada,
+  crearPiezaDeDecorado,
+  crearTelon,
+  ORDEN_DE_LO_PINTADO_EN_EL_PISO,
+  ORDEN_DEL_PISO,
+  ordenDeLoPintadoEnElPiso,
+} from './piezas-de-papel.ts';
 
 /** Un objeto del decorado ya con sus texturas y su pieza, listo para ponerse en el escenario. */
 export interface DecoradoListo {
@@ -38,10 +45,24 @@ export async function armarEscenografia(
     fondo.push(crearTelon(primerCuadroDe(texturas), telon));
   }
 
+  // Lo pintado en el piso se encima en el orden del mapa: el que va después en la capa queda arriba.
+  let cantidadDePintados = 0;
+  for (const objeto of escenografia.decorado) {
+    if (objeto.clase === 'plano') {
+      cantidadDePintados++;
+    }
+  }
+  let pintadosAntes = 0;
   const decorado: DecoradoListo[] = [];
   for (const objeto of escenografia.decorado) {
     const texturas = await almacen.cargar(objeto.imagen);
-    decorado.push({ objeto, texturas, pieza: crearPiezaDeDecorado(objeto, primerCuadroDe(texturas)) });
+    // Solo cuenta para lo pintado en el piso; lo parado y lo colgado tienen su propio orden.
+    let orden = ORDEN_DE_LO_PINTADO_EN_EL_PISO;
+    if (objeto.clase === 'plano') {
+      orden = ordenDeLoPintadoEnElPiso(pintadosAntes, cantidadDePintados);
+      pintadosAntes++;
+    }
+    decorado.push({ objeto, texturas, pieza: crearPiezaDeDecorado(objeto, primerCuadroDe(texturas), orden) });
   }
   return { fondo, decorado };
 }

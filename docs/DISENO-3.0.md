@@ -338,6 +338,8 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   dibujo no tape al del jugador. Empieza a caminar cuando el jugador se aleja esa distancia y 0.6 m más, o cuando
   quedó delante de él tapándolo; mientras el jugador camina lo sigue sin pararse. Durante un diálogo o una cinemática no sigue: lo mueven los pasos. El paso `acompana`
   lo cambia o lo quita; ese cambio todavía no se guarda en la partida.
+- **Lo `plano` se encima en el orden del mapa:** entre dos objetos `plano` que se cruzan, el que va después en la
+  capa `decorado` se pinta encima. Todos quedan bajo las sombras y los pies de los personajes.
 - **Caminos:** al cargar el nivel se corta el piso en una rejilla (celdas de un cuarto de metro, sin las huellas
   del decorado `parado`). Con ella, el jugador al tocar un lugar y los pasos `camina` rodean lo que estorba.
   Un `camina` va en línea recta solo si quien camina o su punto están fuera del piso.

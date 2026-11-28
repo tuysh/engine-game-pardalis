@@ -109,10 +109,24 @@ export function crearTelon(textura: Texture, linea: LineaDeTelon): Mesh {
   return telon;
 }
 
-/** La pieza de un objeto del decorado, según su clase: pintada en el piso, parada o colgada en lo alto. */
-export function crearPiezaDeDecorado(objeto: DecoradoDeEscena, textura: Texture): Mesh {
+/**
+ * El orden de dibujo de un objeto `plano`. Todos van entre lo pintado en el piso y las sombras; entre ellos,
+ * el que va después en la capa del mapa se pinta encima (un cojín sobre el tapete).
+ * Sin esto, Three.js los ordena por su distancia a la cámara, y un tapete grande podía tapar al cojín.
+ * `posicion` cuenta desde 0 entre los objetos `plano` del mapa; `cantidad` es cuántos hay.
+ */
+export function ordenDeLoPintadoEnElPiso(posicion: number, cantidad: number): number {
+  const espacioEntreLoPintadoYLasSombras = ORDEN_DE_LAS_SOMBRAS - ORDEN_DE_LO_PINTADO_EN_EL_PISO;
+  return ORDEN_DE_LO_PINTADO_EN_EL_PISO + (espacioEntreLoPintadoYLasSombras * posicion) / cantidad;
+}
+
+/**
+ * La pieza de un objeto del decorado, según su clase: pintada en el piso, parada o colgada en lo alto.
+ * `ordenSiEsPlano` es su orden de dibujo si es de la clase `plano` (ver `ordenDeLoPintadoEnElPiso`).
+ */
+export function crearPiezaDeDecorado(objeto: DecoradoDeEscena, textura: Texture, ordenSiEsPlano: number): Mesh {
   if (objeto.clase === 'plano') {
-    return crearHojaAcostada(textura, objeto.huella, ORDEN_DE_LO_PINTADO_EN_EL_PISO);
+    return crearHojaAcostada(textura, objeto.huella, ordenSiEsPlano);
   }
 
   // `parado` y `colgado` son hojas paradas en el centro de su huella; lo colgado, además, va en lo alto.
