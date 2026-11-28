@@ -285,7 +285,7 @@ Gana **la primera rama cuya condición se cumple**. Una rama sin `cuando` siempr
 | --- | --- | --- |
 | Línea | `{ "dice": "tortu", "texto": "¡Hola!", "audio": "vo_hola" }` | Globo sobre quien habla. Termina con un toque o al acabar el audio. Opcional: `trad`, y `en` + `es` (siempre juntos) para una **tarjeta de vocabulario**; `con`, `reacciona` y `piensa` (ver «Caras y pensamientos»). |
 | Opción | `{ "elige": "¿Cuál quieres?", "opciones": [ { "imagen": "img_rosa", "audio": "vo_rosa", "secuencia": [...] } ] }` | Espera la elección. Cada opción: `texto`, `trad`, `imagen`, `audio`, `cuando`, y `secuencia` (pasos o nombre de secuencia). Una opción sin `imagen` da advertencia. |
-| Efecto | `{ "efecto": "magia" }` | Partículas y sonido. Disponibles: `magia`, `confeti`. |
+| Efecto | `{ "efecto": "magia" }` | Partículas y sonido. Disponibles: `magia` (chispas alrededor del jugador o del centro del lugar) y `confeti` (papelitos que llueven sobre todo lo que se ve; se ven del mismo tamaño con la cámara cerca o lejos). |
 | Estado | `{ "pon": { "globo": "rosa" } }` | Asigna objetivos o variables. Con números también suma y resta: `{ "pon": { "dinero": { "resta": 10 }, "estrellas": { "suma": 1 } } }`. |
 | Minijuego | `{ "juego": "Tortilleria", "config": { "palabras": ["hot"] } }` | Abre el minijuego que registró el host y, al volver, ejecuta `alVolver`. |
 | Caminar | `{ "camina": "frente_tortilleria", "quien": "tortu" }` | Camina hasta un `punto` del mapa. Sin `quien`, camina el jugador. Sigue el piso y rodea el decorado; ver «Por dónde camina». |

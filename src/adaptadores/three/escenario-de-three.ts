@@ -23,6 +23,7 @@ import { AlmacenDeTexturas } from './almacen-de-texturas.ts';
 import { AnimacionesDeHojas } from './animaciones-de-hojas.ts';
 import { armarEscenografia } from './armar-escenografia.ts';
 import { CamaraEnPerspectiva } from './camara-en-perspectiva.ts';
+import { ConfetiDePapel } from './confeti-de-papel.ts';
 import { DecoradoQueSeTransparenta } from './decorado-que-se-transparenta.ts';
 import { EfectoDeParticulas } from './efecto-de-particulas.ts';
 import { PersonajesDePapel } from './personajes-de-papel.ts';
@@ -31,6 +32,15 @@ import type { FabricaDeTexturas } from './texturas.ts';
 import { ToquesDelLienzo } from './toques-del-lienzo.ts';
 
 const ALTURA_DE_LOS_EFECTOS_EN_METROS = 0.9;
+
+/** Un efecto que se está animando: chispas (efecto-de-particulas.ts) o confeti (confeti-de-papel.ts). */
+interface EfectoEnEscena {
+  /** Lo que se agrega a la escena mientras dura. */
+  readonly objeto: Object3D;
+  /** Lo mueve un cuadro. Devuelve `false` cuando ya terminó. */
+  actualizar(segundos: number): boolean;
+  liberar(): void;
+}
 
 /** Las pantallas muy finas no se aprovechan completas: dibujar tantos píxeles calienta las tablets. */
 const DENSIDAD_MAXIMA_DE_DIBUJO = 2;
@@ -56,7 +66,7 @@ export class EscenarioDeThree implements Escenario {
   /** El personaje que es el jugador. `undefined` = el nivel no tiene. */
   private idDelJugador: string | undefined;
   /** Los efectos que se están animando ahora. */
-  private efectos: EfectoDeParticulas[] = [];
+  private efectos: EfectoEnEscena[] = [];
   /** Quita y libera las guías del modo depuración que se ven ahora. `undefined` = no hay ninguna. */
   private quitarGuiasActuales: (() => void) | undefined;
   /** Cambia con cada `mostrarGuias`: si dos pedidos se cruzan mientras cargan, gana el último. */
@@ -173,11 +183,19 @@ export class EscenarioDeThree implements Escenario {
 
   reproducirEfecto(nombre: string, punto: Punto): void {
     if (this.estaDestruido) return;
-    // El efecto nace a la altura del pecho de un personaje parado en ese punto.
-    const efecto = EfectoDeParticulas.crear(nombre, { x: punto.x, y: ALTURA_DE_LOS_EFECTOS_EN_METROS, z: punto.y });
+    const efecto = this.crearEfecto(nombre, punto);
     if (efecto === undefined) return;
     this.efectos.push(efecto);
-    this.escena.add(efecto.puntos);
+    this.escena.add(efecto.objeto);
+  }
+
+  /** El efecto de ese nombre, o `undefined` si no existe (la validación de niveles lo impide). */
+  private crearEfecto(nombre: string, punto: Punto): EfectoEnEscena | undefined {
+    // El efecto nace a la altura del pecho de un personaje parado en ese punto.
+    const centro = new Vector3(punto.x, ALTURA_DE_LOS_EFECTOS_EN_METROS, punto.y);
+    // El confeti llueve sobre todo lo que ve la cámara, por eso es el único que la necesita.
+    if (nombre === 'confeti') return new ConfetiDePapel(this.camara.camara, centro);
+    return EfectoDeParticulas.crear(nombre, centro);
   }
 
   marcarJugador(id: string | undefined): void {
@@ -237,7 +255,7 @@ export class EscenarioDeThree implements Escenario {
     this.animaciones.olvidarTodas();
     this.tocables.clear();
     for (const efecto of this.efectos) {
-      this.escena.remove(efecto.puntos);
+      this.escena.remove(efecto.objeto);
       efecto.liberar();
     }
     this.efectos = [];
@@ -253,13 +271,13 @@ export class EscenarioDeThree implements Escenario {
 
   /** Mueve cada efecto y quita los que ya terminaron. */
   private animarEfectos(segundos: number): void {
-    const efectosQueSiguen: EfectoDeParticulas[] = [];
+    const efectosQueSiguen: EfectoEnEscena[] = [];
     for (const efecto of this.efectos) {
       const sigueVivo = efecto.actualizar(segundos);
       if (sigueVivo) {
         efectosQueSiguen.push(efecto);
       } else {
-        this.escena.remove(efecto.puntos);
+        this.escena.remove(efecto.objeto);
         efecto.liberar();
       }
     }

@@ -344,6 +344,9 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   pantalla. Vuelve a su color con la misma suavidad (unas dos décimas de segundo).
 - **Lo `plano` se encima en el orden del mapa:** entre dos objetos `plano` que se cruzan, el que va después en la
   capa `decorado` se pinta encima. Todos quedan bajo las sombras y los pies de los personajes.
+- **`confeti`** son papelitos (rectángulos que giran), repartidos a lo ancho de lo que ve la cámara y con un tamaño
+  que crece con la distancia, para verse igual en un plano cercano que en uno de 13 metros. `magia` siguen siendo
+  chispas alrededor del punto del efecto.
 - **Caminos:** al cargar el nivel se corta el piso en una rejilla (celdas de un cuarto de metro, sin las huellas
   del decorado `parado`). Con ella, el jugador al tocar un lugar y los pasos `camina` rodean lo que estorba.
   Un `camina` va en línea recta solo si quien camina o su punto están fuera del piso.
