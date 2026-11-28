@@ -214,6 +214,83 @@ test('callar corta la frase que el host está diciendo', async () => {
   expect(audio.hayAlguienHablando).toBe(false);
 });
 
+test('callar sin una frase del host no hace nada, y lo que el host dice después se oye', async () => {
+  const audio = new AudioDeMemoria();
+  const { vozDelHost } = crearVozDelHost(audio);
+
+  vozDelHost.callar();
+  const frase = vozDelHost.decir('corn', { idioma: 'en' });
+  await dejarCorrer();
+  expect(audio.hayAlguienHablando).toBe(true);
+
+  audio.terminarDeHablar();
+  await frase;
+  expect(audio.frasesDichas.map((dicha) => dicha.texto)).toEqual(['corn']);
+});
+
+test('después de callar, la siguiente frase del host no se corta por el callar anterior', async () => {
+  const audio = new AudioDeMemoria();
+  const { vozDelHost } = crearVozDelHost(audio);
+  const primera = vozDelHost.decir('corn', { idioma: 'en' });
+  await dejarCorrer();
+  vozDelHost.callar();
+  await primera;
+
+  const segunda = vozDelHost.decir('lettuce', { idioma: 'en' });
+  await dejarCorrer();
+  vozDelHost.callar();
+  await segunda;
+  vozDelHost.callar();
+
+  const tercera = vozDelHost.decir('chile', { idioma: 'en' });
+  await dejarCorrer();
+  expect(audio.hayAlguienHablando).toBe(true);
+  audio.terminarDeHablar();
+  await tercera;
+  expect(audio.frasesDichas.map((dicha) => dicha.texto)).toEqual(['corn', 'lettuce', 'chile']);
+});
+
+test('callar con el juego en pausa corta la frase del host, y la línea del juego sigue al reanudar', async () => {
+  const audio = new AudioDeMemoria();
+  const { vozDelHost, voz } = crearVozDelHost(audio);
+  let lineaDelJuegoTermino = false;
+  const lineaDelJuego = voz.decir({ texto: 'Buenos días', idioma: 'es' }, new AbortController().signal).then(() => {
+    lineaDelJuegoTermino = true;
+  });
+  await dejarCorrer();
+  voz.pausar();
+  const fraseDelHost = vozDelHost.decir('corn', { idioma: 'en' });
+  await dejarCorrer();
+  expect(audio.frasesDichas.map((dicha) => dicha.texto)).toEqual(['Buenos días', 'corn']);
+
+  vozDelHost.callar();
+  await fraseDelHost;
+  expect(audio.hayAlguienHablando).toBe(false);
+  expect(lineaDelJuegoTermino).toBe(false);
+
+  voz.reanudar();
+  await dejarCorrer();
+  expect(audio.frasesDichas.map((dicha) => dicha.texto)).toEqual(['Buenos días', 'corn', 'Buenos días']);
+  audio.terminarDeHablar();
+  await lineaDelJuego;
+  expect(lineaDelJuegoTermino).toBe(true);
+});
+
+test('entre un nivel y otro, clave y quien usan la voz sintetizada normal, sin avisos', async () => {
+  const audio = new AudioDeMemoria();
+  const voz = new VozEnOrden(audio, new RelojDeMemoria());
+  const vozDelHost = new VozDelHost({ voz, vocesDelNivel: () => undefined });
+
+  const avisos = await avisosDe(async () => {
+    void vozDelHost.decir('corn', { idioma: 'en', clave: 'vo_bobby_corn', quien: 'bobby' });
+    await dejarCorrer();
+  });
+
+  expect(audio.frasesDichas[0]!.direccionDeLaVoz).toBeUndefined();
+  expect(audio.frasesDichas[0]!.voz).toBeUndefined();
+  expect(avisos).toEqual([]);
+});
+
 test('si el host llama mal a juego.decir, el error dice qué esperaba y qué llegó', async () => {
   const audio = new AudioDeMemoria();
   const { vozDelHost } = crearVozDelHost(audio);

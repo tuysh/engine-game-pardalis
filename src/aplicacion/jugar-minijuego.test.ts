@@ -305,6 +305,33 @@ test('lo que falta para decir algo en un minijuego se avisa una vez y nunca lanz
   ]);
 });
 
+test('una clave o un quien que no son texto se ignoran con un aviso, y la frase igual se dice', async () => {
+  const avisos: string[] = [];
+  const espia = spyOn(console, 'warn').mockImplementation((aviso: unknown) => {
+    avisos.push(String(aviso));
+  });
+  const Tortilleria: Minijuego = async ({ audio }) => {
+    // Así llama un minijuego escrito en JavaScript sin tipos: la clave es un número y quien, un objeto.
+    void Reflect.apply(audio.decir, audio, ['¡Otra vez!', 'es', 7, { id: 'tortu' }]);
+    return { exito: true };
+  };
+  const { piezas, audio } = crearEscena({ Tortilleria });
+
+  let resultado: ResultadoDeMinijuego;
+  try {
+    resultado = await jugarMinijuego({ nombre: 'Tortilleria', config: undefined }, SIN_INTERRUMPIR, piezas);
+  } finally {
+    espia.mockRestore();
+  }
+
+  expect(resultado).toEqual({ exito: true });
+  expect(audio.frasesDichas[0]).toEqual({ texto: '¡Otra vez!', idioma: 'es', direccionDeLaVoz: undefined });
+  expect(avisos).toEqual([
+    '[escenario-engine] contexto.audio.decir: la clave de la voz no es un texto; se usa voz sintetizada',
+    '[escenario-engine] contexto.audio.decir: quien no es el id de un personaje; se usa la voz normal',
+  ]);
+});
+
 test('una frase nueva corta la que estaba sonando, y la promesa de la que se cortó termina', async () => {
   let primeraTermino = false;
   let terminar = (resultado: ResultadoDeMinijuego): void => {};
