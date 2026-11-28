@@ -297,7 +297,19 @@ test('una comparación sin número a la derecha explica cómo se escribe', () =>
 
   expect(diagnostico.errores).toEqual([
     'condición "globo >= mucho" usada en npcs.tortu.dialogo[0].dice[0]: una comparación lleva el nombre de ' +
-      'una variable, un signo (>=, <=, >, < o =) y un número, como "dinero >= 10"',
+      'una variable, un signo (>=, <=, >, < o =) y un número, como "dinero >= 10"; ' +
+      'con un texto a la derecha solo se usa =, como "premio = pizarron"',
+  ]);
+});
+
+test('la variable de una igualdad de texto debe estar declarada', () => {
+  const diagnostico = revisarPasosDeTortu([
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('globo = rosa'), pasos: [] },
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('premio = pizarron'), pasos: [] },
+  ]);
+
+  expect(diagnostico.errores).toEqual([
+    'condición "premio" usada en npcs.tortu.dialogo[0].dice[1]: no está en estado.objetivos, ni en estado.variables, ni en estado.compartidas',
   ]);
 });
 

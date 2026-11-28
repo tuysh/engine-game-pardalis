@@ -123,3 +123,37 @@ test('en una comparación, una variable sin valor cuenta como cero', () => {
 test('una comparación usa la variable que nombra', () => {
   expect(variablesQueUsa(leerCondicionDeTexto('dinero >= 10'))).toEqual(['dinero']);
 });
+
+test('con un texto a la derecha, "=" pregunta si la variable guarda justo ese texto', () => {
+  expect(leerCondicionDeTexto('premio = pizarron')).toEqual({ tipo: 'textoIgual', nombre: 'premio', texto: 'pizarron' });
+  expect(leerCondicionDeTexto('tengo premio=pizarron')).toEqual({
+    tipo: 'textoIgual',
+    nombre: 'premio',
+    texto: 'pizarron',
+  });
+  expect(leerCondicionDeTexto('globo = rosa  claro')).toEqual({ tipo: 'textoIgual', nombre: 'globo', texto: 'rosa claro' });
+});
+
+test('una igualdad de texto se cumple solo con el mismo texto, tal cual', () => {
+  const conPizarron = conCambios(ESTADO_INICIAL, { premio: 'pizarron' });
+  const condicion = leerCondicionDeTexto('premio = pizarron');
+
+  expect(cumpleCondicion(condicion, conPizarron)).toBe(true);
+  expect(cumpleCondicion(leerCondicionDeTexto('premio = globo'), conPizarron)).toBe(false);
+  expect(cumpleCondicion(leerCondicionDeTexto('premio = Pizarron'), conPizarron)).toBe(false);
+  expect(cumpleCondicion(condicion, ESTADO_INICIAL)).toBe(false);
+  expect(cumpleCondicion(leerCondicionDeTexto('no premio = pizarron'), ESTADO_INICIAL)).toBe(true);
+});
+
+test('con un número a la derecha, "=" sigue comparando números aunque se escriba sin espacios', () => {
+  expect(leerCondicionDeTexto('estrellas=3')).toEqual({ tipo: 'comparacion', nombre: 'estrellas', operador: '=', numero: 3 });
+});
+
+test('un texto a la derecha de >=, <=, > o < no es una comparación: queda como un nombre para que la validación avise', () => {
+  expect(leerCondicionDeTexto('globo >= mucho')).toEqual({ tipo: 'variable', nombre: 'globo >= mucho' });
+  expect(leerCondicionDeTexto('premio == globo')).toEqual({ tipo: 'variable', nombre: 'premio == globo' });
+});
+
+test('una igualdad de texto usa la variable que nombra', () => {
+  expect(variablesQueUsa(leerCondicionDeTexto('premio = pizarron'))).toEqual(['premio']);
+});

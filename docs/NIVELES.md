@@ -362,7 +362,8 @@ termina con `sale`: ahí la pantalla puede quedarse en negro mientras carga el n
 | `"objetivosCompletos"` | todos los objetivos están cumplidos |
 | `"charlas.tortu"` | ya se habló con `tortu` |
 | `"vista.intro"` | ya se vio la cinemática `intro` |
-| `"dinero >= 10"` | el número de `dinero` es 10 o más. Los signos son `>=`, `<=`, `>`, `<` y `=`, y a la derecha va siempre un número |
+| `"dinero >= 10"` | el número de `dinero` es 10 o más. Los signos son `>=`, `<=`, `>`, `<` y `=` |
+| `"premio = pizarron"` | `premio` guarda justo el texto `pizarron`. Con un texto a la derecha solo se usa `=` |
 | `["a", "b"]` | se cumplen `a` **y** `b` |
 | `{ "alguno": ["a", "b"] }` | se cumple `a` **o** `b` |
 
@@ -378,6 +379,25 @@ una variable que todavía no tiene valor cuenta como `0`. Así se cobra sin escr
   { "dice": "axo", "texto": "Te falta un poquito. ¡Vuelve luego!" }
 ] }
 ```
+
+**Textos.** Una variable también puede guardar un texto, que le da un `pon` (`{ "pon": { "premio": "pizarron" } }`)
+o el `otorgar` de un minijuego. Para preguntar cuál es, se compara con `=`:
+
+```json
+{ "cuando": "premio = pizarron", "dice": [
+  { "dice": "tlacua", "texto": "¡Te ganaste el premio mayor!" }
+] },
+{ "cuando": "tengo premio", "dice": [
+  { "dice": "tlacua", "texto": "¡Ya tienes tu premio!" }
+] }
+```
+
+- Si lo de la derecha es un número (`"estrellas = 3"`), se comparan números; si no, textos.
+- El texto se compara **tal cual**: `"premio = Pizarron"` y `"premio = pizarrón"` no se cumplen con `"pizarron"`.
+  Conviene que los valores sean palabras cortas, sin acentos ni mayúsculas, iguales a las del `pon` o del minijuego.
+- Una variable sin valor, o con un número, no es igual a ningún texto. Para «cualquier premio» basta `"tengo premio"`,
+  y para «cualquiera menos este», `"no premio = pizarron"`.
+- `>=`, `<=`, `>` y `<` solo van con números: `"premio > globo"` es error.
 
 ### `alVolver` (después de un minijuego)
 
