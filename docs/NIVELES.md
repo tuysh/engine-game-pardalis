@@ -152,6 +152,7 @@ Solo `meta` es obligatoria. **Una clave que el motor no conoce es un error**: as
 | `jugador.personaje` | — | Id en `meta.personajes` (obligatorio si hay `jugador`). |
 | `jugador.velocidad` | 2.4 | Metros por segundo al caminar. |
 | `jugador.acompanante` | — | Id del personaje que **sigue al jugador** mientras explora. Ver «Acompañante». |
+| `jugador.distanciaDelAcompanante` | 0.9 | Metros entre el jugador y el lugar donde se queda su acompañante. |
 | `mundo.pixelesPorMetro` | 100 | Cuántos píxeles del mapa y de las imágenes son un metro del escenario. |
 | `mundo.camara.distancia` | 8 | Metros entre la cámara y lo que sigue. |
 | `mundo.camara.altura` | 4 | Metros de la cámara sobre el piso. |
@@ -171,7 +172,12 @@ La cámara sigue al jugador; en un nivel sin jugador mira al centro del lugar.
 El acompañante es un personaje que va con el jugador: lo sigue a un paso de distancia mientras explora.
 
 - Camina por el piso rodeando el decorado, igual que el jugador, y voltea hacia donde camina.
-- Cuando el jugador se detiene, se queda cerca, del lado por el que venía: no se encima ni se le adelanta.
+- **Va detrás del jugador y un poco más lejos de la cámara:** del lado contrario al que camina el jugador, a
+  `jugador.distanciaDelAcompanante` metros (0.9 si no se dice), y un poco hacia el fondo. Así, al caminar de lado,
+  su dibujo queda detrás del del jugador y no lo tapa. Si ahí hay una pared o un puesto, se pone del otro lado
+  o a la misma altura.
+- Cuando el jugador se detiene, el acompañante se queda en su lugar: no se encima ni se le adelanta. Vuelve a
+  caminar cuando el jugador se aleja (su distancia y 0.6 m más) o si quedó delante de él, tapándolo.
 - **Durante un diálogo o una cinemática deja de seguir:** ahí lo mueven los pasos `camina`, `mira` y `anima`
   como a cualquier personaje. Al terminar la escena vuelve a seguir desde donde quedó.
 - Debe estar en el escenario: ser un NPC del mapa o entrar con un paso `aparece` (empieza a seguir en cuanto

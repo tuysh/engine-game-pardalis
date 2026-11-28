@@ -64,6 +64,18 @@ test('el jugador y el mundo se leen con sus unidades, y lo que falta toma su val
   });
 });
 
+test('jugador.distanciaDelAcompanante se lee en metros y debe ser un número positivo', () => {
+  const lectura = new LectorDeNivelesDeJson().leerContenido({
+    meta: META,
+    jugador: { personaje: 'tortu', acompanante: 'tortu', distanciaDelAcompanante: 1.4 },
+  });
+  if (lectura.tipo !== 'leido') throw new Error(`no se pudo leer: ${lectura.errores.join('; ')}`);
+  expect(lectura.valor.jugador?.distanciaDelAcompananteEnMetros).toBe(1.4);
+
+  const errores = erroresDe({ meta: META, jugador: { personaje: 'tortu', distanciaDelAcompanante: 0 } });
+  expect(errores).toEqual(['jugador.distanciaDelAcompanante: Demasiado pequeño: se esperaba que número fuera >0']);
+});
+
 test('una línea se convierte con su hablante, traducción, audio y tarjeta de vocabulario', () => {
   const pasos = leerPasos([
     { dice: 'tortu', texto: '¡Cuidado!', trad: 'Careful!', en: 'hot', es: 'caliente', audio: 'vo_tortu_caliente' },

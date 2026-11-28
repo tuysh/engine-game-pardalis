@@ -36,6 +36,7 @@ async function crearAcompanante(idDelAcompananteInicial: string | undefined) {
     caminos: crearMapaDeCaminos(TERRENO),
     idDelJugador: 'tommy',
     velocidadEnMetrosPorSegundo: 2,
+    distanciaEnMetros: 0.9,
     idDelAcompananteInicial,
   });
   return { acompanante, reparto, escenario };
@@ -63,8 +64,44 @@ test('cuando el jugador se aleja, lo alcanza y se detiene cerca, sin encimarse',
   avanzarCuadros(acompanante, 200);
 
   const distancia = distanciaEntre(reparto.posicionDe('bobby')!, { x: 3.5, y: 3.5 });
-  expect(distancia).toBeLessThanOrEqual(0.9);
-  expect(distancia).toBeGreaterThan(0.5);
+  expect(distancia).toBeCloseTo(0.9, 1);
+});
+
+test('al caminar el jugador de lado, el acompañante va detrás de él y un poco más lejos de la cámara', async () => {
+  const { acompanante, reparto } = await crearAcompanante('bobby');
+
+  // Tommy camina hacia la izquierda por el frente de la calle, pasando junto a Bobby.
+  reparto.mover('tommy', { x: 3, y: 3.5 });
+  for (let cuadro = 0; cuadro < 100; cuadro++) {
+    const xDeTommy = 3 - cuadro * 0.02;
+    reparto.mover('tommy', { x: xDeTommy, y: 3.5 });
+    acompanante.avanzar(0.02);
+  }
+  avanzarCuadros(acompanante, 200);
+
+  const bobby = reparto.posicionDe('bobby')!;
+  expect(bobby.x).toBeGreaterThan(1.02);
+  expect(bobby.y).toBeLessThan(3.5);
+  expect(distanciaEntre(bobby, { x: 1.02, y: 3.5 })).toBeCloseTo(0.9, 1);
+});
+
+test('con otra distancia del nivel, se queda más lejos', async () => {
+  const escenario = new EscenarioDeMemoria();
+  const reparto = new Reparto(escenario);
+  await reparto.agregar({ id: 'tommy', imagen: IMAGEN, posicion: { x: 8, y: 2 }, mira: 'derecha', sePuedeTocar: false });
+  await reparto.agregar({ id: 'bobby', imagen: IMAGEN, posicion: { x: 1, y: 3.5 }, mira: 'derecha', sePuedeTocar: true });
+  const acompanante = new Acompanante({
+    reparto,
+    caminos: crearMapaDeCaminos(TERRENO),
+    idDelJugador: 'tommy',
+    velocidadEnMetrosPorSegundo: 2,
+    distanciaEnMetros: 1.6,
+    idDelAcompananteInicial: 'bobby',
+  });
+
+  avanzarCuadros(acompanante, 500);
+
+  expect(distanciaEntre(reparto.posicionDe('bobby')!, { x: 8, y: 2 })).toBeCloseTo(1.6, 1);
 });
 
 test('rodea lo que estorba para alcanzar al jugador y voltea hacia donde camina', async () => {
@@ -81,7 +118,7 @@ test('rodea lo que estorba para alcanzar al jugador y voltea hacia donde camina'
   }
 
   expect(atravesoElPuesto).toBe(false);
-  expect(distanciaEntre(reparto.posicionDe('bobby')!, { x: 9, y: 1 })).toBeLessThanOrEqual(0.9);
+  expect(distanciaEntre(reparto.posicionDe('bobby')!, { x: 9, y: 1 })).toBeCloseTo(0.9, 1);
   expect(escenario.personajes.get('bobby')?.mira).toBe('derecha');
 });
 
@@ -94,7 +131,7 @@ test('sin acompañante nadie sigue al jugador, y un cambio lo pone o lo quita', 
 
   acompanante.cambiar('bobby');
   avanzarCuadros(acompanante, 200);
-  expect(distanciaEntre(reparto.posicionDe('bobby')!, { x: 3.5, y: 3.5 })).toBeLessThanOrEqual(0.9);
+  expect(distanciaEntre(reparto.posicionDe('bobby')!, { x: 3.5, y: 3.5 })).toBeCloseTo(0.9, 1);
 
   acompanante.cambiar(undefined);
   reparto.mover('tommy', { x: 1, y: 3.5 });

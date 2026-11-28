@@ -35,12 +35,14 @@ const esquemaDeJugador = z
     personaje: z.string().min(1),
     velocidad: z.number().positive().default(VELOCIDAD_DEL_JUGADOR_POR_DEFECTO),
     acompanante: z.string().min(1).optional(),
+    distanciaDelAcompanante: z.number().positive().optional(),
   })
   .transform(
     (json): Jugador => ({
       personaje: json.personaje,
       velocidadEnMetrosPorSegundo: json.velocidad,
       acompanante: json.acompanante,
+      distanciaDelAcompananteEnMetros: json.distanciaDelAcompanante,
     }),
   );
 

@@ -333,8 +333,10 @@ El diseño no decía estos detalles; así quedaron. Si alguno debe cambiar, se c
   una nube. En código son opciones de `escena.dice` con los mismos nombres. Al saltar una cinemática la línea
   se omite, así que nadie cambia de dibujo.
 - **Acompañante:** `jugador.acompanante` nombra a un personaje que sigue al jugador mientras explora, por el
-  piso y rodeando el decorado. Empieza a caminar cuando el jugador se aleja metro y medio y se detiene a
-  menos de un metro. Durante un diálogo o una cinemática no sigue: lo mueven los pasos. El paso `acompana`
+  piso y rodeando el decorado. Su lugar está a `jugador.distanciaDelAcompanante` metros del jugador (0.9 por
+  defecto), del lado contrario al que camina el jugador y un poco atrás (más lejos de la cámara), para que su
+  dibujo no tape al del jugador. Empieza a caminar cuando el jugador se aleja esa distancia y 0.6 m más, o cuando
+  quedó delante de él tapándolo; mientras el jugador camina lo sigue sin pararse. Durante un diálogo o una cinemática no sigue: lo mueven los pasos. El paso `acompana`
   lo cambia o lo quita; ese cambio todavía no se guarda en la partida.
 - **Caminos:** al cargar el nivel se corta el piso en una rejilla (celdas de un cuarto de metro, sin las huellas
   del decorado `parado`). Con ella, el jugador al tocar un lugar y los pasos `camina` rodean lo que estorba.
