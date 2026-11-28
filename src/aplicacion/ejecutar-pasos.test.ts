@@ -152,6 +152,30 @@ test('el texto de una línea se completa con el estado de ese momento', async ()
   expect(bitacora).toEqual(['tortu: Te faltan las tortillas.', 'tortu: Te faltan .']);
 });
 
+test('una línea muestra el número de una variable y una condición reacciona al texto que guarda otra', async () => {
+  const bitacora: string[] = [];
+  const pasos: Paso[] = [
+    { tipo: 'pon', valores: { globo: { suma: 3 } } },
+    { tipo: 'linea', hablante: 'tortu', texto: 'Llevas {globo} globos.' },
+    { tipo: 'pon', valores: { globo: 'rosa' } },
+    { tipo: 'condicional', condicion: leerCondicionDeTexto('globo = azul'), pasos: [] },
+    {
+      tipo: 'condicional',
+      condicion: leerCondicionDeTexto('globo = rosa'),
+      pasos: [{ tipo: 'linea', hablante: 'tortu', texto: '¡Qué bonito tu globo rosa!' }],
+    },
+  ];
+
+  await ejecutarPasos(pasos, {
+    contenido: CONTENIDO,
+    estado: crearEstado(),
+    acciones: crearAccionesFalsas(bitacora),
+    senal: new AbortController().signal,
+  });
+
+  expect(bitacora).toEqual(['tortu: Llevas 3 globos.', 'tortu: ¡Qué bonito tu globo rosa!']);
+});
+
 test('"pon" cambia el estado', async () => {
   const estado = crearEstado();
 
