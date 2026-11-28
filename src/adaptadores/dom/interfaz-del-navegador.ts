@@ -20,7 +20,8 @@ import { GloboDeDialogo } from './globo-de-dialogo.ts';
 import { SenalEnPantalla } from './senal-en-pantalla.ts';
 import { SenalesDePendientes } from './senales-de-pendientes.ts';
 import { TarjetasDeOpciones } from './tarjetas-de-opciones.ts';
-import { esTeclaDeUnControl } from './tecla-de-un-control.ts';
+import { queHaceLaTeclaConTarjetas } from './tecla-con-tarjetas.ts';
+import { esTeclaDeUnCampo, esTeclaDeUnControl } from './tecla-de-un-control.ts';
 
 /** Cuánto crece todo en el modo proyección, para que se lea desde el fondo del salón. */
 const ESCALA_NORMAL = 1;
@@ -322,15 +323,11 @@ export class InterfazDelNavegador implements Interfaz {
   /**
    * Con teclado: Enter o la barra espaciadora siguen el diálogo, y las teclas 1 a 9 eligen una tarjeta.
    * Las tarjetas son botones: con una enfocada, Enter o la barra la eligen solas, sin pasar por aquí.
+   * Con las tarjetas a la vista y el foco en ningún lado, Enter, la barra o Tab enfocan una (`tecla-con-tarjetas.ts`).
    */
   private readonly alOprimirUnaTecla = (evento: KeyboardEvent): void => {
     if (this.opciones.cantidad > 0) {
-      const numero = Number(evento.key);
-      const esUnaTarjeta = Number.isInteger(numero) && numero >= 1 && numero <= this.opciones.cantidad;
-      if (esUnaTarjeta) {
-        evento.preventDefault();
-        this.avisarEleccion(numero - 1);
-      }
+      this.atenderTeclaConTarjetas(evento);
       return;
     }
 
@@ -345,4 +342,27 @@ export class InterfazDelNavegador implements Interfaz {
       this.alTocarLaCapa();
     }
   };
+
+  private atenderTeclaConTarjetas(evento: KeyboardEvent): void {
+    const enfocado = document.activeElement;
+    const camino = evento.composedPath();
+    const accion = queHaceLaTeclaConTarjetas({
+      tecla: evento.key,
+      repetida: evento.repeat,
+      conMayusculas: evento.shiftKey,
+      cantidad: this.opciones.cantidad,
+      esDeUnControl: esTeclaDeUnControl(camino),
+      esDeUnCampo: esTeclaDeUnCampo(camino),
+      nadaTieneElFoco: enfocado === null || enfocado === document.body,
+    });
+    if (accion.tipo === 'dejar') return;
+    evento.preventDefault();
+    if (accion.tipo === 'elegir') {
+      this.avisarEleccion(accion.posicion);
+      return;
+    }
+    if (accion.tipo === 'enfocar') {
+      this.opciones.enfocar(accion.posicion);
+    }
+  }
 }

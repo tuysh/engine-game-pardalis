@@ -40,6 +40,14 @@ export class TarjetasDeOpciones {
     }
   }
 
+  /**
+   * Lleva el foco a la tarjeta de esa posición, sin mover la página. Como lo pide una tecla, el navegador
+   * le dibuja su marco de foco (`:focus-visible`).
+   */
+  enfocar(posicion: number): void {
+    this.tarjetas[posicion]?.focus({ preventScroll: true });
+  }
+
   ocultar(): void {
     this.elemento.hidden = true;
     this.elemento.replaceChildren();
