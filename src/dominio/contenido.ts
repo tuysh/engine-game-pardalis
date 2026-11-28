@@ -59,7 +59,22 @@ export interface AjustesDelMundo {
   readonly sonidos: SonidosDelMundo;
   /** Planos de cámara con nombre, para los pasos `camara`. */
   readonly planos: Readonly<Record<string, Plano>>;
+  /** Qué tan gruesas son las franjas negras de cine durante una cinemática. `undefined` = `normales`. */
+  readonly franjas?: GrosorDeFranjas;
 }
+
+/**
+ * Qué tan gruesas son las franjas negras de arriba y abajo durante una cinemática:
+ * - `normales`: las de siempre, que dicen «esto es una película»;
+ * - `delgadas`: la mitad, para un nivel que es casi todo cinemática y necesita la pantalla;
+ * - `ninguna`: no se dibujan (los toques siguen sin llegar al escenario y el botón de saltar sigue ahí).
+ */
+export type GrosorDeFranjas = 'normales' | 'delgadas' | 'ninguna';
+
+export const GROSORES_DE_FRANJAS: readonly GrosorDeFranjas[] = ['normales', 'delgadas', 'ninguna'];
+
+/** El grosor de las franjas de un nivel que no dice otro. */
+export const GROSOR_DE_FRANJAS_POR_DEFECTO: GrosorDeFranjas = 'normales';
 
 /** Un plano de cámara: desde dónde se mira a algo del escenario. Las distancias están en metros. */
 export interface Plano extends AjustesDeCamara {

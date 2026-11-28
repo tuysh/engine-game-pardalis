@@ -2,6 +2,7 @@
 // (globos, opciones, tarjetas de vocabulario) y los toques que eso recibe.
 // La aplicación decide qué se muestra y cuándo; el adaptador decide cómo se ve.
 
+import type { GrosorDeFranjas } from '../dominio/contenido.ts';
 import type { PalabraDeVocabulario } from '../dominio/paso.ts';
 import type { LugarEnPantalla } from './escenario.ts';
 
@@ -81,8 +82,9 @@ export interface Interfaz {
   /**
    * Muestra las franjas negras de arriba y abajo que dicen «esto es una cinemática», y no deja que
    * los toques lleguen al escenario. Si se da `alSaltar`, aparece un botón que lo llama al tocarlo.
+   * `grosor` es el de `mundo.franjas` del nivel. Mientras se ven, los globos se acomodan entre las dos franjas.
    */
-  mostrarFranjasDeCine(alSaltar: (() => void) | undefined): void;
+  mostrarFranjasDeCine(alSaltar: (() => void) | undefined, grosor: GrosorDeFranjas): void;
   ocultarFranjasDeCine(): void;
 
   /**

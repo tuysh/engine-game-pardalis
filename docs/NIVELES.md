@@ -159,6 +159,7 @@ Solo `meta` es obligatoria. **Una clave que el motor no conoce es un error**: as
 | `mundo.fondo` | `"#bfe6f5"` (cielo claro) | Color de lo que se ve donde no hay piso ni telones, escrito `#rrggbb`. En un interior, ponle el color de las paredes o uno oscuro para que no se asome cielo; en un exterior, el color del cielo de tus telones (un atardecer, la noche). |
 | `mundo.sonidos.musica` | — | Clave de la música de fondo, que se repite mientras se juega. Si falta el archivo, hay advertencia y el nivel se juega sin música. |
 | `mundo.planos` | — | Planos de cámara con nombre, para los pasos `camara`. Ver abajo. |
+| `mundo.franjas` | `"normales"` | Grosor de las franjas negras de cine: `"normales"`, `"delgadas"` (la mitad) o `"ninguna"`. Ver «Franjas de cine». |
 
 La cámara sigue al jugador; en un nivel sin jugador mira al centro del lugar.
 
@@ -439,6 +440,19 @@ franjas negras de cine. Es una lista de pasos, los mismos de los diálogos.
 - Las líneas (`dice`) se cierran solas al acabar la voz, o con un toque.
 - Con «movimiento reducido» activo en el dispositivo, los viajes de cámara se vuelven cortes.
 
+#### Franjas de cine
+
+Mientras dura una cinemática se ven dos franjas negras, arriba y abajo. Tapan casi una décima del alto cada una,
+así que **lo que quede bajo ellas no se ve**: encuadra los planos con la cámara libre, que las marca con una guía
+punteada (ver «Crear planos con la cámara libre»).
+
+Los globos de diálogo, con su tarjeta de vocabulario, siempre quedan entre las dos franjas: si la cabeza de quien
+habla está muy arriba, el globo baja lo necesario y su piquito sigue apuntándole.
+
+Un nivel que es casi todo cinemática (una casa donde solo se cuenta la historia, una comida final) puede usar
+`"mundo": { "franjas": "delgadas" }` para tapar la mitad, o `"ninguna"` para no dibujarlas. Aun sin franjas, durante
+la cinemática los toques no llegan al escenario y el botón de saltar sigue en su lugar.
+
 La **casa de ejemplo** es un nivel hecho solo de una cinemática: no tiene `jugador`, su `intro` empieza
 `alEntrar` y termina con `{ "sale": "barrio" }`.
 
@@ -632,6 +646,9 @@ Con la tecla `C` entras a la cámara libre (el juego se pausa mientras tanto):
 | Clic en un personaje, en un objeto con `id` o cerca de un punto | Lo fija como `mira` del plano |
 | `1`–`9` | Salta a los planos que el nivel ya tiene, para compararlos o ajustarlos |
 | `P` | Copia el plano actual |
+
+Mientras la cámara libre está activa, una guía punteada marca dónde quedarán las franjas de cine (con el grosor
+de `mundo.franjas`): lo que encuadres debajo de ellas no se verá en una cinemática.
 
 Arriba del juego se ve siempre el plano que llevas, ya escrito como va en el contenido:
 

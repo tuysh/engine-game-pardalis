@@ -2,7 +2,11 @@
 // Los objetos son estrictos: una clave que el motor no conoce es un error, para atrapar errores de dedo.
 
 import { z } from 'zod';
-import { AJUSTES_DEL_MUNDO_POR_DEFECTO, VELOCIDAD_DEL_JUGADOR_POR_DEFECTO } from '../../dominio/contenido.ts';
+import {
+  AJUSTES_DEL_MUNDO_POR_DEFECTO,
+  GROSORES_DE_FRANJAS,
+  VELOCIDAD_DEL_JUGADOR_POR_DEFECTO,
+} from '../../dominio/contenido.ts';
 import type {
   AjustesDeCamara,
   AjustesDelMundo,
@@ -92,6 +96,7 @@ const esquemaDeMundo = z
     fondo: esquemaDeColor.default(AJUSTES_DEL_MUNDO_POR_DEFECTO.colorDeFondo),
     sonidos: z.strictObject({ musica: z.string().min(1).optional() }).prefault({}),
     planos: z.record(z.string(), esquemaDePlano).default({}),
+    franjas: z.enum(GROSORES_DE_FRANJAS).optional(),
   })
   .transform(
     (json): AjustesDelMundo => ({
@@ -100,6 +105,7 @@ const esquemaDeMundo = z
       colorDeFondo: json.fondo,
       sonidos: json.sonidos,
       planos: json.planos,
+      franjas: json.franjas,
     }),
   );
 

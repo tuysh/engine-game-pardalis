@@ -302,7 +302,8 @@ la cinemática termina ahí, el juego sigue y el host recibe el evento `error`.
 
 - **Saltar** pone la cinemática en modo rápido: cada paso se resuelve al instante dejando su resultado final
   (personajes en su destino, `pon` aplicados; líneas y videos omitidos). Vale igual para JSON y para código.
-- Durante una cinemática se bloquean toques y teclado y aparecen las franjas de cine.
+- Durante una cinemática se bloquean toques y teclado y aparecen las franjas de cine. Su grosor lo elige el nivel
+  (`mundo.franjas`: `normales`, `delgadas` o `ninguna`), y los globos siempre quedan entre las dos.
 - **Audio al inicio:** los navegadores no dejan sonar nada hasta el primer toque. Con `iniciarCon: 'boton'`
   el motor muestra un botón grande de jugar; con `'host'` el host garantiza que ya hubo un toque.
 - Con «movimiento reducido» activo en el sistema, los movimientos de cámara se vuelven cortes.

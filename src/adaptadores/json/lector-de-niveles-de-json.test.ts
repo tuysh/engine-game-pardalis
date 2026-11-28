@@ -423,3 +423,15 @@ test('el jugador puede traer acompañante, y el paso "acompana" lo cambia o lo q
     { tipo: 'acompana', personaje: undefined },
   ]);
 });
+
+test('mundo.franjas acepta "normales", "delgadas" y "ninguna"; otro valor es error', () => {
+  const lector = new LectorDeNivelesDeJson();
+  const delgadas = lector.leerContenido({ meta: META, mundo: { franjas: 'delgadas' } });
+  if (delgadas.tipo !== 'leido') throw new Error(`no se pudo leer: ${delgadas.errores.join('; ')}`);
+  expect(delgadas.valor.mundo.franjas).toBe('delgadas');
+
+  const gruesas = lector.leerContenido({ meta: META, mundo: { franjas: 'gruesas' } });
+  expect(gruesas.tipo).toBe('invalido');
+  if (gruesas.tipo !== 'invalido') return;
+  expect(gruesas.errores).toEqual(['mundo.franjas: Opción inválida: se esperaba una de "normales"|"delgadas"|"ninguna"']);
+});

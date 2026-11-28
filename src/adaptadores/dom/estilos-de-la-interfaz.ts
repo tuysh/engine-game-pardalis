@@ -187,7 +187,8 @@ export const ESTILOS_DE_LA_INTERFAZ = `
   position: absolute;
   left: 0;
   right: 0;
-  height: 9%;
+  /* El motor pone el alto según mundo.franjas del nivel (franjas-de-cine.ts). */
+  height: var(--alto-de-la-franja, 9%);
   background: #000000;
 }
 
