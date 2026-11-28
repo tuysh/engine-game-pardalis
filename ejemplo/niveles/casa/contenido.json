@@ -37,9 +37,11 @@
         { "dice": "tommy", "texto": "Hmm… tortillas!", "trad": "Mmm… ¡tortillas!", "piensa": true },
         { "dice": "mama", "texto": "¿Me traes tortillas, mijo?", "audio": "vo_mama_tortillas" },
         { "mira": "tommy", "hacia": "mama" },
-        { "anima": "tele", "con": "tele_apagada", "repite": true },
         { "anima": "tommy", "con": "spr_tommy", "repite": true },
         { "dice": "tommy", "texto": "Yes, mom!", "trad": "¡Sí, mamá!", "audio": "vo_tommy_si" },
+        { "camara": "plano_tele", "duracion": 1 },
+        { "anima": "tele", "con": "tele_apagada", "repite": true },
+        { "espera": 1 },
         { "fundido": "cerrar", "duracion": 0.8 },
         { "sale": "barrio" }
       ]

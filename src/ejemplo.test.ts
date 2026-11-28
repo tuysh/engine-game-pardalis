@@ -50,6 +50,6 @@ test('las únicas advertencias de la casa son por voces y sonidos que todavía n
   expect(resultado.advertencias).toEqual([
     'cinematicas.intro.pasos[3].juntos[1].sonido: no existe el audio "puerta_abre"; no sonará',
     'cinematicas.intro.pasos[8].audio: no existe la voz "vo_mama_tortillas"; se usará voz sintetizada',
-    'cinematicas.intro.pasos[12].audio: no existe la voz "vo_tommy_si"; se usará voz sintetizada',
+    'cinematicas.intro.pasos[11].audio: no existe la voz "vo_tommy_si"; se usará voz sintetizada',
   ]);
 });
