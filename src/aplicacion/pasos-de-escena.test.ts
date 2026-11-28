@@ -276,3 +276,46 @@ test('"fundido" oscurece y aclara la pantalla en el tiempo que dice', async () =
   await reloj.avanzar(0.5);
   expect(interfaz.opacidadDelFundido).toBe(0);
 });
+
+test('quien lleva "anima" en el mapa empieza con ese dibujo, y su sprite se descarga para cuando vuelva a él', async () => {
+  const nivel: Nivel = {
+    ...SALA,
+    mundo: {
+      ...SALA.mundo,
+      npcs: { mama: { descripcion: 'mamá', posicion: { x: 6, y: 2 }, mira: 'derecha', dibujoInicial: 'tommy_saluda' } },
+    },
+  };
+  const escenario = new EscenarioDeMemoria();
+  const ubicacion = { direccionDelNivel: '/niveles/casa/nivel.json', cargador: new CargadorDeMemoria({}) };
+
+  await jugarNivel(
+    { nivel, ubicacion, idiomaBase: 'es', minijuegos: {} },
+    {
+      escenario,
+      interfaz: new InterfazDeMemoria(),
+      audio: new AudioDeMemoria(),
+      video: new VideoDeMemoria(),
+      controles: new ControlesDeMemoria(),
+      reloj: new RelojDeMemoria(),
+      azar: () => 0,
+    },
+    {
+      alCumplirObjetivo: () => {},
+      alVerPalabra: () => {},
+      alSalir: () => {},
+      alFallar: (error) => {
+        throw error;
+      },
+      alEmpezarCinematica: () => {},
+      alTerminarCinematica: () => {},
+      alCambiarElEstado: () => {},
+      alEmpezarMinijuego: () => {},
+      alTerminarMinijuego: () => {},
+    },
+  );
+
+  expect(escenario.dibujosAlEntrar.get('mama')?.direcciones[0]).toBe('/niveles/casa/img/tommy_saluda_1.svg');
+  expect(escenario.dibujosAlEntrar.get('tommy')?.direcciones[0]).toBe('/niveles/casa/img/spr_tommy.svg');
+  const precargadas = escenario.imagenesPrecargadas.map((imagen) => imagen.direcciones[0]);
+  expect(precargadas).toContain('/niveles/casa/img/spr_mama.svg');
+});

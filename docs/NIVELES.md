@@ -52,7 +52,7 @@ a metros del escenario, igual que a las imágenes. Un personaje dibujado de 160 
 | `suelo` | Capa de imagen | La imagen del piso, tal como se ve desde arriba. Propiedad `asset` (clave). Se coloca según el desplazamiento de la capa y mide lo que mide la imagen. |
 | `telones` | Capa de objetos | Una **línea de dos puntos** por cada fondo vertical (fachadas, cielo). Propiedades `asset` y `alto` (en píxeles). |
 | `decorado` | Capa de objetos | Un **rectángulo** por objeto: su forma es **la huella real** del objeto en el piso. Clase del catálogo y propiedad `asset`. |
-| `npcs` | Capa de objetos | Un objeto por personaje (un punto es lo más cómodo). Propiedades `id` y, opcional, `mira`. |
+| `npcs` | Capa de objetos | Un objeto por personaje (un punto es lo más cómodo). Propiedades `id` y, opcionales, `mira` y `anima` (ver «Pose inicial»). |
 | `interaccion` | Capa de objetos | Objetos de clase `inicioJugador`, `punto`, `salida` o `zona`. |
 | `piso` | Capa de objetos | Polígonos (o rectángulos) por donde se puede caminar. |
 
@@ -100,10 +100,21 @@ que en el contenido (ver «Condiciones»). Cambia sola en cuanto cambia el estad
 
 | Clase | Forma | Propiedades |
 | --- | --- | --- |
-| `inicioJugador` | punto | `mira` (`izquierda`/`derecha`, por defecto `derecha`). Exactamente uno si el nivel tiene jugador, dentro del piso. |
+| `inicioJugador` | punto | `mira` (`izquierda`/`derecha`, por defecto `derecha`) y, opcional, `anima`. Exactamente uno si el nivel tiene jugador, dentro del piso. |
 | `punto` | punto | Su **nombre** es su identificador (p. ej. `frente_tortilleria`); lo usan los pasos `camina`. No se repite. |
 | `salida` | rectángulo o polígono | Máximo una. |
 | `zona` | rectángulo o polígono | Su **nombre** es su identificador. Opcionales: `grupo` (qué lista de `comentarios` usar al entrar) y `espera` (segundos antes de repetir; por defecto 20). |
+
+#### Pose inicial (`anima`)
+
+Un personaje del mapa (un objeto de `npcs`, o el `inicioJugador`) puede llevar la propiedad de texto `anima`:
+la clave de la imagen o animación con que **empieza**, en vez de su `sprite`. Así lo que se ve detrás del botón
+de jugar ya es la primera toma de la cinemática de entrada (Pardi sentado viendo la tele), y no un personaje
+parado que de pronto cambia.
+
+- Es como un paso `anima` con `repite` que ya pasó: las caras de una línea (`con`) vuelven a esta pose al terminar.
+- Para que regrese a su dibujo normal: `{ "anima": "pardi", "con": "spr_pardi", "repite": true }`.
+- La imagen debe existir en los assets (si no, es error).
 
 ### Cómo se une el mapa con el contenido
 

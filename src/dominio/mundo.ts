@@ -63,6 +63,12 @@ export interface LugarDePersonaje {
   readonly descripcion: string;
   readonly posicion: Punto;
   readonly mira: Mira;
+  /**
+   * Clave de la imagen o animación con que el personaje empieza (propiedad `anima` del mapa): así la escena
+   * detrás del botón de jugar ya se ve como la primera toma (alguien sentado viendo la tele).
+   * `undefined` = empieza con su `sprite`.
+   */
+  readonly dibujoInicial?: string;
 }
 
 /** El área que, al tocarla, lleva al jugador a salir del nivel. */
