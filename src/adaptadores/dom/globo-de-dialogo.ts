@@ -49,7 +49,9 @@ export class GloboDeDialogo {
     if (globo.palabra !== undefined) {
       // «lettuce · lechuga»: cada palabra con su idioma.
       const tarjeta = crearConTexto('div', 'tarjeta-de-palabra', '');
-      tarjeta.append(crearEnIdioma('span', '', globo.palabra.en, 'en'), ' · ', crearEnIdioma('span', '', globo.palabra.es, 'es'));
+      const enIngles = crearEnIdioma('span', '', globo.palabra.en, 'en');
+      const enEspanol = crearEnIdioma('span', '', globo.palabra.es, 'es');
+      tarjeta.append(enIngles, ' · ', enEspanol);
       this.elemento.append(tarjeta);
     }
     this.elemento.append(crearEnIdioma('div', 'texto', globo.texto, globo.idioma));

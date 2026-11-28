@@ -76,7 +76,8 @@ export class RelojDeMemoria implements Reloj {
   }
 
   /**
-   * Hace pasar el tiempo. En pausa no pasa nada (solo le da turno al código que estaba esperando). Cuenta como un solo cuadro: llama una vez a las funciones de `enCadaCuadro`.
+   * Hace pasar el tiempo. Cuenta como un solo cuadro: llama una vez a las funciones de `enCadaCuadro`.
+   * En pausa no pasa nada: solo le da turno al código que estaba esperando.
    * Luego termina las esperas que vencen, en orden, y le da turno al código que estaba esperando;
    * si ese código pide otra espera que también vence, también termina.
    */

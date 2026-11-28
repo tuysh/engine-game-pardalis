@@ -402,9 +402,9 @@ alPausarOReanudar((pausado) => canasta.classList.toggle('quieta', pausado));
 
 Un host que arma a mano un `ContextoDeMinijuego` (por ejemplo, una mesa de pruebas que abre un minijuego sin
 el motor) ahora tiene que darle también `assets.cuadros`, `assets.animar`, `pausado`, `alPausarOReanudar` y
-`enCadaCuadro`; TypeScript lo señala. Para una prueba sin pausa basta con `pausado: false`,
-`alPausarOReanudar: () => () => {}` y un `enCadaCuadro` hecho con `requestAnimationFrame`. Para una
-prueba basta con poner el primer cuadro: `animar: (imagen, clave) => { imagen.src = url(clave); return { cambiar:
+`enCadaCuadro`; TypeScript lo señala. Para una prueba sin pausa bastan `pausado: false`,
+`alPausarOReanudar: () => () => {}` y un `enCadaCuadro` hecho con `requestAnimationFrame`. Y para
+las animaciones basta con poner el primer cuadro: `animar: (imagen, clave) => { imagen.src = url(clave); return { cambiar:
 (otra) => { imagen.src = url(otra); }, detener: () => {} }; }`.
 
 ## 7. Cinemáticas
