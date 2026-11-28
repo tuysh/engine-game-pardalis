@@ -11,7 +11,7 @@ import type { AjustesDeVoz } from '../../dominio/ajustes-de-voz.ts';
 import { VOZ_NORMAL } from '../../dominio/ajustes-de-voz.ts';
 import type { Idioma } from '../../dominio/idioma.ts';
 import type { ResultadoDeDecir } from '../../puertos/audio.ts';
-import { elegirVoz } from './elegir-voz.ts';
+import { elegirVoz, etiquetaDeIdioma } from './elegir-voz.ts';
 
 /** Con qué acento habla la voz sintetizada en cada idioma, si el dispositivo no tiene una voz de ese idioma. */
 const ACENTO_POR_IDIOMA: Readonly<Record<Idioma, string>> = { es: 'es-MX', en: 'en-US' };
@@ -38,7 +38,12 @@ export class VozSintetizada {
   constructor() {
     if (!hayVozSintetizada()) return;
     this.voces = speechSynthesis.getVoices();
-    speechSynthesis.addEventListener('voiceschanged', this.alCambiarLasVoces);
+    // En algunos Safari viejos (los de muchas tabletas de escuela) `speechSynthesis` no es un `EventTarget`:
+    // llamar a `addEventListener` lanzaría un error y el juego no se crearía. Ahí la lista de voces llega
+    // completa desde el principio, así que basta con no escuchar.
+    if (typeof speechSynthesis.addEventListener === 'function') {
+      speechSynthesis.addEventListener('voiceschanged', this.alCambiarLasVoces);
+    }
   }
 
   /**
@@ -77,7 +82,9 @@ export class VozSintetizada {
   /** Calla lo que se esté diciendo y deja de escuchar al navegador. */
   destruir(): void {
     if (!hayVozSintetizada()) return;
-    speechSynthesis.removeEventListener('voiceschanged', this.alCambiarLasVoces);
+    if (typeof speechSynthesis.removeEventListener === 'function') {
+      speechSynthesis.removeEventListener('voiceschanged', this.alCambiarLasVoces);
+    }
     speechSynthesis.cancel();
   }
 
@@ -92,7 +99,7 @@ export class VozSintetizada {
     if (voz !== undefined) {
       enunciado.voice = voz;
       // El acento de la voz elegida manda: así una voz "es-US" no recibe la etiqueta "es-MX".
-      enunciado.lang = voz.lang;
+      enunciado.lang = etiquetaDeIdioma(voz);
     }
     return enunciado;
   }
