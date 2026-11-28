@@ -79,7 +79,12 @@ export class ControlesDelTeclado implements Controles {
     }
 
     // `repeat` es verdadero en los avisos que el teclado repite al dejar una tecla oprimida: se pide hablar una vez.
-    const pideHablar = TECLAS_DE_HABLAR.includes(evento.code) && !evento.repeat;
+    const esTeclaDeHablar = TECLAS_DE_HABLAR.includes(evento.code) && !evento.repeat;
+    // Enter y la barra espaciadora también siguen el diálogo, y la interfaz las atiende antes (escucha en
+    // `document`, que recibe la tecla antes que `window`) y lo marca con `preventDefault`. Si esa tecla cerró
+    // la última línea, aquí el diálogo ya terminó: pedir hablar lo empezaría otra vez con quien está cerca.
+    const yaLaAtendioLaInterfaz = evento.defaultPrevented;
+    const pideHablar = esTeclaDeHablar && !yaLaAtendioLaInterfaz;
     if (pideHablar && this.funcionesDeHablar.length > 0) {
       // Evita que la barra espaciadora, además, desplace la página.
       evento.preventDefault();
